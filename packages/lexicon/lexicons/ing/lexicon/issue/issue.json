@@ -1,0 +1,27 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.issue",
+  "description": "An issue: what the org is working on, and the record everything else in this surface points at. Its state is deliberately NOT here — a state change is a new `ing.lexicon.issue.state` record, never an edit, so the history of what happened is the log rather than a field somebody overwrote.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "One issue.",
+      "required": ["title", "createdAt"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "body": {
+          "type": "string",
+          "maxLength": 100000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,582 @@
+{
+  "generatedFrom": "../../specs/pds/blob-upload.qnt",
+  "specHash": "03f911895fcc8d178a18b01ec9b638636261eff1e0c4dc47ccc2ce00cb5b8ad0",
+  "module": "pds_blob_upload",
+  "vars": [
+    {
+      "name": "phase",
+      "type": "str"
+    },
+    {
+      "name": "bytes",
+      "type": "int"
+    },
+    {
+      "name": "limit",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "exceeds": {
+      "kind": "function",
+      "params": [
+        "bytes",
+        "chunk",
+        "limit"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "igt",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "bytes"
+              },
+              {
+                "kind": "name",
+                "name": "chunk"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "limit"
+          }
+        ]
+      }
+    },
+    "PhaseValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "empty"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "uploading"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "uploaded"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "failed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "LimitPositive": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igt",
+        "args": [
+          {
+            "kind": "name",
+            "name": "limit"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "BytesInRange": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "bytes"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "bytes"
+              },
+              {
+                "kind": "name",
+                "name": "limit"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "UploadedNonEmpty": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "uploaded"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igt",
+            "args": [
+              {
+                "kind": "name",
+                "name": "bytes"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "FailedDiscardsBytes": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "failed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "bytes"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "str",
+            "value": "empty"
+          }
+        },
+        {
+          "field": "bytes",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "limit",
+          "rhs": {
+            "kind": "int",
+            "value": "1024"
+          }
+        }
+      ]
+    },
+    {
+      "name": "begin",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "empty"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "uploading"
+              },
+              {
+                "kind": "name",
+                "name": "phase"
+              }
+            ]
+          }
+        },
+        {
+          "field": "bytes",
+          "rhs": {
+            "kind": "name",
+            "name": "bytes"
+          }
+        },
+        {
+          "field": "limit",
+          "rhs": {
+            "kind": "name",
+            "name": "limit"
+          }
+        }
+      ]
+    },
+    {
+      "name": "appendChunk",
+      "nondet": {
+        "name": "chunk",
+        "kind": "int",
+        "pool": [
+          "0",
+          "128",
+          "1024",
+          "2048"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "uploading"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "exceeds",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "bytes"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "chunk"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "limit"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "failed"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "uploading"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "phase"
+              }
+            ]
+          }
+        },
+        {
+          "field": "bytes",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "uploading"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "exceeds",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "bytes"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "chunk"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "limit"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "iadd",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "bytes"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "chunk"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "bytes"
+              }
+            ]
+          }
+        },
+        {
+          "field": "limit",
+          "rhs": {
+            "kind": "name",
+            "name": "limit"
+          }
+        }
+      ]
+    },
+    {
+      "name": "finish",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "uploading"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "igt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "bytes"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "0"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "uploaded"
+              },
+              {
+                "kind": "name",
+                "name": "phase"
+              }
+            ]
+          }
+        },
+        {
+          "field": "bytes",
+          "rhs": {
+            "kind": "name",
+            "name": "bytes"
+          }
+        },
+        {
+          "field": "limit",
+          "rhs": {
+            "kind": "name",
+            "name": "limit"
+          }
+        }
+      ]
+    },
+    {
+      "name": "discard",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "str",
+            "value": "empty"
+          }
+        },
+        {
+          "field": "bytes",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "limit",
+          "rhs": {
+            "kind": "name",
+            "name": "limit"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "begin",
+    "appendChunk",
+    "finish",
+    "discard"
+  ]
+}

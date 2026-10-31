@@ -1,0 +1,401 @@
+{
+  "generatedFrom": "../../specs/space-host/revocation-log.qnt",
+  "specHash": "916302a263af6bf95c31dd9ed1aadc61634cd006a3649f68e6adf2ab64c454f8",
+  "module": "revocation_log",
+  "vars": [
+    {
+      "name": "epoch",
+      "type": "int"
+    },
+    {
+      "name": "revokedUpTo",
+      "type": "int"
+    },
+    {
+      "name": "status",
+      "type": "str"
+    }
+  ],
+  "defs": {
+    "RevocationForwardOnly": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "revokedUpTo"
+          },
+          {
+            "kind": "name",
+            "name": "epoch"
+          }
+        ]
+      }
+    },
+    "RevokedStaysRevoked": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "revoked"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "revokedUpTo"
+              },
+              {
+                "kind": "name",
+                "name": "epoch"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "EpochNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "epoch"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "RevocationNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "revokedUpTo"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "revokedUpTo",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "grant",
+      "assignments": [
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "epoch"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "revokedUpTo",
+          "rhs": {
+            "kind": "name",
+            "name": "revokedUpTo"
+          }
+        },
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "active"
+          }
+        }
+      ]
+    },
+    {
+      "name": "revoke",
+      "assignments": [
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "name",
+            "name": "epoch"
+          }
+        },
+        {
+          "field": "revokedUpTo",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "active"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "epoch"
+              },
+              {
+                "kind": "name",
+                "name": "revokedUpTo"
+              }
+            ]
+          }
+        },
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "active"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "revoked"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "record",
+      "nondet": {
+        "name": "at",
+        "kind": "int",
+        "pool": [
+          "0",
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "name",
+            "name": "epoch"
+          }
+        },
+        {
+          "field": "revokedUpTo",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "igt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "at"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "revokedUpTo"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "ilte",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "at"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "epoch"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "at"
+              },
+              {
+                "kind": "name",
+                "name": "revokedUpTo"
+              }
+            ]
+          }
+        },
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "igt",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "at"
+                          },
+                          {
+                            "kind": "name",
+                            "name": "revokedUpTo"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "ilte",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "at"
+                          },
+                          {
+                            "kind": "name",
+                            "name": "epoch"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "at"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "epoch"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "revoked"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "grant",
+    "revoke",
+    "record"
+  ]
+}

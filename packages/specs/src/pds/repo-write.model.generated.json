@@ -1,0 +1,753 @@
+{
+  "generatedFrom": "../../specs/pds/repo-write.qnt",
+  "specHash": "f9faa26eb04f9c6fbd391e41925e9489f263ce05bf569ccaa00e111835ab163c",
+  "module": "pds_repo_write",
+  "vars": [
+    {
+      "name": "phase",
+      "type": "str"
+    },
+    {
+      "name": "commit",
+      "type": "int"
+    },
+    {
+      "name": "record",
+      "type": "int"
+    },
+    {
+      "name": "staged",
+      "type": "int"
+    },
+    {
+      "name": "mstDirty",
+      "type": "bool"
+    }
+  ],
+  "defs": {
+    "CommitNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "commit"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "RecordInRange": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "record"
+              },
+              {
+                "kind": "app",
+                "opcode": "iuminus",
+                "args": [
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "record"
+              },
+              {
+                "kind": "name",
+                "name": "commit"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "StagedInRange": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "staged"
+              },
+              {
+                "kind": "app",
+                "opcode": "iuminus",
+                "args": [
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "staged"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "commit"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "PhaseValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "validated"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "committed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "conflict"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ValidatedStaged": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "validated"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "staged"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "iadd",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "commit"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "mstDirty"
+                  },
+                  {
+                    "kind": "bool",
+                    "value": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "DirtyOnlyWhenValidated": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "mstDirty"
+              },
+              {
+                "kind": "bool",
+                "value": false
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "validated"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "commit",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "record",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iuminus",
+            "args": [
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "staged",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iuminus",
+            "args": [
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "mstDirty",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "submit",
+      "nondet": {
+        "name": "seen",
+        "kind": "int",
+        "pool": [
+          "-1",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "seen"
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "iuminus",
+                        "args": [
+                          {
+                            "kind": "int",
+                            "value": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "seen"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "commit"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "validated"
+              },
+              {
+                "kind": "str",
+                "value": "conflict"
+              }
+            ]
+          }
+        },
+        {
+          "field": "commit",
+          "rhs": {
+            "kind": "name",
+            "name": "commit"
+          }
+        },
+        {
+          "field": "record",
+          "rhs": {
+            "kind": "name",
+            "name": "record"
+          }
+        },
+        {
+          "field": "staged",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "seen"
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "iuminus",
+                        "args": [
+                          {
+                            "kind": "int",
+                            "value": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "seen"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "commit"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "commit"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iuminus",
+                "args": [
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "mstDirty",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "seen"
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "iuminus",
+                        "args": [
+                          {
+                            "kind": "int",
+                            "value": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "seen"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "commit"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "bool",
+                "value": false
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "commitWrite",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igte",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "staged"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "committed"
+              },
+              {
+                "kind": "name",
+                "name": "phase"
+              }
+            ]
+          }
+        },
+        {
+          "field": "commit",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igte",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "staged"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "staged"
+              },
+              {
+                "kind": "name",
+                "name": "commit"
+              }
+            ]
+          }
+        },
+        {
+          "field": "record",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igte",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "staged"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "staged"
+              },
+              {
+                "kind": "name",
+                "name": "record"
+              }
+            ]
+          }
+        },
+        {
+          "field": "staged",
+          "rhs": {
+            "kind": "name",
+            "name": "staged"
+          }
+        },
+        {
+          "field": "mstDirty",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "reload",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "commit",
+          "rhs": {
+            "kind": "name",
+            "name": "commit"
+          }
+        },
+        {
+          "field": "record",
+          "rhs": {
+            "kind": "name",
+            "name": "record"
+          }
+        },
+        {
+          "field": "staged",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iuminus",
+            "args": [
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "mstDirty",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "submit",
+    "commitWrite",
+    "reload"
+  ]
+}

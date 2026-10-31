@@ -1,0 +1,877 @@
+{
+  "generatedFrom": "../../specs/oauth/dpop-nonce.qnt",
+  "specHash": "58947d72f643df59057a7edbcdfbea0c3565c63a65bf6449029357cfbdd90338",
+  "module": "oauth_dpop_nonce",
+  "vars": [
+    {
+      "name": "phase",
+      "type": "str"
+    },
+    {
+      "name": "nextNonce",
+      "type": "int"
+    },
+    {
+      "name": "usedNonce",
+      "type": "int"
+    },
+    {
+      "name": "nextJti",
+      "type": "int"
+    },
+    {
+      "name": "lastJti",
+      "type": "int"
+    },
+    {
+      "name": "presentedNonce",
+      "type": "int"
+    },
+    {
+      "name": "presentedJti",
+      "type": "int"
+    },
+    {
+      "name": "nonceOk",
+      "type": "bool"
+    },
+    {
+      "name": "jtiOk",
+      "type": "bool"
+    }
+  ],
+  "defs": {
+    "submittedNonce": {
+      "kind": "function",
+      "params": [
+        "s"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "s"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "s"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "2"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "nextNonce"
+          },
+          {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "nextNonce"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "submittedJti": {
+      "kind": "function",
+      "params": [
+        "s"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "s"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "s"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "nextJti"
+          },
+          {
+            "kind": "name",
+            "name": "lastJti"
+          }
+        ]
+      }
+    },
+    "nonceOkFor": {
+      "kind": "function",
+      "params": [
+        "s"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "submittedNonce",
+            "args": [
+              {
+                "kind": "name",
+                "name": "s"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "nextNonce"
+          }
+        ]
+      }
+    },
+    "jtiOkFor": {
+      "kind": "function",
+      "params": [
+        "s"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "submittedJti",
+            "args": [
+              {
+                "kind": "name",
+                "name": "s"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "nextJti"
+          }
+        ]
+      }
+    },
+    "acceptedFor": {
+      "kind": "function",
+      "params": [
+        "s"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "nonceOkFor",
+            "args": [
+              {
+                "kind": "name",
+                "name": "s"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "jtiOkFor",
+            "args": [
+              {
+                "kind": "name",
+                "name": "s"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "NoReplay": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilt",
+        "args": [
+          {
+            "kind": "name",
+            "name": "lastJti"
+          },
+          {
+            "kind": "name",
+            "name": "nextJti"
+          }
+        ]
+      }
+    },
+    "NonceFresh": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilt",
+        "args": [
+          {
+            "kind": "name",
+            "name": "usedNonce"
+          },
+          {
+            "kind": "name",
+            "name": "nextNonce"
+          }
+        ]
+      }
+    },
+    "AcceptedImpliesChecks": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "accepted"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "name",
+                "name": "nonceOk"
+              },
+              {
+                "kind": "name",
+                "name": "jtiOk"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RejectedImpliesReason": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "rejected"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "not",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "nonceOk"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "not",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "jtiOk"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "str",
+            "value": "ready"
+          }
+        },
+        {
+          "field": "nextNonce",
+          "rhs": {
+            "kind": "int",
+            "value": "1"
+          }
+        },
+        {
+          "field": "usedNonce",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "nextJti",
+          "rhs": {
+            "kind": "int",
+            "value": "1"
+          }
+        },
+        {
+          "field": "lastJti",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "presentedNonce",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "presentedJti",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "nonceOk",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "jtiOk",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "submit",
+      "nondet": {
+        "name": "scenario",
+        "kind": "int",
+        "pool": [
+          "0",
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "acceptedFor",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "scenario"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "accepted"
+              },
+              {
+                "kind": "str",
+                "value": "rejected"
+              }
+            ]
+          }
+        },
+        {
+          "field": "nextNonce",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "acceptedFor",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "scenario"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "nextNonce"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "nextNonce"
+              }
+            ]
+          }
+        },
+        {
+          "field": "usedNonce",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "acceptedFor",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "scenario"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "nextNonce"
+              },
+              {
+                "kind": "name",
+                "name": "usedNonce"
+              }
+            ]
+          }
+        },
+        {
+          "field": "nextJti",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "acceptedFor",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "scenario"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "nextJti"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "nextJti"
+              }
+            ]
+          }
+        },
+        {
+          "field": "lastJti",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "acceptedFor",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "scenario"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "nextJti"
+              },
+              {
+                "kind": "name",
+                "name": "lastJti"
+              }
+            ]
+          }
+        },
+        {
+          "field": "presentedNonce",
+          "rhs": {
+            "kind": "app",
+            "opcode": "submittedNonce",
+            "args": [
+              {
+                "kind": "name",
+                "name": "scenario"
+              }
+            ]
+          }
+        },
+        {
+          "field": "presentedJti",
+          "rhs": {
+            "kind": "app",
+            "opcode": "submittedJti",
+            "args": [
+              {
+                "kind": "name",
+                "name": "scenario"
+              }
+            ]
+          }
+        },
+        {
+          "field": "nonceOk",
+          "rhs": {
+            "kind": "app",
+            "opcode": "nonceOkFor",
+            "args": [
+              {
+                "kind": "name",
+                "name": "scenario"
+              }
+            ]
+          }
+        },
+        {
+          "field": "jtiOk",
+          "rhs": {
+            "kind": "app",
+            "opcode": "jtiOkFor",
+            "args": [
+              {
+                "kind": "name",
+                "name": "scenario"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "rotate",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "name",
+            "name": "phase"
+          }
+        },
+        {
+          "field": "nextNonce",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "nextNonce"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "usedNonce",
+          "rhs": {
+            "kind": "name",
+            "name": "usedNonce"
+          }
+        },
+        {
+          "field": "nextJti",
+          "rhs": {
+            "kind": "name",
+            "name": "nextJti"
+          }
+        },
+        {
+          "field": "lastJti",
+          "rhs": {
+            "kind": "name",
+            "name": "lastJti"
+          }
+        },
+        {
+          "field": "presentedNonce",
+          "rhs": {
+            "kind": "name",
+            "name": "presentedNonce"
+          }
+        },
+        {
+          "field": "presentedJti",
+          "rhs": {
+            "kind": "name",
+            "name": "presentedJti"
+          }
+        },
+        {
+          "field": "nonceOk",
+          "rhs": {
+            "kind": "name",
+            "name": "nonceOk"
+          }
+        },
+        {
+          "field": "jtiOk",
+          "rhs": {
+            "kind": "name",
+            "name": "jtiOk"
+          }
+        }
+      ]
+    },
+    {
+      "name": "challenge",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "name",
+            "name": "phase"
+          }
+        },
+        {
+          "field": "nextNonce",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "rejected"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "not",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "nonceOk"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "nextNonce"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "nextNonce"
+              }
+            ]
+          }
+        },
+        {
+          "field": "usedNonce",
+          "rhs": {
+            "kind": "name",
+            "name": "usedNonce"
+          }
+        },
+        {
+          "field": "nextJti",
+          "rhs": {
+            "kind": "name",
+            "name": "nextJti"
+          }
+        },
+        {
+          "field": "lastJti",
+          "rhs": {
+            "kind": "name",
+            "name": "lastJti"
+          }
+        },
+        {
+          "field": "presentedNonce",
+          "rhs": {
+            "kind": "name",
+            "name": "presentedNonce"
+          }
+        },
+        {
+          "field": "presentedJti",
+          "rhs": {
+            "kind": "name",
+            "name": "presentedJti"
+          }
+        },
+        {
+          "field": "nonceOk",
+          "rhs": {
+            "kind": "name",
+            "name": "nonceOk"
+          }
+        },
+        {
+          "field": "jtiOk",
+          "rhs": {
+            "kind": "name",
+            "name": "jtiOk"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "submit",
+    "rotate",
+    "challenge"
+  ]
+}

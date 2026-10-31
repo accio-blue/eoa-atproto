@@ -1,0 +1,47 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.cms.section",
+  "description": "A shared slice — a reusable section with named variations, each carrying its own fields. One record per slice; the rkey IS the slice key.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "description": "The rkey is the slice key.",
+      "record": {
+        "type": "object",
+        "required": ["key", "name", "variations"],
+        "properties": {
+          "key": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "variations": {
+            "type": "array",
+            "items": { "type": "ref", "ref": "#variation" }
+          },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "variation": {
+      "type": "object",
+      "required": ["id", "name", "primary"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "primary": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "ing.lexicon.cms.defs#fieldDef" },
+          "description": "Fields shown once per slice instance."
+        },
+        "items": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "ing.lexicon.cms.defs#fieldDef" },
+          "description": "Repeatable fields — the slice's list."
+        }
+      }
+    }
+  }
+}

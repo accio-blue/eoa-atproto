@@ -1,0 +1,435 @@
+{
+  "generatedFrom": "../../specs/space-host/grant-lifecycle.qnt",
+  "specHash": "47396fb58760838ce4a9aeccef3cef4228b112a6bf54d69d6afdf5ea4ab8356d",
+  "module": "grant_lifecycle",
+  "vars": [
+    {
+      "name": "grant",
+      "type": "str"
+    },
+    {
+      "name": "logHead",
+      "type": "int"
+    },
+    {
+      "name": "expected",
+      "type": "int"
+    },
+    {
+      "name": "outcome",
+      "type": "str"
+    }
+  ],
+  "defs": {
+    "GrantFailClosed": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "grant"
+              },
+              {
+                "kind": "str",
+                "value": "revoked"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "outcome"
+              },
+              {
+                "kind": "str",
+                "value": "revoked"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "outcome"
+              },
+              {
+                "kind": "str",
+                "value": "denied"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "NoMergeOnConflict": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "outcome"
+              },
+              {
+                "kind": "str",
+                "value": "conflict"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igt",
+            "args": [
+              {
+                "kind": "name",
+                "name": "expected"
+              },
+              {
+                "kind": "name",
+                "name": "logHead"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "HeadNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "logHead"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "grant",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "logHead",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "expected",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "outcome",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "issue",
+      "assignments": [
+        {
+          "field": "grant",
+          "rhs": {
+            "kind": "str",
+            "value": "active"
+          }
+        },
+        {
+          "field": "logHead",
+          "rhs": {
+            "kind": "name",
+            "name": "logHead"
+          }
+        },
+        {
+          "field": "expected",
+          "rhs": {
+            "kind": "name",
+            "name": "logHead"
+          }
+        },
+        {
+          "field": "outcome",
+          "rhs": {
+            "kind": "str",
+            "value": "issued"
+          }
+        }
+      ]
+    },
+    {
+      "name": "use",
+      "nondet": {
+        "name": "fresh",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "grant",
+          "rhs": {
+            "kind": "name",
+            "name": "grant"
+          }
+        },
+        {
+          "field": "logHead",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "grant"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "active"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "fresh"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "logHead"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "logHead"
+              }
+            ]
+          }
+        },
+        {
+          "field": "expected",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "fresh"
+              },
+              {
+                "kind": "name",
+                "name": "logHead"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "logHead"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "outcome",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "neq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "grant"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "active"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "denied"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "fresh"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "committed"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "conflict"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "revoke",
+      "assignments": [
+        {
+          "field": "grant",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "grant"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "active"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "revoked"
+              },
+              {
+                "kind": "name",
+                "name": "grant"
+              }
+            ]
+          }
+        },
+        {
+          "field": "logHead",
+          "rhs": {
+            "kind": "name",
+            "name": "logHead"
+          }
+        },
+        {
+          "field": "expected",
+          "rhs": {
+            "kind": "name",
+            "name": "expected"
+          }
+        },
+        {
+          "field": "outcome",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "grant"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "active"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "revoked"
+              },
+              {
+                "kind": "name",
+                "name": "outcome"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "issue",
+    "use",
+    "revoke"
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.canvas.override",
+  "description": "A viewer's own rearrangement of a scene, stored in the viewer's repo. Ranked app < author < viewer: the scene is the author layer, this record the viewer layer, a field it omits falls through to the layer below.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "description": "Record key is the rkey of the scene it overrides (a sidecar, so a viewer's override for a scene is a known-URI lookup). The scene field is authoritative; a reader ignores the record when the rkey of scene differs from the record key or scene is not the scene being rendered.",
+      "record": {
+        "type": "object",
+        "required": ["scene", "nodes", "createdAt"],
+        "properties": {
+          "scene": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The ing.lexicon.canvas.scene record this overrides."
+          },
+          "nodes": {
+            "type": "array",
+            "items": { "type": "ref", "ref": "#nodeOverride" }
+          },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "nodeOverride": {
+      "type": "object",
+      "description": "Per-node patch, matched to the scene's node by id. A field that is absent is inherited.",
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Id of the node in the scene. An id the scene does not have is ignored."
+        },
+        "x": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "y": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "order": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "The viewer has hidden this node."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,985 @@
+{
+  "generatedFrom": "../../specs/labeler/label-lifecycle.qnt",
+  "specHash": "b5c608753faccc668f9cc92554fb066c1b131406fc1bc708094e309088ebd16f",
+  "module": "labeler_label_lifecycle",
+  "vars": [
+    {
+      "name": "status",
+      "type": "str"
+    },
+    {
+      "name": "neg",
+      "type": "bool"
+    },
+    {
+      "name": "active",
+      "type": "bool"
+    },
+    {
+      "name": "published",
+      "type": "int"
+    },
+    {
+      "name": "cursor",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "isLive": {
+      "kind": "function",
+      "params": [
+        "value",
+        "negated"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "str",
+                "value": "issued"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "negated"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "StatusValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "pending"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "issued"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "negated"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "retracted"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "expired"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ActiveIsView": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "active"
+          },
+          {
+            "kind": "app",
+            "opcode": "isLive",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "name",
+                "name": "neg"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "NegOnlyWhenSuperseded": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "neg"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "negated"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "retracted"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ExpiredNotTombstone": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "expired"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "neg"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CursorNeverAhead": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "cursor"
+          },
+          {
+            "kind": "name",
+            "name": "published"
+          }
+        ]
+      }
+    },
+    "CursorNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "cursor"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "PublishedNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "published"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "pending"
+          }
+        },
+        {
+          "field": "neg",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "active",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "published",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "emit",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "pending"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "issued"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "neg",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "pending"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": false
+              },
+              {
+                "kind": "name",
+                "name": "neg"
+              }
+            ]
+          }
+        },
+        {
+          "field": "active",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "pending"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "active"
+              }
+            ]
+          }
+        },
+        {
+          "field": "published",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "pending"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "published"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "published"
+              }
+            ]
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        }
+      ]
+    },
+    {
+      "name": "negate",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "issued"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "negated"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "neg",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "issued"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "neg"
+              }
+            ]
+          }
+        },
+        {
+          "field": "active",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "issued"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": false
+              },
+              {
+                "kind": "name",
+                "name": "active"
+              }
+            ]
+          }
+        },
+        {
+          "field": "published",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "issued"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "published"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "published"
+              }
+            ]
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        }
+      ]
+    },
+    {
+      "name": "retract",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "issued"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "retracted"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "neg",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "issued"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "neg"
+              }
+            ]
+          }
+        },
+        {
+          "field": "active",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "issued"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": false
+              },
+              {
+                "kind": "name",
+                "name": "active"
+              }
+            ]
+          }
+        },
+        {
+          "field": "published",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "issued"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "published"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "published"
+              }
+            ]
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        }
+      ]
+    },
+    {
+      "name": "expire",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "issued"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "expired"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "neg",
+          "rhs": {
+            "kind": "name",
+            "name": "neg"
+          }
+        },
+        {
+          "field": "active",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "issued"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": false
+              },
+              {
+                "kind": "name",
+                "name": "active"
+              }
+            ]
+          }
+        },
+        {
+          "field": "published",
+          "rhs": {
+            "kind": "name",
+            "name": "published"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ack",
+      "nondet": {
+        "name": "n",
+        "kind": "int",
+        "pool": [
+          "1",
+          "2",
+          "5"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "name",
+            "name": "status"
+          }
+        },
+        {
+          "field": "neg",
+          "rhs": {
+            "kind": "name",
+            "name": "neg"
+          }
+        },
+        {
+          "field": "active",
+          "rhs": {
+            "kind": "name",
+            "name": "active"
+          }
+        },
+        {
+          "field": "published",
+          "rhs": {
+            "kind": "name",
+            "name": "published"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "iadd",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "cursor"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "n"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "published"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "published"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "cursor"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "n"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "emit",
+    "negate",
+    "retract",
+    "expire",
+    "ack"
+  ]
+}

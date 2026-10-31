@@ -1,0 +1,544 @@
+{
+  "generatedFrom": "../../specs/plugin-host/capability_gate.qnt",
+  "specHash": "54aa4f9a18690b1f1741565fe78e041a791f82664821c56d67e9356d581c7b5f",
+  "module": "capability_gate",
+  "vars": [
+    {
+      "name": "declaredRead",
+      "type": "bool"
+    },
+    {
+      "name": "declaredWrite",
+      "type": "bool"
+    },
+    {
+      "name": "requested",
+      "type": "str"
+    },
+    {
+      "name": "decision",
+      "type": "str"
+    }
+  ],
+  "defs": {
+    "DenyByDefault": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "decision"
+              },
+              {
+                "kind": "str",
+                "value": "granted"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "requested"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "read"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "declaredRead"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "requested"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "write"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "declaredWrite"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "DecisionValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "decision"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "decision"
+              },
+              {
+                "kind": "str",
+                "value": "granted"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "decision"
+              },
+              {
+                "kind": "str",
+                "value": "denied"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RequestedValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "requested"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "requested"
+              },
+              {
+                "kind": "str",
+                "value": "read"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "requested"
+              },
+              {
+                "kind": "str",
+                "value": "write"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "requested"
+              },
+              {
+                "kind": "str",
+                "value": "admin"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "declaredRead",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "declaredWrite",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "decision",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "declare",
+      "nondet": {
+        "name": "cap",
+        "kind": "str",
+        "pool": [
+          "read",
+          "write"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "declaredRead",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "cap"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "read"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "declaredRead"
+              }
+            ]
+          }
+        },
+        {
+          "field": "declaredWrite",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "cap"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "write"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "declaredWrite"
+              }
+            ]
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "name",
+            "name": "requested"
+          }
+        },
+        {
+          "field": "decision",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "revoke",
+      "nondet": {
+        "name": "cap",
+        "kind": "str",
+        "pool": [
+          "read",
+          "write"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "declaredRead",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "cap"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "read"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": false
+              },
+              {
+                "kind": "name",
+                "name": "declaredRead"
+              }
+            ]
+          }
+        },
+        {
+          "field": "declaredWrite",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "cap"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "write"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": false
+              },
+              {
+                "kind": "name",
+                "name": "declaredWrite"
+              }
+            ]
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "name",
+            "name": "requested"
+          }
+        },
+        {
+          "field": "decision",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "request",
+      "nondet": {
+        "name": "cap",
+        "kind": "str",
+        "pool": [
+          "read",
+          "write",
+          "admin"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "declaredRead",
+          "rhs": {
+            "kind": "name",
+            "name": "declaredRead"
+          }
+        },
+        {
+          "field": "declaredWrite",
+          "rhs": {
+            "kind": "name",
+            "name": "declaredWrite"
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "name",
+            "name": "cap"
+          }
+        },
+        {
+          "field": "decision",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "cap"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "read"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "declaredRead"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "granted"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "cap"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "write"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "name",
+                        "name": "declaredWrite"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "granted"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "denied"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "declare",
+    "revoke",
+    "request"
+  ]
+}

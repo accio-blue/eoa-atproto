@@ -1,0 +1,31 @@
+{
+  "name": "@eoa/specs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Service specs: Quint sources + generated models/scaffolding + spec-only verification (one spec per behavior-machine, grouped per service)",
+  "type": "module",
+  "scripts": {
+    "generate:all": "tsx scripts/generate-all.ts",
+    "check": "pnpm generate:all && pnpm typecheck:quint && pnpm test",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "effect-tsrs diagnostics --project tsconfig.json --type-check",
+    "typecheck:tsgo": "tsgo -p tsconfig.json --noEmit",
+    "typecheck:quint": "tsx scripts/typecheck-quint.ts",
+    "diagnostics:effect": "effect-tsgo diagnostics --project tsconfig.json --format pretty"
+  },
+  "dependencies": {
+    "@quint-machine/core": "^0.2.0",
+    "@typeonce/effect-machine": "catalog:",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/platform-node": "catalog:",
+    "@effect/tsgo": "catalog:",
+    "@types/node": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

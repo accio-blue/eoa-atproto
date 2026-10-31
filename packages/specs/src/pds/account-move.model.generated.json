@@ -1,0 +1,933 @@
+{
+  "generatedFrom": "../../specs/pds/account-move.qnt",
+  "specHash": "18f07cf9a3221f1171a1d05c946b4c5d6e5a4a296628b4072b23701b68d3145d",
+  "module": "pds_account_move",
+  "vars": [
+    {
+      "name": "phase",
+      "type": "str"
+    },
+    {
+      "name": "advanced",
+      "type": "int"
+    },
+    {
+      "name": "spaces",
+      "type": "bool"
+    },
+    {
+      "name": "discovered",
+      "type": "bool"
+    }
+  ],
+  "defs": {
+    "canAdvance": {
+      "kind": "function",
+      "params": [
+        "before",
+        "after",
+        "hasSpaces",
+        "knewSpaces"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "name",
+            "name": "knewSpaces"
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "or",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "or",
+                        "args": [
+                          {
+                            "kind": "app",
+                            "opcode": "or",
+                            "args": [
+                              {
+                                "kind": "app",
+                                "opcode": "or",
+                                "args": [
+                                  {
+                                    "kind": "app",
+                                    "opcode": "or",
+                                    "args": [
+                                      {
+                                        "kind": "app",
+                                        "opcode": "and",
+                                        "args": [
+                                          {
+                                            "kind": "app",
+                                            "opcode": "eq",
+                                            "args": [
+                                              {
+                                                "kind": "name",
+                                                "name": "before"
+                                              },
+                                              {
+                                                "kind": "str",
+                                                "value": "created"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "kind": "app",
+                                            "opcode": "eq",
+                                            "args": [
+                                              {
+                                                "kind": "name",
+                                                "name": "after"
+                                              },
+                                              {
+                                                "kind": "str",
+                                                "value": "repo"
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "kind": "app",
+                                        "opcode": "and",
+                                        "args": [
+                                          {
+                                            "kind": "app",
+                                            "opcode": "eq",
+                                            "args": [
+                                              {
+                                                "kind": "name",
+                                                "name": "before"
+                                              },
+                                              {
+                                                "kind": "str",
+                                                "value": "repo"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "kind": "app",
+                                            "opcode": "eq",
+                                            "args": [
+                                              {
+                                                "kind": "name",
+                                                "name": "after"
+                                              },
+                                              {
+                                                "kind": "str",
+                                                "value": "blobs"
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "kind": "app",
+                                    "opcode": "and",
+                                    "args": [
+                                      {
+                                        "kind": "app",
+                                        "opcode": "eq",
+                                        "args": [
+                                          {
+                                            "kind": "name",
+                                            "name": "before"
+                                          },
+                                          {
+                                            "kind": "str",
+                                            "value": "blobs"
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "kind": "app",
+                                        "opcode": "eq",
+                                        "args": [
+                                          {
+                                            "kind": "name",
+                                            "name": "after"
+                                          },
+                                          {
+                                            "kind": "str",
+                                            "value": "prefs"
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "app",
+                                "opcode": "and",
+                                "args": [
+                                  {
+                                    "kind": "app",
+                                    "opcode": "and",
+                                    "args": [
+                                      {
+                                        "kind": "app",
+                                        "opcode": "eq",
+                                        "args": [
+                                          {
+                                            "kind": "name",
+                                            "name": "before"
+                                          },
+                                          {
+                                            "kind": "str",
+                                            "value": "prefs"
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "kind": "name",
+                                        "name": "hasSpaces"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "kind": "app",
+                                    "opcode": "eq",
+                                    "args": [
+                                      {
+                                        "kind": "name",
+                                        "name": "after"
+                                      },
+                                      {
+                                        "kind": "str",
+                                        "value": "space-meta"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "app",
+                            "opcode": "and",
+                            "args": [
+                              {
+                                "kind": "app",
+                                "opcode": "and",
+                                "args": [
+                                  {
+                                    "kind": "app",
+                                    "opcode": "eq",
+                                    "args": [
+                                      {
+                                        "kind": "name",
+                                        "name": "before"
+                                      },
+                                      {
+                                        "kind": "str",
+                                        "value": "prefs"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "kind": "app",
+                                    "opcode": "not",
+                                    "args": [
+                                      {
+                                        "kind": "name",
+                                        "name": "hasSpaces"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "app",
+                                "opcode": "eq",
+                                "args": [
+                                  {
+                                    "kind": "name",
+                                    "name": "after"
+                                  },
+                                  {
+                                    "kind": "str",
+                                    "value": "identity"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "and",
+                        "args": [
+                          {
+                            "kind": "app",
+                            "opcode": "eq",
+                            "args": [
+                              {
+                                "kind": "name",
+                                "name": "before"
+                              },
+                              {
+                                "kind": "str",
+                                "value": "space-meta"
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "app",
+                            "opcode": "eq",
+                            "args": [
+                              {
+                                "kind": "name",
+                                "name": "after"
+                              },
+                              {
+                                "kind": "str",
+                                "value": "space-repos"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "before"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "space-repos"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "after"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "identity"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "before"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "identity"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "after"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "active"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "PhaseKnown": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "created"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "repo"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "blobs"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "prefs"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "space-meta"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "space-repos"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "identity"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AdvancedAtMostSeven": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "advanced"
+          },
+          {
+            "kind": "int",
+            "value": "7"
+          }
+        ]
+      }
+    },
+    "AdvancedImpliesStarted": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "advanced"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "created"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AdvancedImpliesDiscovered": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "advanced"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "discovered"
+          }
+        ]
+      }
+    },
+    "NoSpacesStaysFive": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "name",
+            "name": "spaces"
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "advanced"
+              },
+              {
+                "kind": "int",
+                "value": "5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "SpacesPhasesNeedSpaces": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "name",
+            "name": "spaces"
+          },
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "neq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "space-meta"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "neq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "space-repos"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ActiveIsTheLastStep": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "advanced"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "spaces"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "7"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "5"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "str",
+            "value": "created"
+          }
+        },
+        {
+          "field": "advanced",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "spaces",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "discovered",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "discover",
+      "nondet": {
+        "name": "hasSpaces",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "name",
+            "name": "phase"
+          }
+        },
+        {
+          "field": "advanced",
+          "rhs": {
+            "kind": "name",
+            "name": "advanced"
+          }
+        },
+        {
+          "field": "spaces",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "discovered"
+              },
+              {
+                "kind": "name",
+                "name": "spaces"
+              },
+              {
+                "kind": "name",
+                "name": "hasSpaces"
+              }
+            ]
+          }
+        },
+        {
+          "field": "discovered",
+          "rhs": {
+            "kind": "bool",
+            "value": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "advance",
+      "nondet": {
+        "name": "target",
+        "kind": "str",
+        "pool": [
+          "repo",
+          "blobs",
+          "prefs",
+          "space-meta",
+          "space-repos",
+          "identity",
+          "active"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canAdvance",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "target"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "spaces"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "discovered"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "target"
+              },
+              {
+                "kind": "name",
+                "name": "phase"
+              }
+            ]
+          }
+        },
+        {
+          "field": "advanced",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canAdvance",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "target"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "spaces"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "discovered"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "advanced"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "advanced"
+              }
+            ]
+          }
+        },
+        {
+          "field": "spaces",
+          "rhs": {
+            "kind": "name",
+            "name": "spaces"
+          }
+        },
+        {
+          "field": "discovered",
+          "rhs": {
+            "kind": "name",
+            "name": "discovered"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "discover",
+    "advance"
+  ]
+}

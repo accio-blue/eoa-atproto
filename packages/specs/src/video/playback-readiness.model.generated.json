@@ -1,0 +1,507 @@
+{
+  "generatedFrom": "../../specs/video/playback-readiness.qnt",
+  "specHash": "0917ef489b7aa9e5b3bf24e00e23ed9db7189d377ba58826005b9e635de389be",
+  "module": "video_playback_readiness",
+  "vars": [
+    {
+      "name": "stage",
+      "type": "str"
+    },
+    {
+      "name": "requests",
+      "type": "int"
+    },
+    {
+      "name": "served",
+      "type": "int"
+    },
+    {
+      "name": "blocked",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "isPlayable": {
+      "kind": "function",
+      "params": [
+        "now"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "now"
+          },
+          {
+            "kind": "str",
+            "value": "playable"
+          }
+        ]
+      }
+    },
+    "isGone": {
+      "kind": "function",
+      "params": [
+        "now"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "now"
+          },
+          {
+            "kind": "str",
+            "value": "gone"
+          }
+        ]
+      }
+    },
+    "StageValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "processing"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "playable"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "gone"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CountersNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "requests"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "served"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "blocked"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RequestsBacked": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "requests"
+          },
+          {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "served"
+              },
+              {
+                "kind": "name",
+                "name": "blocked"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ServedBound": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "served"
+          },
+          {
+            "kind": "name",
+            "name": "requests"
+          }
+        ]
+      }
+    },
+    "ServedImpliesPublished": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "served"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "processing"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "processing"
+          }
+        },
+        {
+          "field": "requests",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "blocked",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "publish",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "processing"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "playable"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "requests",
+          "rhs": {
+            "kind": "name",
+            "name": "requests"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "name",
+            "name": "served"
+          }
+        },
+        {
+          "field": "blocked",
+          "rhs": {
+            "kind": "name",
+            "name": "blocked"
+          }
+        }
+      ]
+    },
+    {
+      "name": "request",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "name",
+            "name": "stage"
+          }
+        },
+        {
+          "field": "requests",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "requests"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isPlayable",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "served"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "served"
+              }
+            ]
+          }
+        },
+        {
+          "field": "blocked",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isPlayable",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "blocked"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "blocked"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "remove",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isGone",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "gone"
+              }
+            ]
+          }
+        },
+        {
+          "field": "requests",
+          "rhs": {
+            "kind": "name",
+            "name": "requests"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "name",
+            "name": "served"
+          }
+        },
+        {
+          "field": "blocked",
+          "rhs": {
+            "kind": "name",
+            "name": "blocked"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "publish",
+    "request",
+    "remove"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.registry.manifest",
+  "description": "A registry's published catalog — the list of installable modules one source offers. It is UNTRUSTED data: publishing a module here says nothing about who made it. An install reads a manifest only from a registry DID the tenant accepts (grill 8r3q R4), then verifies the module's own publisher-signed release (ing.lexicon.plugin.release). One shape across ordered sources (signed registry / tenant override / user config), merged by `readRegistry` in @eoa/plugin-host.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "literal:self",
+      "description": "The registry's manifest: one per registry repo. A catalog lists modules; it does not vouch for them.",
+      "record": {
+        "type": "object",
+        "required": ["modules"],
+        "properties": {
+          "modules": {
+            "type": "array",
+            "items": { "type": "ref", "ref": "#module" },
+            "description": "The modules this source offers. Embedding the entries makes a manifest a self-contained snapshot, so a catalog cannot be swapped out from under a reader."
+          },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "module": {
+      "type": "object",
+      "description": "One installable bundle. `cid` is the pin; a reader may opt into following the publisher's head instead (grill 8r3q R3).",
+      "required": ["id", "version", "cid", "type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "The module's stable id, e.g. `app.fitsky`."
+        },
+        "version": { "type": "string", "maxLength": 64 },
+        "cid": {
+          "type": "string",
+          "format": "cid",
+          "description": "The bundle CID this entry is pinned to."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Where the bundle is fetched from, when it is not resolved by CID alone."
+        },
+        "type": {
+          "type": "string",
+          "knownValues": ["tool", "datatype", "component-set"]
+        },
+        "icon": { "type": "string", "maxLength": 2048 }
+      }
+    }
+  }
+}

@@ -1,0 +1,882 @@
+{
+  "generatedFrom": "../../specs/labeler/labeler-subscription.qnt",
+  "specHash": "bf53c62a7936a344d9269689bc400b44e3c4b12b669d53a8c97897876e9df998",
+  "module": "labeler_subscription",
+  "vars": [
+    {
+      "name": "subscription",
+      "type": "str"
+    },
+    {
+      "name": "labelerMatch",
+      "type": "bool"
+    },
+    {
+      "name": "declared",
+      "type": "bool"
+    },
+    {
+      "name": "expired",
+      "type": "bool"
+    },
+    {
+      "name": "visible",
+      "type": "bool"
+    }
+  ],
+  "defs": {
+    "viewOf": {
+      "kind": "function",
+      "params": [
+        "sub",
+        "matches",
+        "declaredValue",
+        "past"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "canView",
+        "args": [
+          {
+            "kind": "name",
+            "name": "sub"
+          },
+          {
+            "kind": "name",
+            "name": "matches"
+          },
+          {
+            "kind": "name",
+            "name": "declaredValue"
+          },
+          {
+            "kind": "name",
+            "name": "past"
+          }
+        ]
+      }
+    },
+    "SubscriptionValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "subscription"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "subscription"
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "subscription"
+              },
+              {
+                "kind": "str",
+                "value": "revoked"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "VisibleIsOracle": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "visible"
+          },
+          {
+            "kind": "app",
+            "opcode": "viewOf",
+            "args": [
+              {
+                "kind": "name",
+                "name": "subscription"
+              },
+              {
+                "kind": "name",
+                "name": "labelerMatch"
+              },
+              {
+                "kind": "name",
+                "name": "declared"
+              },
+              {
+                "kind": "name",
+                "name": "expired"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "VisibleRequiresActive": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "visible"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "subscription"
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "VisibleRequiresMatch": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "visible"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "labelerMatch"
+          }
+        ]
+      }
+    },
+    "VisibleRequiresDeclared": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "visible"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "declared"
+          }
+        ]
+      }
+    },
+    "NotVisibleWhenExpired": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "visible"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "expired"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RevokedNeverVisible": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "subscription"
+              },
+              {
+                "kind": "str",
+                "value": "revoked"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "visible"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "isActive": {
+      "kind": "function",
+      "params": [
+        "grant"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "grant"
+          },
+          {
+            "kind": "str",
+            "value": "active"
+          }
+        ]
+      }
+    },
+    "verbPermitted": {
+      "kind": "function",
+      "params": [
+        "verb"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "verb"
+              },
+              {
+                "kind": "str",
+                "value": "view"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "verb"
+              },
+              {
+                "kind": "str",
+                "value": "write"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canAct": {
+      "kind": "function",
+      "params": [
+        "grant",
+        "subjectMatchesViewer",
+        "verb",
+        "selectorMatches",
+        "expired"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "isActive",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "grant"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "name",
+                        "name": "subjectMatchesViewer"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "verbPermitted",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "verb"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "selectorMatches"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "expired"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canView": {
+      "kind": "function",
+      "params": [
+        "grant",
+        "subjectMatchesViewer",
+        "selectorMatches",
+        "expired"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "canAct",
+        "args": [
+          {
+            "kind": "name",
+            "name": "grant"
+          },
+          {
+            "kind": "name",
+            "name": "subjectMatchesViewer"
+          },
+          {
+            "kind": "str",
+            "value": "view"
+          },
+          {
+            "kind": "name",
+            "name": "selectorMatches"
+          },
+          {
+            "kind": "name",
+            "name": "expired"
+          }
+        ]
+      }
+    },
+    "canWrite": {
+      "kind": "function",
+      "params": [
+        "grant",
+        "subjectMatchesViewer",
+        "selectorMatches",
+        "expired"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "canAct",
+        "args": [
+          {
+            "kind": "name",
+            "name": "grant"
+          },
+          {
+            "kind": "name",
+            "name": "subjectMatchesViewer"
+          },
+          {
+            "kind": "str",
+            "value": "write"
+          },
+          {
+            "kind": "name",
+            "name": "selectorMatches"
+          },
+          {
+            "kind": "name",
+            "name": "expired"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "subscription",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "labelerMatch",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "declared",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "expired",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "visible",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "subscribe",
+      "assignments": [
+        {
+          "field": "subscription",
+          "rhs": {
+            "kind": "str",
+            "value": "active"
+          }
+        },
+        {
+          "field": "labelerMatch",
+          "rhs": {
+            "kind": "name",
+            "name": "labelerMatch"
+          }
+        },
+        {
+          "field": "declared",
+          "rhs": {
+            "kind": "name",
+            "name": "declared"
+          }
+        },
+        {
+          "field": "expired",
+          "rhs": {
+            "kind": "name",
+            "name": "expired"
+          }
+        },
+        {
+          "field": "visible",
+          "rhs": {
+            "kind": "app",
+            "opcode": "viewOf",
+            "args": [
+              {
+                "kind": "str",
+                "value": "active"
+              },
+              {
+                "kind": "name",
+                "name": "labelerMatch"
+              },
+              {
+                "kind": "name",
+                "name": "declared"
+              },
+              {
+                "kind": "name",
+                "name": "expired"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "unsubscribe",
+      "assignments": [
+        {
+          "field": "subscription",
+          "rhs": {
+            "kind": "str",
+            "value": "revoked"
+          }
+        },
+        {
+          "field": "labelerMatch",
+          "rhs": {
+            "kind": "name",
+            "name": "labelerMatch"
+          }
+        },
+        {
+          "field": "declared",
+          "rhs": {
+            "kind": "name",
+            "name": "declared"
+          }
+        },
+        {
+          "field": "expired",
+          "rhs": {
+            "kind": "name",
+            "name": "expired"
+          }
+        },
+        {
+          "field": "visible",
+          "rhs": {
+            "kind": "app",
+            "opcode": "viewOf",
+            "args": [
+              {
+                "kind": "str",
+                "value": "revoked"
+              },
+              {
+                "kind": "name",
+                "name": "labelerMatch"
+              },
+              {
+                "kind": "name",
+                "name": "declared"
+              },
+              {
+                "kind": "name",
+                "name": "expired"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "resolve",
+      "nondet": {
+        "name": "origin",
+        "kind": "str",
+        "pool": [
+          "foreign",
+          "unlisted",
+          "listed"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "subscription",
+          "rhs": {
+            "kind": "name",
+            "name": "subscription"
+          }
+        },
+        {
+          "field": "labelerMatch",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "origin"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "foreign"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": false
+              },
+              {
+                "kind": "bool",
+                "value": true
+              }
+            ]
+          }
+        },
+        {
+          "field": "declared",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "origin"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "listed"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "bool",
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "field": "expired",
+          "rhs": {
+            "kind": "name",
+            "name": "expired"
+          }
+        },
+        {
+          "field": "visible",
+          "rhs": {
+            "kind": "app",
+            "opcode": "viewOf",
+            "args": [
+              {
+                "kind": "name",
+                "name": "subscription"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "origin"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "foreign"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "bool",
+                    "value": false
+                  },
+                  {
+                    "kind": "bool",
+                    "value": true
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "origin"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "listed"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "bool",
+                    "value": true
+                  },
+                  {
+                    "kind": "bool",
+                    "value": false
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "expired"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "expire",
+      "assignments": [
+        {
+          "field": "subscription",
+          "rhs": {
+            "kind": "name",
+            "name": "subscription"
+          }
+        },
+        {
+          "field": "labelerMatch",
+          "rhs": {
+            "kind": "name",
+            "name": "labelerMatch"
+          }
+        },
+        {
+          "field": "declared",
+          "rhs": {
+            "kind": "name",
+            "name": "declared"
+          }
+        },
+        {
+          "field": "expired",
+          "rhs": {
+            "kind": "bool",
+            "value": true
+          }
+        },
+        {
+          "field": "visible",
+          "rhs": {
+            "kind": "app",
+            "opcode": "viewOf",
+            "args": [
+              {
+                "kind": "name",
+                "name": "subscription"
+              },
+              {
+                "kind": "name",
+                "name": "labelerMatch"
+              },
+              {
+                "kind": "name",
+                "name": "declared"
+              },
+              {
+                "kind": "bool",
+                "value": true
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "subscribe",
+    "unsubscribe",
+    "resolve",
+    "expire"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.issue.labelOp",
+  "description": "Applying or removing a label: one op per change, appended, so an issue's labels are the fold of its ops rather than a set somebody rewrote. Removing is an op of its own — there is no edit to undo, which is what makes the log the truth.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "One label operation.",
+      "required": ["subject", "label", "op", "createdAt"],
+      "properties": {
+        "subject": {
+          "type": "ref",
+          "ref": "ing.lexicon.cms.defs#strongRef"
+        },
+        "label": {
+          "type": "ref",
+          "ref": "ing.lexicon.cms.defs#strongRef"
+        },
+        "op": {
+          "type": "string",
+          "knownValues": ["add", "remove"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    }
+  }
+}

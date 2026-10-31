@@ -1,0 +1,695 @@
+{
+  "generatedFrom": "../../specs/search/ingest-index.qnt",
+  "specHash": "61514211d72fa5cba4e8098e31e0a49bb16ba6f1d86f86bda0f5baa76714b2fc",
+  "module": "search_ingest_index",
+  "vars": [
+    {
+      "name": "phase",
+      "type": "str"
+    },
+    {
+      "name": "cursor",
+      "type": "int"
+    },
+    {
+      "name": "buffer",
+      "type": "int"
+    },
+    {
+      "name": "docs",
+      "type": "int"
+    },
+    {
+      "name": "tombstones",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "PhaseValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "streaming"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "blocked"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CursorNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "cursor"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "BufferNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "buffer"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "IndexedAssetsMatchCursor": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "docs"
+              },
+              {
+                "kind": "name",
+                "name": "tombstones"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "cursor"
+          }
+        ]
+      }
+    },
+    "TombstonesNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "tombstones"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "buffer",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "docs",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "tombstones",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "startStream",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "str",
+            "value": "streaming"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "buffer",
+          "rhs": {
+            "kind": "name",
+            "name": "buffer"
+          }
+        },
+        {
+          "field": "docs",
+          "rhs": {
+            "kind": "name",
+            "name": "docs"
+          }
+        },
+        {
+          "field": "tombstones",
+          "rhs": {
+            "kind": "name",
+            "name": "tombstones"
+          }
+        }
+      ]
+    },
+    {
+      "name": "receive",
+      "nondet": {
+        "name": "delta",
+        "kind": "int",
+        "pool": [
+          "1",
+          "2",
+          "5",
+          "0",
+          "-1"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "streaming"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "delta"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "streaming"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "phase"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "streaming"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "igt",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "delta"
+                          },
+                          {
+                            "kind": "int",
+                            "value": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "blocked"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "buffer",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "streaming"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "delta"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "buffer"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "buffer"
+              }
+            ]
+          }
+        },
+        {
+          "field": "docs",
+          "rhs": {
+            "kind": "name",
+            "name": "docs"
+          }
+        },
+        {
+          "field": "tombstones",
+          "rhs": {
+            "kind": "name",
+            "name": "tombstones"
+          }
+        }
+      ]
+    },
+    {
+      "name": "indexRecord",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "name",
+            "name": "phase"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "buffer"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "cursor"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "cursor"
+              }
+            ]
+          }
+        },
+        {
+          "field": "buffer",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "buffer"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "isub",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "buffer"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "buffer"
+              }
+            ]
+          }
+        },
+        {
+          "field": "docs",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "buffer"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "docs"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "docs"
+              }
+            ]
+          }
+        },
+        {
+          "field": "tombstones",
+          "rhs": {
+            "kind": "name",
+            "name": "tombstones"
+          }
+        }
+      ]
+    },
+    {
+      "name": "deleteDoc",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "name",
+            "name": "phase"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "buffer",
+          "rhs": {
+            "kind": "name",
+            "name": "buffer"
+          }
+        },
+        {
+          "field": "docs",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "docs"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "isub",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "docs"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "docs"
+              }
+            ]
+          }
+        },
+        {
+          "field": "tombstones",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "docs"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "tombstones"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "tombstones"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "startStream",
+    "receive",
+    "indexRecord",
+    "deleteDoc"
+  ]
+}

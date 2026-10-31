@@ -1,0 +1,57 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.cms.draft",
+  "description": "The same shape as a document, in a separate collection so previews and in-progress edits are not listed with published content. UNLISTED BY CONVENTION, NOT PRIVATE: an atproto repo is public, so a draft here is readable by anyone who looks. True privacy needs a permissioned space (space-host).",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "description": "The rkey is `<lang>-<uid>`.",
+      "record": {
+        "type": "object",
+        "required": ["type", "uid", "lang", "data", "createdAt"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The content-type key this document instantiates."
+          },
+          "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "lang": { "type": "string", "minLength": 2, "maxLength": 16 },
+          "publication": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The site (site.standard.publication) this document belongs to."
+          },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "data": { "type": "unknown" },
+          "body": {
+            "type": "array",
+            "items": {
+              "type": "ref",
+              "ref": "ing.lexicon.cms.defs#sectionEntry"
+            }
+          },
+          "alternates": {
+            "type": "array",
+            "items": { "type": "ref", "ref": "ing.lexicon.cms.defs#strongRef" }
+          },
+          "bodyBlob": {
+            "type": "blob",
+            "accept": ["application/json"],
+            "maxSize": 5000000,
+            "description": "When the inline body would be too large for the PDS, the JSON-encoded slice array is uploaded here and `body` is left empty/a stub. Consumers MUST prefer `bodyBlob` when set."
+          },
+          "blobs": {
+            "type": "array",
+            "items": { "type": "blob", "accept": ["*/*"], "maxSize": 10000000 },
+            "description": "Blob refs living inside bodyBlob; the PDS GC scans only a record's top level, so they must be mirrored here to stay referenced."
+          },
+          "publishedAt": { "type": "string", "format": "datetime" },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

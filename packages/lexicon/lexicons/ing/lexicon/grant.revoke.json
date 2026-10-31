@@ -1,0 +1,24 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.grant.revoke",
+  "description": "A revocation, as an APPEND-ONLY companion of the grant it ends -- never a delete, so that what was shared, with whom and when stays readable in the record log. The evaluator treats a grant with a revoke as ended, forwards only.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["grant", "revokedAt"],
+        "properties": {
+          "grant": {
+            "type": "ref",
+            "ref": "ing.lexicon.cms.defs#strongRef",
+            "description": "The grant being revoked, as it was read -- a later edit to the grant is therefore a different grant, which is the point."
+          },
+          "revokedAt": { "type": "string", "format": "datetime" },
+          "reason": { "type": "string" }
+        }
+      }
+    }
+  }
+}

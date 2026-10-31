@@ -1,0 +1,1435 @@
+{
+  "generatedFrom": "../../specs/mail/warming.qnt",
+  "specHash": "9f09e41e23d58900941240c7d4dd80343320bb48333c2e850ddb31c4cb90dc7d",
+  "module": "mail_warming",
+  "vars": [
+    {
+      "name": "tier",
+      "type": "str"
+    },
+    {
+      "name": "week",
+      "type": "int"
+    },
+    {
+      "name": "day",
+      "type": "int"
+    },
+    {
+      "name": "sendsHour",
+      "type": "int"
+    },
+    {
+      "name": "sendsDay",
+      "type": "int"
+    },
+    {
+      "name": "sent",
+      "type": "int"
+    },
+    {
+      "name": "delivered",
+      "type": "int"
+    },
+    {
+      "name": "bounces",
+      "type": "int"
+    },
+    {
+      "name": "complaints",
+      "type": "int"
+    },
+    {
+      "name": "paused",
+      "type": "bool"
+    },
+    {
+      "name": "sentWhenPaused",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "hourlyCap": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "tier"
+              },
+              {
+                "kind": "str",
+                "value": "new"
+              }
+            ]
+          },
+          {
+            "kind": "int",
+            "value": "2"
+          },
+          {
+            "kind": "int",
+            "value": "10"
+          }
+        ]
+      }
+    },
+    "dailyCap": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "tier"
+              },
+              {
+                "kind": "str",
+                "value": "new"
+              }
+            ]
+          },
+          {
+            "kind": "int",
+            "value": "10"
+          },
+          {
+            "kind": "int",
+            "value": "50"
+          }
+        ]
+      }
+    },
+    "canSend": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "paused"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "ilt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "sendsHour"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "hourlyCap"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ilt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "sendsDay"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "dailyCap"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "bounceRateHigh": {
+      "kind": "function",
+      "params": [
+        "total",
+        "bad"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igt",
+            "args": [
+              {
+                "kind": "name",
+                "name": "total"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "imul",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "bad"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "100"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "imul",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "total"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "5"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "complaintRateHigh": {
+      "kind": "function",
+      "params": [
+        "total",
+        "bad"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igt",
+            "args": [
+              {
+                "kind": "name",
+                "name": "total"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "imul",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "bad"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "10000"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "imul",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "total"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "8"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "crosses": {
+      "kind": "function",
+      "params": [
+        "outcome",
+        "total",
+        "bounced",
+        "complained"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "bounceRateHigh",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "total"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "bounced"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "ite",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "outcome"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "bounced"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "int",
+                        "value": "1"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "0"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "complaintRateHigh",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "total"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "complained"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "ite",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "outcome"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "complained"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "int",
+                        "value": "1"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "0"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "WithinHourlyCap": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "sendsHour"
+          },
+          {
+            "kind": "name",
+            "name": "hourlyCap"
+          }
+        ]
+      }
+    },
+    "WithinDailyCap": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "sendsDay"
+          },
+          {
+            "kind": "name",
+            "name": "dailyCap"
+          }
+        ]
+      }
+    },
+    "PausedIsSilent": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "paused"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "sent"
+              },
+              {
+                "kind": "name",
+                "name": "sentWhenPaused"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "PromotedNotEarly": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "tier"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "warmed"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "day"
+              },
+              {
+                "kind": "int",
+                "value": "7"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "tier",
+          "rhs": {
+            "kind": "str",
+            "value": "new"
+          }
+        },
+        {
+          "field": "week",
+          "rhs": {
+            "kind": "int",
+            "value": "1"
+          }
+        },
+        {
+          "field": "day",
+          "rhs": {
+            "kind": "int",
+            "value": "1"
+          }
+        },
+        {
+          "field": "sendsHour",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "sendsDay",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "delivered",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "bounces",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "complaints",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "paused",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "sentWhenPaused",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "send",
+      "nondet": {
+        "name": "outcome",
+        "kind": "str",
+        "pool": [
+          "delivered",
+          "bounced",
+          "complained"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "sendsHour",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canSend"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "sendsHour"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "sendsHour"
+              }
+            ]
+          }
+        },
+        {
+          "field": "sendsDay",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canSend"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "sendsDay"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "sendsDay"
+              }
+            ]
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canSend"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "sent"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "sent"
+              }
+            ]
+          }
+        },
+        {
+          "field": "delivered",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canSend"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "outcome"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "delivered"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "delivered"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "delivered"
+              }
+            ]
+          }
+        },
+        {
+          "field": "bounces",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canSend"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "outcome"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "bounced"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "bounces"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "bounces"
+              }
+            ]
+          }
+        },
+        {
+          "field": "complaints",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canSend"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "outcome"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "complained"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "complaints"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "complaints"
+              }
+            ]
+          }
+        },
+        {
+          "field": "paused",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canSend"
+              },
+              {
+                "kind": "app",
+                "opcode": "crosses",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "outcome"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "sent"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "bounces"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "complaints"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "paused"
+              }
+            ]
+          }
+        },
+        {
+          "field": "sentWhenPaused",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canSend"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "crosses",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "outcome"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "sent"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "bounces"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "complaints"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "sent"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "sentWhenPaused"
+              }
+            ]
+          }
+        },
+        {
+          "field": "tier",
+          "rhs": {
+            "kind": "name",
+            "name": "tier"
+          }
+        },
+        {
+          "field": "week",
+          "rhs": {
+            "kind": "name",
+            "name": "week"
+          }
+        },
+        {
+          "field": "day",
+          "rhs": {
+            "kind": "name",
+            "name": "day"
+          }
+        }
+      ]
+    },
+    {
+      "name": "advanceHour",
+      "assignments": [
+        {
+          "field": "sendsHour",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "tier",
+          "rhs": {
+            "kind": "name",
+            "name": "tier"
+          }
+        },
+        {
+          "field": "week",
+          "rhs": {
+            "kind": "name",
+            "name": "week"
+          }
+        },
+        {
+          "field": "day",
+          "rhs": {
+            "kind": "name",
+            "name": "day"
+          }
+        },
+        {
+          "field": "sendsDay",
+          "rhs": {
+            "kind": "name",
+            "name": "sendsDay"
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "name",
+            "name": "sent"
+          }
+        },
+        {
+          "field": "delivered",
+          "rhs": {
+            "kind": "name",
+            "name": "delivered"
+          }
+        },
+        {
+          "field": "bounces",
+          "rhs": {
+            "kind": "name",
+            "name": "bounces"
+          }
+        },
+        {
+          "field": "complaints",
+          "rhs": {
+            "kind": "name",
+            "name": "complaints"
+          }
+        },
+        {
+          "field": "paused",
+          "rhs": {
+            "kind": "name",
+            "name": "paused"
+          }
+        },
+        {
+          "field": "sentWhenPaused",
+          "rhs": {
+            "kind": "name",
+            "name": "sentWhenPaused"
+          }
+        }
+      ]
+    },
+    {
+      "name": "advanceDay",
+      "assignments": [
+        {
+          "field": "day",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "day"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "sendsDay",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "sendsHour",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "delivered",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "bounces",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "complaints",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "tier",
+          "rhs": {
+            "kind": "name",
+            "name": "tier"
+          }
+        },
+        {
+          "field": "week",
+          "rhs": {
+            "kind": "name",
+            "name": "week"
+          }
+        },
+        {
+          "field": "paused",
+          "rhs": {
+            "kind": "name",
+            "name": "paused"
+          }
+        },
+        {
+          "field": "sentWhenPaused",
+          "rhs": {
+            "kind": "name",
+            "name": "sentWhenPaused"
+          }
+        }
+      ]
+    },
+    {
+      "name": "promote",
+      "assignments": [
+        {
+          "field": "tier",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "tier"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "new"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "igte",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "day"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "7"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "warmed"
+              },
+              {
+                "kind": "name",
+                "name": "tier"
+              }
+            ]
+          }
+        },
+        {
+          "field": "week",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "tier"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "new"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "igte",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "day"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "7"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "2"
+              },
+              {
+                "kind": "name",
+                "name": "week"
+              }
+            ]
+          }
+        },
+        {
+          "field": "day",
+          "rhs": {
+            "kind": "name",
+            "name": "day"
+          }
+        },
+        {
+          "field": "sendsHour",
+          "rhs": {
+            "kind": "name",
+            "name": "sendsHour"
+          }
+        },
+        {
+          "field": "sendsDay",
+          "rhs": {
+            "kind": "name",
+            "name": "sendsDay"
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "name",
+            "name": "sent"
+          }
+        },
+        {
+          "field": "delivered",
+          "rhs": {
+            "kind": "name",
+            "name": "delivered"
+          }
+        },
+        {
+          "field": "bounces",
+          "rhs": {
+            "kind": "name",
+            "name": "bounces"
+          }
+        },
+        {
+          "field": "complaints",
+          "rhs": {
+            "kind": "name",
+            "name": "complaints"
+          }
+        },
+        {
+          "field": "paused",
+          "rhs": {
+            "kind": "name",
+            "name": "paused"
+          }
+        },
+        {
+          "field": "sentWhenPaused",
+          "rhs": {
+            "kind": "name",
+            "name": "sentWhenPaused"
+          }
+        }
+      ]
+    },
+    {
+      "name": "resume",
+      "assignments": [
+        {
+          "field": "paused",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "sentWhenPaused",
+          "rhs": {
+            "kind": "name",
+            "name": "sent"
+          }
+        },
+        {
+          "field": "tier",
+          "rhs": {
+            "kind": "name",
+            "name": "tier"
+          }
+        },
+        {
+          "field": "week",
+          "rhs": {
+            "kind": "name",
+            "name": "week"
+          }
+        },
+        {
+          "field": "day",
+          "rhs": {
+            "kind": "name",
+            "name": "day"
+          }
+        },
+        {
+          "field": "sendsHour",
+          "rhs": {
+            "kind": "name",
+            "name": "sendsHour"
+          }
+        },
+        {
+          "field": "sendsDay",
+          "rhs": {
+            "kind": "name",
+            "name": "sendsDay"
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "name",
+            "name": "sent"
+          }
+        },
+        {
+          "field": "delivered",
+          "rhs": {
+            "kind": "name",
+            "name": "delivered"
+          }
+        },
+        {
+          "field": "bounces",
+          "rhs": {
+            "kind": "name",
+            "name": "bounces"
+          }
+        },
+        {
+          "field": "complaints",
+          "rhs": {
+            "kind": "name",
+            "name": "complaints"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "send",
+    "advanceHour",
+    "advanceDay",
+    "promote",
+    "resume"
+  ]
+}

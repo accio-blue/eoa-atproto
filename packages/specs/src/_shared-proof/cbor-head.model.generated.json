@@ -1,0 +1,895 @@
+{
+  "generatedFrom": "../../specs/_shared-proof/cbor-head.qnt",
+  "specHash": "89b6caac62f705ee4f3c258aa1b970dd9883b41158a7b65c2cf9e00eb3268121",
+  "module": "shared_proof_cbor_head",
+  "vars": [
+    {
+      "name": "lastArg",
+      "type": "int"
+    },
+    {
+      "name": "lastClass",
+      "type": "int"
+    },
+    {
+      "name": "canonical",
+      "type": "bool"
+    }
+  ],
+  "defs": {
+    "ClassInRange": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "inRange",
+        "args": [
+          {
+            "kind": "name",
+            "name": "lastClass"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          },
+          {
+            "kind": "int",
+            "value": "4"
+          }
+        ]
+      }
+    },
+    "CanonicalIsShort": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "canonical"
+          },
+          {
+            "kind": "app",
+            "opcode": "isShortForm",
+            "args": [
+              {
+                "kind": "name",
+                "name": "lastArg"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "none": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "none"
+      }
+    },
+    "isNone": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "value"
+          },
+          {
+            "kind": "name",
+            "name": "none"
+          }
+        ]
+      }
+    },
+    "didPlcSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "did:plc:genesis"
+      }
+    },
+    "didWebSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "did:web:example.com"
+      }
+    },
+    "isDid": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "didPlcSample"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "didWebSample"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "handleSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "alice.example.com"
+      }
+    },
+    "isHandle": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "value"
+          },
+          {
+            "kind": "name",
+            "name": "handleSample"
+          }
+        ]
+      }
+    },
+    "nsidSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "app.bsky.feed.post"
+      }
+    },
+    "isNsid": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "nsidSample"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isNone",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "atUriSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "at://did:plc:genesis/app.bsky.feed.post/3jzsm4zqb2s2a"
+      }
+    },
+    "isAtUri": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "atUriSample"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isNone",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "cidSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "bafyreib2rxk3rybk3aobmv5cjuql3bm2twh4jo5uygzv5kkz2rq7v5test"
+      }
+    },
+    "isCid": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "cidSample"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isNone",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "tidSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "3jzsm4zqb2s2a"
+      }
+    },
+    "isTid": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "value"
+          },
+          {
+            "kind": "name",
+            "name": "tidSample"
+          }
+        ]
+      }
+    },
+    "rkeySample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "3jzsm4zqb2s2a"
+      }
+    },
+    "isRkey": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "rkeySample"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isNone",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "headClass": {
+      "kind": "function",
+      "params": [
+        "arg"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "ilt",
+            "args": [
+              {
+                "kind": "name",
+                "name": "arg"
+              },
+              {
+                "kind": "int",
+                "value": "24"
+              }
+            ]
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          },
+          {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "ilt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "arg"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "256"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "ilt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "arg"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "65536"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "int",
+                    "value": "2"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "ite",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "ilt",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "arg"
+                          },
+                          {
+                            "kind": "int",
+                            "value": "4294967296"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "int",
+                        "value": "3"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "4"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "isShortForm": {
+      "kind": "function",
+      "params": [
+        "arg"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "not",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "arg"
+              },
+              {
+                "kind": "int",
+                "value": "24"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "extraByteCount": {
+      "kind": "function",
+      "params": [
+        "arg"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "ilt",
+            "args": [
+              {
+                "kind": "name",
+                "name": "arg"
+              },
+              {
+                "kind": "int",
+                "value": "24"
+              }
+            ]
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          },
+          {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "ilt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "arg"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "256"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "ilt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "arg"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "65536"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "int",
+                    "value": "2"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "ite",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "ilt",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "arg"
+                          },
+                          {
+                            "kind": "int",
+                            "value": "4294967296"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "int",
+                        "value": "3"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "8"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "nonNegative": {
+      "kind": "function",
+      "params": [
+        "x"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "x"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "nonPositive": {
+      "kind": "function",
+      "params": [
+        "x"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "x"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "positive": {
+      "kind": "function",
+      "params": [
+        "x"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "igt",
+        "args": [
+          {
+            "kind": "name",
+            "name": "x"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "inRange": {
+      "kind": "function",
+      "params": [
+        "x",
+        "low",
+        "high"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "x"
+              },
+              {
+                "kind": "name",
+                "name": "low"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "x"
+              },
+              {
+                "kind": "name",
+                "name": "high"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "monotone": {
+      "kind": "function",
+      "params": [
+        "after",
+        "previous"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "after"
+          },
+          {
+            "kind": "name",
+            "name": "previous"
+          }
+        ]
+      }
+    },
+    "implication": {
+      "kind": "function",
+      "params": [
+        "condition",
+        "consequence"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "condition"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "consequence"
+          }
+        ]
+      }
+    },
+    "exclusive": {
+      "kind": "function",
+      "params": [
+        "a",
+        "b"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "neq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "a"
+          },
+          {
+            "kind": "name",
+            "name": "b"
+          }
+        ]
+      }
+    },
+    "unchanged": {
+      "kind": "function",
+      "params": [
+        "after",
+        "previous"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "after"
+          },
+          {
+            "kind": "name",
+            "name": "previous"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "lastArg",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "lastClass",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "canonical",
+          "rhs": {
+            "kind": "bool",
+            "value": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "putHead",
+      "nondet": {
+        "name": "n",
+        "kind": "int",
+        "pool": [
+          "0",
+          "23",
+          "24",
+          "256",
+          "65536",
+          "4294967296"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "lastArg",
+          "rhs": {
+            "kind": "name",
+            "name": "n"
+          }
+        },
+        {
+          "field": "lastClass",
+          "rhs": {
+            "kind": "app",
+            "opcode": "headClass",
+            "args": [
+              {
+                "kind": "name",
+                "name": "n"
+              }
+            ]
+          }
+        },
+        {
+          "field": "canonical",
+          "rhs": {
+            "kind": "app",
+            "opcode": "isShortForm",
+            "args": [
+              {
+                "kind": "name",
+                "name": "n"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "putHead"
+  ]
+}

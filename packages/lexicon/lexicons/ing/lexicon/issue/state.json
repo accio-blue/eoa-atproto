@@ -1,0 +1,32 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.issue.state",
+  "description": "A change of state: a new record every time, appended, so an issue's history is the sequence of these rather than a field that was overwritten. The four names are the machine's (`apps/machine-spike/specs/work.qnt`); `knownValues` states them here for readers, and the machine rules on which moves are legal.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "One state change, as it happened.",
+      "required": ["subject", "state", "createdAt"],
+      "properties": {
+        "subject": {
+          "type": "ref",
+          "ref": "ing.lexicon.cms.defs#strongRef"
+        },
+        "state": {
+          "type": "string",
+          "knownValues": ["todo", "in-progress", "blocked", "done"]
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Why, when that is worth saying — chiefly for `blocked`."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    }
+  }
+}

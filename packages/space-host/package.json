@@ -1,0 +1,53 @@
+{
+  "name": "@eoa/space-host",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Space host permission primitive: grant schema, fail-closed evaluator, revocation log and CAS write log",
+  "keywords": [
+    "at-protocol",
+    "atproto",
+    "effect-ts",
+    "grants",
+    "permissioned-repos"
+  ],
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "build": "vp pack src/index.ts --dts",
+    "typecheck": "effect-tsrs diagnostics --project tsconfig.json --type-check",
+    "format": "vp fmt",
+    "lint": "vp lint",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@eoa/core": "workspace:*",
+    "@eoa/crypto": "workspace:*",
+    "@eoa/kv": "workspace:*",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@eoa/object-store": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "effect": "catalog:"
+  }
+}

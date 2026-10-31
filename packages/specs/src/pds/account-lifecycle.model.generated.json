@@ -1,0 +1,667 @@
+{
+  "generatedFrom": "../../specs/pds/account-lifecycle.qnt",
+  "specHash": "eb9cf170a870ae7c115e837b6a812a19d0db08c09302a4e4d976ffe0de1d6c23",
+  "module": "pds_account_lifecycle",
+  "vars": [
+    {
+      "name": "status",
+      "type": "str"
+    },
+    {
+      "name": "handleReserved",
+      "type": "bool"
+    }
+  ],
+  "defs": {
+    "StatusValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "absent"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "created"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "suspended"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "deleted"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CreatedReservesHandle": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "created"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "handleReserved"
+              },
+              {
+                "kind": "bool",
+                "value": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ActiveReservesHandle": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "handleReserved"
+              },
+              {
+                "kind": "bool",
+                "value": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "SuspendedReservesHandle": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "suspended"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "handleReserved"
+              },
+              {
+                "kind": "bool",
+                "value": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AbsentHasNoHandle": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "absent"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "handleReserved"
+              },
+              {
+                "kind": "bool",
+                "value": false
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "DeletedReleasesHandle": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "deleted"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "handleReserved"
+              },
+              {
+                "kind": "bool",
+                "value": false
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "absent"
+          }
+        },
+        {
+          "field": "handleReserved",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "create",
+      "nondet": {
+        "name": "availability",
+        "kind": "str",
+        "pool": [
+          "free",
+          "taken"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "status"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "absent"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "availability"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "free"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "created"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "handleReserved",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "status"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "absent"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "availability"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "free"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "handleReserved"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "activate",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "created"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "handleReserved",
+          "rhs": {
+            "kind": "name",
+            "name": "handleReserved"
+          }
+        }
+      ]
+    },
+    {
+      "name": "suspend",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "active"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "suspended"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "handleReserved",
+          "rhs": {
+            "kind": "name",
+            "name": "handleReserved"
+          }
+        }
+      ]
+    },
+    {
+      "name": "reinstate",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "suspended"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "handleReserved",
+          "rhs": {
+            "kind": "name",
+            "name": "handleReserved"
+          }
+        }
+      ]
+    },
+    {
+      "name": "deleteAccount",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "status"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "active"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "status"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "suspended"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "deleted"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "handleReserved",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "status"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "active"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "status"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "suspended"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": false
+              },
+              {
+                "kind": "name",
+                "name": "handleReserved"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "create",
+    "activate",
+    "suspend",
+    "reinstate",
+    "deleteAccount"
+  ]
+}

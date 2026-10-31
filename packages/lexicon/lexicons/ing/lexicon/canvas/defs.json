@@ -1,0 +1,189 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.canvas.defs",
+  "description": "Shared definitions for canvas scenes: a JSON Canvas 1.0-shaped node and edge with integer geometry, an explicit order, and an open union of node content.",
+  "defs": {
+    "node": {
+      "type": "object",
+      "description": "A node on the canvas. The frame (id, geometry, order, colour, ref) is the same for every node, so a reader can place a node whose content it does not understand. The content is an open union keyed by NSID.",
+      "required": ["id", "x", "y", "width", "height", "order", "content"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Local stable id, unique within the scene. Edges and per-user overrides refer to it."
+        },
+        "x": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Left edge in canvas units (JSON Canvas: pixels)."
+        },
+        "y": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Top edge in canvas units (JSON Canvas: pixels)."
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "order": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Explicit stacking order, ascending = bottom to top (the JSON Canvas array-order rule, made a field because array position is not merge-safe). Ties are broken by id."
+        },
+        "color": {
+          "type": "string",
+          "maxLength": 16,
+          "description": "JSON Canvas canvasColor: a hex colour such as #FF0000, or a preset '1'..'6'."
+        },
+        "ref": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "The record this node represents. The same record may be referenced by more than one node."
+        },
+        "content": {
+          "type": "union",
+          "closed": false,
+          "refs": [
+            "#text",
+            "#file",
+            "#link",
+            "#group",
+            "#component",
+            "#canvas"
+          ],
+          "description": "What the node holds. Open union: a third party may add a variant under its own NSID, and readers must tolerate variants they do not know."
+        }
+      }
+    },
+    "text": {
+      "type": "object",
+      "description": "JSON Canvas 'text' node: plain text with Markdown syntax.",
+      "required": ["text"],
+      "properties": {
+        "text": { "type": "string" }
+      }
+    },
+    "file": {
+      "type": "object",
+      "description": "JSON Canvas 'file' node. The path is opaque and system-local; to point at an atproto record use the node's ref.",
+      "required": ["file"],
+      "properties": {
+        "file": { "type": "string" },
+        "subpath": {
+          "type": "string",
+          "description": "Link to a heading or block inside the file; starts with '#'."
+        }
+      }
+    },
+    "link": {
+      "type": "object",
+      "description": "JSON Canvas 'link' node: a URL.",
+      "required": ["url"],
+      "properties": {
+        "url": { "type": "string" }
+      }
+    },
+    "group": {
+      "type": "object",
+      "description": "JSON Canvas 'group' node: a visual container. Membership is spatial (the group's rectangle), as in JSON Canvas; there is no nesting field.",
+      "properties": {
+        "label": { "type": "string" },
+        "background": {
+          "type": "string",
+          "description": "Path to a background image."
+        },
+        "backgroundStyle": {
+          "type": "string",
+          "knownValues": ["cover", "ratio", "repeat"]
+        }
+      }
+    },
+    "component": {
+      "type": "object",
+      "description": "A plugin component placed on the canvas (the Inlay window model: componentUri + props).",
+      "required": ["componentUri"],
+      "properties": {
+        "componentUri": {
+          "type": "string",
+          "format": "uri",
+          "description": "The component to render, usually the at-uri of its record."
+        },
+        "props": {
+          "type": "unknown",
+          "description": "Props for the component: a JSON object with no floats (atproto data model)."
+        }
+      }
+    },
+    "canvas": {
+      "type": "object",
+      "description": "A nested canvas: another scene shown inside this node's frame. Rendering a nested scene is up to the reader; a reader that cannot do so shows a placeholder.",
+      "required": ["scene"],
+      "properties": {
+        "scene": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "The at-uri of the ing.lexicon.canvas.scene record to show."
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "description": "A JSON Canvas 1.0 edge, stored in the scene record.",
+      "required": ["id", "fromNode", "toNode"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "fromNode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Id of the node where the connection starts."
+        },
+        "fromSide": {
+          "type": "string",
+          "knownValues": ["top", "right", "bottom", "left"]
+        },
+        "fromEnd": {
+          "type": "string",
+          "knownValues": ["none", "arrow"],
+          "default": "none"
+        },
+        "toNode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Id of the node where the connection ends."
+        },
+        "toSide": {
+          "type": "string",
+          "knownValues": ["top", "right", "bottom", "left"]
+        },
+        "toEnd": {
+          "type": "string",
+          "knownValues": ["none", "arrow"],
+          "default": "arrow"
+        },
+        "label": { "type": "string" },
+        "color": {
+          "type": "string",
+          "maxLength": 16
+        }
+      }
+    }
+  }
+}

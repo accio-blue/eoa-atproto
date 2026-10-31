@@ -1,0 +1,738 @@
+{
+  "generatedFrom": "../../specs/payments/refund-lifecycle.qnt",
+  "specHash": "dce2dc7faa41e7e9eecc77126f16da0bf550f78a6d07dfb3dbaa632846e26747",
+  "module": "payments_refund_lifecycle",
+  "vars": [
+    {
+      "name": "stage",
+      "type": "str"
+    },
+    {
+      "name": "refunds",
+      "type": "int"
+    },
+    {
+      "name": "chargeSettled",
+      "type": "bool"
+    }
+  ],
+  "defs": {
+    "canRequest": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "str",
+                "value": "rejected"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "StageValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "requested"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "refunded"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "rejected"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RefundsBound": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "refunds"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "refunds"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RefundedHasRefund": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "refunded"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "refunds"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RejectedHasNoRefund": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "rejected"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "refunds"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RefundRequiresCharge": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "refunds"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "chargeSettled"
+          }
+        ]
+      }
+    },
+    "RefundedRequiresCharge": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "refunded"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "chargeSettled"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "refunds",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "chargeSettled",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "settleCharge",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "name",
+            "name": "stage"
+          }
+        },
+        {
+          "field": "refunds",
+          "rhs": {
+            "kind": "name",
+            "name": "refunds"
+          }
+        },
+        {
+          "field": "chargeSettled",
+          "rhs": {
+            "kind": "bool",
+            "value": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "requestRefund",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "chargeSettled"
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "refunds"
+                          },
+                          {
+                            "kind": "int",
+                            "value": "0"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "canRequest",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "requested"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "refunds",
+          "rhs": {
+            "kind": "name",
+            "name": "refunds"
+          }
+        },
+        {
+          "field": "chargeSettled",
+          "rhs": {
+            "kind": "name",
+            "name": "chargeSettled"
+          }
+        }
+      ]
+    },
+    {
+      "name": "processRefund",
+      "nondet": {
+        "name": "cleared",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "requested"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "cleared"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "refunded"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "stage"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "requested"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "not",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "cleared"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "rejected"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "refunds",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "requested"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "cleared"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "refunds"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "refunds"
+              }
+            ]
+          }
+        },
+        {
+          "field": "chargeSettled",
+          "rhs": {
+            "kind": "name",
+            "name": "chargeSettled"
+          }
+        }
+      ]
+    },
+    {
+      "name": "retryRefund",
+      "nondet": {
+        "name": "cleared",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "rejected"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "cleared"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "refunded"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "stage"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "rejected"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "not",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "cleared"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "rejected"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "refunds",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "rejected"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "cleared"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "refunds"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "refunds"
+              }
+            ]
+          }
+        },
+        {
+          "field": "chargeSettled",
+          "rhs": {
+            "kind": "name",
+            "name": "chargeSettled"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "settleCharge",
+    "requestRefund",
+    "processRefund",
+    "retryRefund"
+  ]
+}

@@ -1,0 +1,1046 @@
+{
+  "generatedFrom": "../../specs/mail/outbound-queue.qnt",
+  "specHash": "85db9076c5aefc5dd0a2b79cd1fee216dc93b0a67f9e4a9cc3ff442abdc18c0a",
+  "module": "mail_outbound_queue",
+  "vars": [
+    {
+      "name": "state",
+      "type": "str"
+    },
+    {
+      "name": "attempts",
+      "type": "int"
+    },
+    {
+      "name": "now",
+      "type": "int"
+    },
+    {
+      "name": "dueAt",
+      "type": "int"
+    },
+    {
+      "name": "lastDueAt",
+      "type": "int"
+    },
+    {
+      "name": "lastAttemptAt",
+      "type": "int"
+    },
+    {
+      "name": "everDelivered",
+      "type": "bool"
+    },
+    {
+      "name": "dsn",
+      "type": "bool"
+    },
+    {
+      "name": "lastCode",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "sendable": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "state"
+          },
+          {
+            "kind": "str",
+            "value": "spooled"
+          }
+        ]
+      }
+    },
+    "spent": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "attempts"
+          },
+          {
+            "kind": "int",
+            "value": "5"
+          }
+        ]
+      }
+    },
+    "due": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "now"
+          },
+          {
+            "kind": "name",
+            "name": "dueAt"
+          }
+        ]
+      }
+    },
+    "canAttempt": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "name",
+            "name": "sendable"
+          },
+          {
+            "kind": "name",
+            "name": "due"
+          }
+        ]
+      }
+    },
+    "backoffFor": {
+      "kind": "function",
+      "params": [
+        "n"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "n"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          },
+          {
+            "kind": "int",
+            "value": "1"
+          },
+          {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "n"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "2"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "5"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "n"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "3"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "int",
+                    "value": "15"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "ite",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "n"
+                          },
+                          {
+                            "kind": "int",
+                            "value": "4"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "int",
+                        "value": "30"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "60"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "StateValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "spooled"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "state"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "delivered"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "state"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "bounced"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AttemptsBounded": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "attempts"
+          },
+          {
+            "kind": "int",
+            "value": "5"
+          }
+        ]
+      }
+    },
+    "DeliveredIsFinal": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "everDelivered"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "delivered"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AttemptOnlyWhenDue": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "lastAttemptAt"
+          },
+          {
+            "kind": "name",
+            "name": "lastDueAt"
+          }
+        ]
+      }
+    },
+    "BouncedIsReported": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "state"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "bounced"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "dsn"
+          }
+        ]
+      }
+    },
+    "DeliveredWasAttempted": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "everDelivered"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "attempts"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "str",
+            "value": "spooled"
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "now",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "dueAt",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "lastDueAt",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "lastAttemptAt",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "everDelivered",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "dsn",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "tick",
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "name",
+            "name": "state"
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "name",
+            "name": "attempts"
+          }
+        },
+        {
+          "field": "now",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "now"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "dueAt",
+          "rhs": {
+            "kind": "name",
+            "name": "dueAt"
+          }
+        },
+        {
+          "field": "lastDueAt",
+          "rhs": {
+            "kind": "name",
+            "name": "lastDueAt"
+          }
+        },
+        {
+          "field": "lastAttemptAt",
+          "rhs": {
+            "kind": "name",
+            "name": "lastAttemptAt"
+          }
+        },
+        {
+          "field": "everDelivered",
+          "rhs": {
+            "kind": "name",
+            "name": "everDelivered"
+          }
+        },
+        {
+          "field": "dsn",
+          "rhs": {
+            "kind": "name",
+            "name": "dsn"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "name",
+            "name": "lastCode"
+          }
+        }
+      ]
+    },
+    {
+      "name": "attempt",
+      "nondet": {
+        "name": "answer",
+        "kind": "int",
+        "pool": [
+          "250",
+          "451",
+          "550"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canAttempt"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "answer"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "250"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "delivered"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "ite",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "answer"
+                          },
+                          {
+                            "kind": "int",
+                            "value": "550"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "str",
+                        "value": "bounced"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "state"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "state"
+              }
+            ]
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canAttempt"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "attempts"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "attempts"
+              }
+            ]
+          }
+        },
+        {
+          "field": "now",
+          "rhs": {
+            "kind": "name",
+            "name": "now"
+          }
+        },
+        {
+          "field": "dueAt",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canAttempt"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "answer"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "451"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "now"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "backoffFor",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "iadd",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "attempts"
+                          },
+                          {
+                            "kind": "int",
+                            "value": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "dueAt"
+              }
+            ]
+          }
+        },
+        {
+          "field": "lastDueAt",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canAttempt"
+              },
+              {
+                "kind": "name",
+                "name": "dueAt"
+              },
+              {
+                "kind": "name",
+                "name": "lastDueAt"
+              }
+            ]
+          }
+        },
+        {
+          "field": "lastAttemptAt",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canAttempt"
+              },
+              {
+                "kind": "name",
+                "name": "now"
+              },
+              {
+                "kind": "name",
+                "name": "lastAttemptAt"
+              }
+            ]
+          }
+        },
+        {
+          "field": "everDelivered",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canAttempt"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "answer"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "250"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "everDelivered"
+              }
+            ]
+          }
+        },
+        {
+          "field": "dsn",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canAttempt"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "answer"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "550"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "dsn"
+              }
+            ]
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canAttempt"
+              },
+              {
+                "kind": "name",
+                "name": "answer"
+              },
+              {
+                "kind": "name",
+                "name": "lastCode"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "giveUp",
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "sendable"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "spent"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "bounced"
+              },
+              {
+                "kind": "name",
+                "name": "state"
+              }
+            ]
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "name",
+            "name": "attempts"
+          }
+        },
+        {
+          "field": "now",
+          "rhs": {
+            "kind": "name",
+            "name": "now"
+          }
+        },
+        {
+          "field": "dueAt",
+          "rhs": {
+            "kind": "name",
+            "name": "dueAt"
+          }
+        },
+        {
+          "field": "lastDueAt",
+          "rhs": {
+            "kind": "name",
+            "name": "lastDueAt"
+          }
+        },
+        {
+          "field": "lastAttemptAt",
+          "rhs": {
+            "kind": "name",
+            "name": "lastAttemptAt"
+          }
+        },
+        {
+          "field": "everDelivered",
+          "rhs": {
+            "kind": "name",
+            "name": "everDelivered"
+          }
+        },
+        {
+          "field": "dsn",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "sendable"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "spent"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "dsn"
+              }
+            ]
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "sendable"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "spent"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "550"
+              },
+              {
+                "kind": "name",
+                "name": "lastCode"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "tick",
+    "attempt",
+    "giveUp"
+  ]
+}

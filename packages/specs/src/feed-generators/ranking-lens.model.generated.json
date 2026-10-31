@@ -1,0 +1,848 @@
+{
+  "generatedFrom": "../../specs/feed-generators/ranking-lens.qnt",
+  "specHash": "7cf21457aacd6010469fdb06e57bacb63e989b1c22142015cd2ed894bcf36262",
+  "module": "feed_generators_ranking_lens",
+  "vars": [
+    {
+      "name": "lens",
+      "type": "str"
+    },
+    {
+      "name": "observed",
+      "type": "int"
+    },
+    {
+      "name": "blocked",
+      "type": "int"
+    },
+    {
+      "name": "duplicate",
+      "type": "int"
+    },
+    {
+      "name": "pending",
+      "type": "int"
+    },
+    {
+      "name": "ranked",
+      "type": "int"
+    },
+    {
+      "name": "suppressed",
+      "type": "int"
+    },
+    {
+      "name": "slot",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "LensValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "lens"
+              },
+              {
+                "kind": "str",
+                "value": "chronological"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "lens"
+              },
+              {
+                "kind": "str",
+                "value": "discovery"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AccountingExact": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "observed"
+          },
+          {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "iadd",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "iadd",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "blocked"
+                          },
+                          {
+                            "kind": "name",
+                            "name": "duplicate"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "name",
+                        "name": "pending"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ranked"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "suppressed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "SlotTracksRanked": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "slot"
+          },
+          {
+            "kind": "name",
+            "name": "ranked"
+          }
+        ]
+      }
+    },
+    "CountersNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "observed"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "blocked"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "duplicate"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "pending"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "ranked"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "suppressed"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "slot"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "lens",
+          "rhs": {
+            "kind": "str",
+            "value": "chronological"
+          }
+        },
+        {
+          "field": "observed",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "blocked",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "duplicate",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "pending",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "ranked",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "suppressed",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "slot",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "chooseLens",
+      "nondet": {
+        "name": "choice",
+        "kind": "str",
+        "pool": [
+          "chronological",
+          "discovery"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "lens",
+          "rhs": {
+            "kind": "name",
+            "name": "choice"
+          }
+        },
+        {
+          "field": "observed",
+          "rhs": {
+            "kind": "name",
+            "name": "observed"
+          }
+        },
+        {
+          "field": "blocked",
+          "rhs": {
+            "kind": "name",
+            "name": "blocked"
+          }
+        },
+        {
+          "field": "duplicate",
+          "rhs": {
+            "kind": "name",
+            "name": "duplicate"
+          }
+        },
+        {
+          "field": "pending",
+          "rhs": {
+            "kind": "name",
+            "name": "pending"
+          }
+        },
+        {
+          "field": "ranked",
+          "rhs": {
+            "kind": "name",
+            "name": "ranked"
+          }
+        },
+        {
+          "field": "suppressed",
+          "rhs": {
+            "kind": "name",
+            "name": "suppressed"
+          }
+        },
+        {
+          "field": "slot",
+          "rhs": {
+            "kind": "name",
+            "name": "slot"
+          }
+        }
+      ]
+    },
+    {
+      "name": "observe",
+      "nondet": {
+        "name": "outcome",
+        "kind": "str",
+        "pool": [
+          "public",
+          "blocked",
+          "repeat"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "lens",
+          "rhs": {
+            "kind": "name",
+            "name": "lens"
+          }
+        },
+        {
+          "field": "observed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "observed"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "blocked",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "outcome"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "blocked"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "blocked"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "blocked"
+              }
+            ]
+          }
+        },
+        {
+          "field": "duplicate",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "outcome"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "repeat"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "duplicate"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "duplicate"
+              }
+            ]
+          }
+        },
+        {
+          "field": "pending",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "outcome"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "public"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "pending"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "pending"
+              }
+            ]
+          }
+        },
+        {
+          "field": "ranked",
+          "rhs": {
+            "kind": "name",
+            "name": "ranked"
+          }
+        },
+        {
+          "field": "suppressed",
+          "rhs": {
+            "kind": "name",
+            "name": "suppressed"
+          }
+        },
+        {
+          "field": "slot",
+          "rhs": {
+            "kind": "name",
+            "name": "slot"
+          }
+        }
+      ]
+    },
+    {
+      "name": "place",
+      "nondet": {
+        "name": "decision",
+        "kind": "str",
+        "pool": [
+          "rank",
+          "suppress"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "lens",
+          "rhs": {
+            "kind": "name",
+            "name": "lens"
+          }
+        },
+        {
+          "field": "observed",
+          "rhs": {
+            "kind": "name",
+            "name": "observed"
+          }
+        },
+        {
+          "field": "blocked",
+          "rhs": {
+            "kind": "name",
+            "name": "blocked"
+          }
+        },
+        {
+          "field": "duplicate",
+          "rhs": {
+            "kind": "name",
+            "name": "duplicate"
+          }
+        },
+        {
+          "field": "pending",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "pending"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "isub",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "pending"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "pending"
+              }
+            ]
+          }
+        },
+        {
+          "field": "ranked",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "igt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "pending"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "0"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "decision"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "rank"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "ranked"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "ranked"
+              }
+            ]
+          }
+        },
+        {
+          "field": "suppressed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "igt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "pending"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "0"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "decision"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "suppress"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "suppressed"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "suppressed"
+              }
+            ]
+          }
+        },
+        {
+          "field": "slot",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "igt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "pending"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "0"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "decision"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "rank"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "slot"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "slot"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "chooseLens",
+    "observe",
+    "place"
+  ]
+}

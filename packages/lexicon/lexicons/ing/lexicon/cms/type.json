@@ -1,0 +1,42 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.cms.type",
+  "description": "A content type — what a Prismic site calls a custom type. One record per type; the rkey IS the type key, so a document can reference its model by key.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "description": "The rkey is the type key.",
+      "record": {
+        "type": "object",
+        "required": ["key", "name", "kind", "fields"],
+        "properties": {
+          "key": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "name": { "type": "string" },
+          "label": { "type": "string" },
+          "kind": {
+            "type": "string",
+            "knownValues": ["repeatable", "singleton"],
+            "description": "repeatable: many documents; singleton: one (Prismic 'custom')."
+          },
+          "meta": { "type": "ref", "ref": "#metaMapping" },
+          "fields": {
+            "type": "array",
+            "items": { "type": "ref", "ref": "ing.lexicon.cms.defs#fieldDef" }
+          },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "metaMapping": {
+      "type": "object",
+      "description": "Which field keys supply a document's SEO/meta values, so a reader finds them without knowing the type.",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "image": { "type": "string" }
+      }
+    }
+  }
+}

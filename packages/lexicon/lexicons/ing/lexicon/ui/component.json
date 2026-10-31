@@ -1,0 +1,145 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.ui.component",
+  "description": "A component implementation. The record key IS the NSID the component implements, so a host resolves a name to the first DID in the import stack that publishes it. Inlay-shaped (https://github.com/danabra/inlay) under our own namespace; interop with at.inlay.component is a read/convert, not the storage shape.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "nsid",
+      "description": "Component record. The rkey is the type NSID this component implements, e.g. at://{did}/ing.lexicon.ui.component/dev.cssints.ui.stack.",
+      "record": {
+        "type": "object",
+        "required": ["imports", "createdAt"],
+        "properties": {
+          "body": {
+            "type": "union",
+            "refs": ["#bodyExternal", "#bodyTemplate"],
+            "description": "How this component is rendered. Omit for a primitive the host implements itself."
+          },
+          "view": {
+            "type": "ref",
+            "ref": "#view",
+            "description": "What data this component views and which prop receives it."
+          },
+          "imports": {
+            "type": "array",
+            "items": { "type": "string", "format": "did" },
+            "minLength": 1,
+            "description": "Ordered DID import stack for this component's subtree. For each NSID, the first DID that publishes a component with that rkey wins. Overrides the tenant's default order for this subtree."
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 10000,
+            "maxGraphemes": 1000
+          },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Last update. Set by the publish flow to bust cached reads."
+          }
+        }
+      }
+    },
+    "bodyExternal": {
+      "type": "object",
+      "description": "The component is rendered by calling a remote XRPC endpoint.",
+      "required": ["did"],
+      "properties": {
+        "did": {
+          "type": "string",
+          "format": "did",
+          "description": "DID of the service hosting this component."
+        },
+        "personalized": {
+          "type": "boolean",
+          "description": "When true the host sends a signed JWT identifying the viewer with each call."
+        }
+      }
+    },
+    "bodyTemplate": {
+      "type": "object",
+      "description": "The host renders the component from a serialized element tree with bindings.",
+      "required": ["node"],
+      "properties": {
+        "node": {
+          "type": "unknown",
+          "description": "Serialized element tree, not interpreted by this lexicon."
+        }
+      }
+    },
+    "view": {
+      "type": "object",
+      "description": "Declares what data this component views and which prop receives it.",
+      "required": ["prop", "accepts"],
+      "properties": {
+        "prop": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Which component prop receives the view data."
+        },
+        "accepts": {
+          "type": "array",
+          "items": {
+            "type": "union",
+            "refs": ["#viewRecord", "#viewPrimitive"]
+          },
+          "minLength": 1,
+          "description": "Data types this view accepts."
+        }
+      }
+    },
+    "viewRecord": {
+      "type": "object",
+      "description": "The component views records of a collection. Omit collection for any collection; an rkey makes it accept a bare DID.",
+      "properties": {
+        "collection": {
+          "type": "string",
+          "format": "nsid",
+          "description": "The collection this component views. Omit for any collection."
+        },
+        "rkey": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Record key baked from the collection's lexicon. Present enables DID expansion."
+        }
+      }
+    },
+    "viewPrimitive": {
+      "type": "object",
+      "description": "The component views a primitive value.",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "maxLength": 128,
+          "knownValues": [
+            "string",
+            "integer",
+            "boolean",
+            "blob",
+            "cid-link",
+            "bytes"
+          ]
+        },
+        "format": {
+          "type": "string",
+          "maxLength": 64,
+          "knownValues": [
+            "at-uri",
+            "did",
+            "datetime",
+            "uri",
+            "handle",
+            "at-identifier",
+            "nsid",
+            "cid",
+            "language",
+            "record-key",
+            "tid"
+          ]
+        }
+      }
+    }
+  }
+}

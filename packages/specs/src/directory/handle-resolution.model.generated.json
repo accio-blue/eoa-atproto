@@ -1,0 +1,960 @@
+{
+  "generatedFrom": "../../specs/directory/handle-resolution.qnt",
+  "specHash": "150b6de483ef696cb0c46d694f73d57c026fa1c2193bc9333f28f15aad0dccb4",
+  "module": "handle_resolution",
+  "vars": [
+    {
+      "name": "phase",
+      "type": "str"
+    },
+    {
+      "name": "source",
+      "type": "str"
+    },
+    {
+      "name": "handle",
+      "type": "str"
+    },
+    {
+      "name": "dns",
+      "type": "str"
+    },
+    {
+      "name": "wellKnown",
+      "type": "str"
+    },
+    {
+      "name": "resolvedDid",
+      "type": "str"
+    },
+    {
+      "name": "docHandle",
+      "type": "str"
+    }
+  ],
+  "defs": {
+    "HandleResolves": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "resolved"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "neq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "resolvedDid"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "neq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "source"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "bool",
+            "value": true
+          }
+        ]
+      }
+    },
+    "SourceValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "source"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "source"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "dns"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "source"
+              },
+              {
+                "kind": "str",
+                "value": "well-known"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "DnsBeforeWellKnown": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "source"
+              },
+              {
+                "kind": "str",
+                "value": "well-known"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "dns"
+              },
+              {
+                "kind": "str",
+                "value": "missing"
+              }
+            ]
+          },
+          {
+            "kind": "bool",
+            "value": true
+          }
+        ]
+      }
+    },
+    "PhaseValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "or",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "or",
+                        "args": [
+                          {
+                            "kind": "app",
+                            "opcode": "eq",
+                            "args": [
+                              {
+                                "kind": "name",
+                                "name": "phase"
+                              },
+                              {
+                                "kind": "str",
+                                "value": "idle"
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "app",
+                            "opcode": "eq",
+                            "args": [
+                              {
+                                "kind": "name",
+                                "name": "phase"
+                              },
+                              {
+                                "kind": "str",
+                                "value": "well-known"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "phase"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "verifying"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "resolved"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "unresolved"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "mismatch"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "source",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "handle",
+          "rhs": {
+            "kind": "str",
+            "value": "alice.example.com"
+          }
+        },
+        {
+          "field": "dns",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "wellKnown",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "resolvedDid",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "docHandle",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dnsLookup",
+      "nondet": {
+        "name": "result",
+        "kind": "str",
+        "pool": [
+          "did:plc:alice",
+          "did:plc:other",
+          "missing"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "idle"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "result"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "missing"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "well-known"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "verifying"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "phase"
+              }
+            ]
+          }
+        },
+        {
+          "field": "source",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "idle"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "neq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "result"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "missing"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "dns"
+              },
+              {
+                "kind": "name",
+                "name": "source"
+              }
+            ]
+          }
+        },
+        {
+          "field": "handle",
+          "rhs": {
+            "kind": "name",
+            "name": "handle"
+          }
+        },
+        {
+          "field": "dns",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "idle"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "result"
+              },
+              {
+                "kind": "name",
+                "name": "dns"
+              }
+            ]
+          }
+        },
+        {
+          "field": "wellKnown",
+          "rhs": {
+            "kind": "name",
+            "name": "wellKnown"
+          }
+        },
+        {
+          "field": "resolvedDid",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "idle"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "neq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "result"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "missing"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "result"
+              },
+              {
+                "kind": "name",
+                "name": "resolvedDid"
+              }
+            ]
+          }
+        },
+        {
+          "field": "docHandle",
+          "rhs": {
+            "kind": "name",
+            "name": "docHandle"
+          }
+        }
+      ]
+    },
+    {
+      "name": "wellKnownLookup",
+      "nondet": {
+        "name": "result",
+        "kind": "str",
+        "pool": [
+          "did:plc:alice",
+          "did:plc:other",
+          "missing"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "well-known"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "result"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "missing"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "unresolved"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "verifying"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "phase"
+              }
+            ]
+          }
+        },
+        {
+          "field": "source",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "well-known"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "neq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "result"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "missing"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "well-known"
+              },
+              {
+                "kind": "name",
+                "name": "source"
+              }
+            ]
+          }
+        },
+        {
+          "field": "handle",
+          "rhs": {
+            "kind": "name",
+            "name": "handle"
+          }
+        },
+        {
+          "field": "dns",
+          "rhs": {
+            "kind": "name",
+            "name": "dns"
+          }
+        },
+        {
+          "field": "wellKnown",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "well-known"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "result"
+              },
+              {
+                "kind": "name",
+                "name": "wellKnown"
+              }
+            ]
+          }
+        },
+        {
+          "field": "resolvedDid",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "well-known"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "neq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "result"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "missing"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "result"
+              },
+              {
+                "kind": "name",
+                "name": "resolvedDid"
+              }
+            ]
+          }
+        },
+        {
+          "field": "docHandle",
+          "rhs": {
+            "kind": "name",
+            "name": "docHandle"
+          }
+        }
+      ]
+    },
+    {
+      "name": "verify",
+      "nondet": {
+        "name": "claim",
+        "kind": "str",
+        "pool": [
+          "alice.example.com",
+          "bob.example.com",
+          "none"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "verifying"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "claim"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "handle"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "resolved"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "mismatch"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "phase"
+              }
+            ]
+          }
+        },
+        {
+          "field": "source",
+          "rhs": {
+            "kind": "name",
+            "name": "source"
+          }
+        },
+        {
+          "field": "handle",
+          "rhs": {
+            "kind": "name",
+            "name": "handle"
+          }
+        },
+        {
+          "field": "dns",
+          "rhs": {
+            "kind": "name",
+            "name": "dns"
+          }
+        },
+        {
+          "field": "wellKnown",
+          "rhs": {
+            "kind": "name",
+            "name": "wellKnown"
+          }
+        },
+        {
+          "field": "resolvedDid",
+          "rhs": {
+            "kind": "name",
+            "name": "resolvedDid"
+          }
+        },
+        {
+          "field": "docHandle",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "verifying"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "claim"
+              },
+              {
+                "kind": "name",
+                "name": "docHandle"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "dnsLookup",
+    "wellKnownLookup",
+    "verify"
+  ]
+}

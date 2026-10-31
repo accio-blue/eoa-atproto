@@ -1,0 +1,1030 @@
+{
+  "generatedFrom": "../../specs/mail/inbound-authentication.qnt",
+  "specHash": "0e4a02f0b9de6159d76b8a16f340282ab175f102d74b5caca8bfbb018761a4b1",
+  "module": "mail_inbound_authentication",
+  "vars": [
+    {
+      "name": "spf",
+      "type": "str"
+    },
+    {
+      "name": "spfAligned",
+      "type": "bool"
+    },
+    {
+      "name": "dkim",
+      "type": "str"
+    },
+    {
+      "name": "dkimAligned",
+      "type": "bool"
+    },
+    {
+      "name": "policy",
+      "type": "str"
+    },
+    {
+      "name": "dmarc",
+      "type": "str"
+    },
+    {
+      "name": "disposition",
+      "type": "str"
+    }
+  ],
+  "defs": {
+    "spfFor": {
+      "kind": "function",
+      "params": [
+        "s"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "s"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "s"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "2"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "str",
+            "value": "pass"
+          },
+          {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "s"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "3"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "s"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "4"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "s"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "5"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "fail"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "spfAlignedFor": {
+      "kind": "function",
+      "params": [
+        "s"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "s"
+          },
+          {
+            "kind": "int",
+            "value": "1"
+          }
+        ]
+      }
+    },
+    "dkimFor": {
+      "kind": "function",
+      "params": [
+        "s"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "s"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "3"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "s"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "4"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "str",
+            "value": "pass"
+          },
+          {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "s"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "5"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "fail"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "dkimAlignedFor": {
+      "kind": "function",
+      "params": [
+        "s"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "s"
+          },
+          {
+            "kind": "int",
+            "value": "3"
+          }
+        ]
+      }
+    },
+    "alignedSpf": {
+      "kind": "function",
+      "params": [
+        "s"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "spfFor",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "s"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "pass"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "spfAlignedFor",
+            "args": [
+              {
+                "kind": "name",
+                "name": "s"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "alignedDkim": {
+      "kind": "function",
+      "params": [
+        "s"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "dkimFor",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "s"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "pass"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "dkimAlignedFor",
+            "args": [
+              {
+                "kind": "name",
+                "name": "s"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "dmarcFor": {
+      "kind": "function",
+      "params": [
+        "s"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "alignedSpf",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "s"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "alignedDkim",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "s"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "str",
+            "value": "pass"
+          },
+          {
+            "kind": "str",
+            "value": "fail"
+          }
+        ]
+      }
+    },
+    "dispositionFor": {
+      "kind": "function",
+      "params": [
+        "p",
+        "passed"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "name",
+            "name": "passed"
+          },
+          {
+            "kind": "str",
+            "value": "deliver"
+          },
+          {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "p"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "reject"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "reject"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "p"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "quarantine"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "quarantine"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "deliver"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "DispositionValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "disposition"
+              },
+              {
+                "kind": "str",
+                "value": "deliver"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "disposition"
+              },
+              {
+                "kind": "str",
+                "value": "quarantine"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "disposition"
+              },
+              {
+                "kind": "str",
+                "value": "reject"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "DmarcPassImpliesAlignedPass": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "dmarc"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "pass"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "spf"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "pass"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "spfAligned"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "dkim"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "pass"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "dkimAligned"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RejectOnlyUnderRejectPolicy": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "disposition"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "reject"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "policy"
+              },
+              {
+                "kind": "str",
+                "value": "reject"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "QuarantineOnlyUnderQuarantinePolicy": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "disposition"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "quarantine"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "policy"
+              },
+              {
+                "kind": "str",
+                "value": "quarantine"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "DeliveredUnderPolicyImpliesPass": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "disposition"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "deliver"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "not",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "policy"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "none"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "dmarc"
+              },
+              {
+                "kind": "str",
+                "value": "pass"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "spf",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "spfAligned",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "dkim",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "dkimAligned",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "policy",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "dmarc",
+          "rhs": {
+            "kind": "str",
+            "value": "fail"
+          }
+        },
+        {
+          "field": "disposition",
+          "rhs": {
+            "kind": "str",
+            "value": "deliver"
+          }
+        }
+      ]
+    },
+    {
+      "name": "setPolicy",
+      "nondet": {
+        "name": "chosen",
+        "kind": "str",
+        "pool": [
+          "none",
+          "quarantine",
+          "reject"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "spf",
+          "rhs": {
+            "kind": "name",
+            "name": "spf"
+          }
+        },
+        {
+          "field": "spfAligned",
+          "rhs": {
+            "kind": "name",
+            "name": "spfAligned"
+          }
+        },
+        {
+          "field": "dkim",
+          "rhs": {
+            "kind": "name",
+            "name": "dkim"
+          }
+        },
+        {
+          "field": "dkimAligned",
+          "rhs": {
+            "kind": "name",
+            "name": "dkimAligned"
+          }
+        },
+        {
+          "field": "policy",
+          "rhs": {
+            "kind": "name",
+            "name": "chosen"
+          }
+        },
+        {
+          "field": "dmarc",
+          "rhs": {
+            "kind": "name",
+            "name": "dmarc"
+          }
+        },
+        {
+          "field": "disposition",
+          "rhs": {
+            "kind": "app",
+            "opcode": "dispositionFor",
+            "args": [
+              {
+                "kind": "name",
+                "name": "chosen"
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "dmarc"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "pass"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "check",
+      "nondet": {
+        "name": "scenario",
+        "kind": "int",
+        "pool": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "spf",
+          "rhs": {
+            "kind": "app",
+            "opcode": "spfFor",
+            "args": [
+              {
+                "kind": "name",
+                "name": "scenario"
+              }
+            ]
+          }
+        },
+        {
+          "field": "spfAligned",
+          "rhs": {
+            "kind": "app",
+            "opcode": "spfAlignedFor",
+            "args": [
+              {
+                "kind": "name",
+                "name": "scenario"
+              }
+            ]
+          }
+        },
+        {
+          "field": "dkim",
+          "rhs": {
+            "kind": "app",
+            "opcode": "dkimFor",
+            "args": [
+              {
+                "kind": "name",
+                "name": "scenario"
+              }
+            ]
+          }
+        },
+        {
+          "field": "dkimAligned",
+          "rhs": {
+            "kind": "app",
+            "opcode": "dkimAlignedFor",
+            "args": [
+              {
+                "kind": "name",
+                "name": "scenario"
+              }
+            ]
+          }
+        },
+        {
+          "field": "policy",
+          "rhs": {
+            "kind": "name",
+            "name": "policy"
+          }
+        },
+        {
+          "field": "dmarc",
+          "rhs": {
+            "kind": "app",
+            "opcode": "dmarcFor",
+            "args": [
+              {
+                "kind": "name",
+                "name": "scenario"
+              }
+            ]
+          }
+        },
+        {
+          "field": "disposition",
+          "rhs": {
+            "kind": "app",
+            "opcode": "dispositionFor",
+            "args": [
+              {
+                "kind": "name",
+                "name": "policy"
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "dmarcFor",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "scenario"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "pass"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "setPolicy",
+    "check"
+  ]
+}

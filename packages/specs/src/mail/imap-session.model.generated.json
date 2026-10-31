@@ -1,0 +1,1101 @@
+{
+  "generatedFrom": "../../specs/mail/imap-session.qnt",
+  "specHash": "48a455d62c3ffd7b1694cec836abf3dca145308853e92836d7821d1e044f24a7",
+  "module": "mail_imap_session",
+  "vars": [
+    {
+      "name": "state",
+      "type": "str"
+    },
+    {
+      "name": "selected",
+      "type": "str"
+    },
+    {
+      "name": "everSelected",
+      "type": "bool"
+    },
+    {
+      "name": "uidNext",
+      "type": "int"
+    },
+    {
+      "name": "assignedMax",
+      "type": "int"
+    },
+    {
+      "name": "lastUid",
+      "type": "int"
+    },
+    {
+      "name": "lastOutcome",
+      "type": "str"
+    }
+  ],
+  "defs": {
+    "hasServed": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igt",
+        "args": [
+          {
+            "kind": "name",
+            "name": "lastUid"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "inSelected": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "state"
+          },
+          {
+            "kind": "str",
+            "value": "selected"
+          }
+        ]
+      }
+    },
+    "canLogin": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "state"
+          },
+          {
+            "kind": "str",
+            "value": "not-authenticated"
+          }
+        ]
+      }
+    },
+    "canSelect": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "authenticated"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "selected"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "StateValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "not-authenticated"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "authenticated"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "selected"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "logout"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "NoFetchBeforeSelect": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "hasServed"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "everSelected"
+          }
+        ]
+      }
+    },
+    "UidNextAboveAssigned": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igt",
+        "args": [
+          {
+            "kind": "name",
+            "name": "uidNext"
+          },
+          {
+            "kind": "name",
+            "name": "assignedMax"
+          }
+        ]
+      }
+    },
+    "ServedWasAssigned": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "hasServed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "lastUid"
+              },
+              {
+                "kind": "name",
+                "name": "assignedMax"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "SelectedHasMailbox": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "inSelected"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "selected"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "str",
+            "value": "not-authenticated"
+          }
+        },
+        {
+          "field": "selected",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "everSelected",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "uidNext",
+          "rhs": {
+            "kind": "int",
+            "value": "1"
+          }
+        },
+        {
+          "field": "assignedMax",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "lastUid",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "lastOutcome",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "login",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canLogin"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "authenticated"
+              },
+              {
+                "kind": "name",
+                "name": "state"
+              }
+            ]
+          }
+        },
+        {
+          "field": "selected",
+          "rhs": {
+            "kind": "name",
+            "name": "selected"
+          }
+        },
+        {
+          "field": "everSelected",
+          "rhs": {
+            "kind": "name",
+            "name": "everSelected"
+          }
+        },
+        {
+          "field": "uidNext",
+          "rhs": {
+            "kind": "name",
+            "name": "uidNext"
+          }
+        },
+        {
+          "field": "assignedMax",
+          "rhs": {
+            "kind": "name",
+            "name": "assignedMax"
+          }
+        },
+        {
+          "field": "lastUid",
+          "rhs": {
+            "kind": "name",
+            "name": "lastUid"
+          }
+        },
+        {
+          "field": "lastOutcome",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canLogin"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "ok"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "no"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "no"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "openMailbox",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canSelect"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "selected"
+              },
+              {
+                "kind": "name",
+                "name": "state"
+              }
+            ]
+          }
+        },
+        {
+          "field": "selected",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canSelect"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "INBOX"
+              },
+              {
+                "kind": "name",
+                "name": "selected"
+              }
+            ]
+          }
+        },
+        {
+          "field": "everSelected",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canSelect"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "everSelected"
+              }
+            ]
+          }
+        },
+        {
+          "field": "uidNext",
+          "rhs": {
+            "kind": "name",
+            "name": "uidNext"
+          }
+        },
+        {
+          "field": "assignedMax",
+          "rhs": {
+            "kind": "name",
+            "name": "assignedMax"
+          }
+        },
+        {
+          "field": "lastUid",
+          "rhs": {
+            "kind": "name",
+            "name": "lastUid"
+          }
+        },
+        {
+          "field": "lastOutcome",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canSelect"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "ok"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "no"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "no"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "examine",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canSelect"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "selected"
+              },
+              {
+                "kind": "name",
+                "name": "state"
+              }
+            ]
+          }
+        },
+        {
+          "field": "selected",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canSelect"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "INBOX"
+              },
+              {
+                "kind": "name",
+                "name": "selected"
+              }
+            ]
+          }
+        },
+        {
+          "field": "everSelected",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canSelect"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "everSelected"
+              }
+            ]
+          }
+        },
+        {
+          "field": "uidNext",
+          "rhs": {
+            "kind": "name",
+            "name": "uidNext"
+          }
+        },
+        {
+          "field": "assignedMax",
+          "rhs": {
+            "kind": "name",
+            "name": "assignedMax"
+          }
+        },
+        {
+          "field": "lastUid",
+          "rhs": {
+            "kind": "name",
+            "name": "lastUid"
+          }
+        },
+        {
+          "field": "lastOutcome",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canSelect"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "ok"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "no"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "no"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "fetch",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "name",
+            "name": "state"
+          }
+        },
+        {
+          "field": "selected",
+          "rhs": {
+            "kind": "name",
+            "name": "selected"
+          }
+        },
+        {
+          "field": "everSelected",
+          "rhs": {
+            "kind": "name",
+            "name": "everSelected"
+          }
+        },
+        {
+          "field": "uidNext",
+          "rhs": {
+            "kind": "name",
+            "name": "uidNext"
+          }
+        },
+        {
+          "field": "assignedMax",
+          "rhs": {
+            "kind": "name",
+            "name": "assignedMax"
+          }
+        },
+        {
+          "field": "lastUid",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "inSelected"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "assignedMax"
+              },
+              {
+                "kind": "name",
+                "name": "lastUid"
+              }
+            ]
+          }
+        },
+        {
+          "field": "lastOutcome",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "inSelected"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "ok"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "no"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "no"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "deliver",
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "name",
+            "name": "state"
+          }
+        },
+        {
+          "field": "selected",
+          "rhs": {
+            "kind": "name",
+            "name": "selected"
+          }
+        },
+        {
+          "field": "everSelected",
+          "rhs": {
+            "kind": "name",
+            "name": "everSelected"
+          }
+        },
+        {
+          "field": "uidNext",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "uidNext"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "assignedMax",
+          "rhs": {
+            "kind": "name",
+            "name": "uidNext"
+          }
+        },
+        {
+          "field": "lastUid",
+          "rhs": {
+            "kind": "name",
+            "name": "lastUid"
+          }
+        },
+        {
+          "field": "lastOutcome",
+          "rhs": {
+            "kind": "name",
+            "name": "lastOutcome"
+          }
+        }
+      ]
+    },
+    {
+      "name": "noop",
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "name",
+            "name": "state"
+          }
+        },
+        {
+          "field": "selected",
+          "rhs": {
+            "kind": "name",
+            "name": "selected"
+          }
+        },
+        {
+          "field": "everSelected",
+          "rhs": {
+            "kind": "name",
+            "name": "everSelected"
+          }
+        },
+        {
+          "field": "uidNext",
+          "rhs": {
+            "kind": "name",
+            "name": "uidNext"
+          }
+        },
+        {
+          "field": "assignedMax",
+          "rhs": {
+            "kind": "name",
+            "name": "assignedMax"
+          }
+        },
+        {
+          "field": "lastUid",
+          "rhs": {
+            "kind": "name",
+            "name": "lastUid"
+          }
+        },
+        {
+          "field": "lastOutcome",
+          "rhs": {
+            "kind": "str",
+            "value": "ok"
+          }
+        }
+      ]
+    },
+    {
+      "name": "logout",
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "str",
+            "value": "logout"
+          }
+        },
+        {
+          "field": "selected",
+          "rhs": {
+            "kind": "name",
+            "name": "selected"
+          }
+        },
+        {
+          "field": "everSelected",
+          "rhs": {
+            "kind": "name",
+            "name": "everSelected"
+          }
+        },
+        {
+          "field": "uidNext",
+          "rhs": {
+            "kind": "name",
+            "name": "uidNext"
+          }
+        },
+        {
+          "field": "assignedMax",
+          "rhs": {
+            "kind": "name",
+            "name": "assignedMax"
+          }
+        },
+        {
+          "field": "lastUid",
+          "rhs": {
+            "kind": "name",
+            "name": "lastUid"
+          }
+        },
+        {
+          "field": "lastOutcome",
+          "rhs": {
+            "kind": "str",
+            "value": "ok"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "login",
+    "openMailbox",
+    "examine",
+    "fetch",
+    "deliver",
+    "noop",
+    "logout"
+  ]
+}

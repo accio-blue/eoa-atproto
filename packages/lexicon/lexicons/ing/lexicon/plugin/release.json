@@ -1,0 +1,45 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.plugin.release",
+  "description": "A plugin release, signed into the PUBLISHER'S OWN repo. The record is the trust anchor an install verifies against: its `cid` is the bundle, and its `artifact.sha256` the code the publisher published. A registry catalog (ing.lexicon.registry.manifest) is untrusted; the install proves this record is in the publisher's signed commit — and the bytes hash to `artifact.sha256` — before anything runs (@eoa/repo `verifyRelease`, bean blf2).",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "One published release. Keyed by tid so a publisher's release history is a set of records, not a mutable 'latest'.",
+      "record": {
+        "type": "object",
+        "required": ["plugin", "version", "cid", "artifact", "createdAt"],
+        "properties": {
+          "plugin": {
+            "type": "string",
+            "format": "nsid",
+            "description": "The plugin's NSID, matching its ing.lexicon.plugin.manifest."
+          },
+          "version": { "type": "string", "maxLength": 64 },
+          "cid": {
+            "type": "string",
+            "format": "cid",
+            "description": "The bundle CID this release names."
+          },
+          "artifact": { "type": "ref", "ref": "#artifact" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "description": "The published bytes: their checksum, and (optionally) size and fetch URL.",
+      "required": ["sha256"],
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "base64url(sha256(bytes)) — the same encoding @eoa/repo's verifyRelease computes."
+        },
+        "size": { "type": "integer", "minimum": 0 },
+        "url": { "type": "string", "format": "uri" }
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "name": "@eoa/object-store",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The object-store contract: content-addressed get/put/list with conditional writes, and its filesystem adapter",
+  "keywords": [
+    "effect-ts",
+    "object-store",
+    "r2",
+    "s3"
+  ],
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "build": "vp pack src/index.ts --dts",
+    "typecheck": "effect-tsrs diagnostics --project tsconfig.json --type-check",
+    "format": "vp fmt",
+    "lint": "vp lint",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "miniflare": "^4.20260730.0",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "effect": "catalog:"
+  }
+}

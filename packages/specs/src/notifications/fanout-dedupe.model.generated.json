@@ -1,0 +1,699 @@
+{
+  "generatedFrom": "../../specs/notifications/fanout-dedupe.qnt",
+  "specHash": "06179aee398c048ed2d320bfa739c6c11f8810e236e35dd54f6cfcab0eafa8b5",
+  "module": "notifications_fanout_dedupe",
+  "vars": [
+    {
+      "name": "eventCount",
+      "type": "int"
+    },
+    {
+      "name": "inboxA",
+      "type": "int"
+    },
+    {
+      "name": "inboxB",
+      "type": "int"
+    },
+    {
+      "name": "cursorA",
+      "type": "int"
+    },
+    {
+      "name": "cursorB",
+      "type": "int"
+    },
+    {
+      "name": "dropped",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "ReadCursorWithinInbox": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "cursorA"
+              },
+              {
+                "kind": "name",
+                "name": "inboxA"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "cursorB"
+              },
+              {
+                "kind": "name",
+                "name": "inboxB"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "InboxWithinEvents": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "inboxA"
+              },
+              {
+                "kind": "name",
+                "name": "eventCount"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "inboxB"
+              },
+              {
+                "kind": "name",
+                "name": "eventCount"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CountersNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "eventCount"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "inboxA"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "inboxB"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "cursorA"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "cursorB"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "dropped"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "eventCount",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "inboxA",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "inboxB",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "cursorA",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "cursorB",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "dropped",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "fanout",
+      "nondet": {
+        "name": "audience",
+        "kind": "str",
+        "pool": [
+          "recipientA",
+          "recipientB",
+          "both"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "eventCount",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "eventCount"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "inboxA",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "audience"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "recipientA"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "audience"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "both"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "inboxA"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "inboxA"
+              }
+            ]
+          }
+        },
+        {
+          "field": "inboxB",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "audience"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "recipientB"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "audience"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "both"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "inboxB"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "inboxB"
+              }
+            ]
+          }
+        },
+        {
+          "field": "cursorA",
+          "rhs": {
+            "kind": "name",
+            "name": "cursorA"
+          }
+        },
+        {
+          "field": "cursorB",
+          "rhs": {
+            "kind": "name",
+            "name": "cursorB"
+          }
+        },
+        {
+          "field": "dropped",
+          "rhs": {
+            "kind": "name",
+            "name": "dropped"
+          }
+        }
+      ]
+    },
+    {
+      "name": "redeliver",
+      "nondet": {
+        "name": "audience",
+        "kind": "str",
+        "pool": [
+          "recipientA",
+          "recipientB",
+          "both"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "eventCount",
+          "rhs": {
+            "kind": "name",
+            "name": "eventCount"
+          }
+        },
+        {
+          "field": "inboxA",
+          "rhs": {
+            "kind": "name",
+            "name": "inboxA"
+          }
+        },
+        {
+          "field": "inboxB",
+          "rhs": {
+            "kind": "name",
+            "name": "inboxB"
+          }
+        },
+        {
+          "field": "cursorA",
+          "rhs": {
+            "kind": "name",
+            "name": "cursorA"
+          }
+        },
+        {
+          "field": "cursorB",
+          "rhs": {
+            "kind": "name",
+            "name": "cursorB"
+          }
+        },
+        {
+          "field": "dropped",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "dropped"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "readA",
+      "nondet": {
+        "name": "n",
+        "kind": "int",
+        "pool": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "eventCount",
+          "rhs": {
+            "kind": "name",
+            "name": "eventCount"
+          }
+        },
+        {
+          "field": "inboxA",
+          "rhs": {
+            "kind": "name",
+            "name": "inboxA"
+          }
+        },
+        {
+          "field": "inboxB",
+          "rhs": {
+            "kind": "name",
+            "name": "inboxB"
+          }
+        },
+        {
+          "field": "cursorA",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "iadd",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "cursorA"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "n"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "inboxA"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "inboxA"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "cursorA"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "n"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "cursorB",
+          "rhs": {
+            "kind": "name",
+            "name": "cursorB"
+          }
+        },
+        {
+          "field": "dropped",
+          "rhs": {
+            "kind": "name",
+            "name": "dropped"
+          }
+        }
+      ]
+    },
+    {
+      "name": "readB",
+      "nondet": {
+        "name": "n",
+        "kind": "int",
+        "pool": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "eventCount",
+          "rhs": {
+            "kind": "name",
+            "name": "eventCount"
+          }
+        },
+        {
+          "field": "inboxA",
+          "rhs": {
+            "kind": "name",
+            "name": "inboxA"
+          }
+        },
+        {
+          "field": "inboxB",
+          "rhs": {
+            "kind": "name",
+            "name": "inboxB"
+          }
+        },
+        {
+          "field": "cursorA",
+          "rhs": {
+            "kind": "name",
+            "name": "cursorA"
+          }
+        },
+        {
+          "field": "cursorB",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "iadd",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "cursorB"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "n"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "inboxB"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "inboxB"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "cursorB"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "n"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "dropped",
+          "rhs": {
+            "kind": "name",
+            "name": "dropped"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "fanout",
+    "redeliver",
+    "readA",
+    "readB"
+  ]
+}

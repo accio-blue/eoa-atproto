@@ -1,0 +1,133 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.ui.primitive",
+  "description": "A primitive's published interface. The record key IS the primitive's NSID, so a component record and a plugin author can bind to a name and read what it accepts. Populated by the host for its built-in primitives (the spec-backed widgets); a primitive record carries no behaviour — only the contract.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "nsid",
+      "description": "Primitive interface record, e.g. at://{did}/ing.lexicon.ui.primitive/ing.lexicon.ui.disclosure.",
+      "record": {
+        "type": "object",
+        "required": ["createdAt"],
+        "properties": {
+          "props": {
+            "type": "array",
+            "items": { "type": "ref", "ref": "#propDecl" },
+            "description": "Props this primitive accepts. Empty or absent means it accepts none."
+          },
+          "events": {
+            "type": "array",
+            "items": { "type": "ref", "ref": "#eventDecl" },
+            "description": "Callbacks this primitive emits. An uncontrolled primitive emits them as requests the host may ignore."
+          },
+          "lookIntents": {
+            "type": "array",
+            "description": "The Mise en Mode intents this primitive reads, so a host can contain a look (ADR 0002, Rule 7). Values are the standard's names; a record cannot invent one.",
+            "items": {
+              "type": "string",
+              "knownValues": [
+                "action.auxiliary.background",
+                "action.auxiliary.border",
+                "action.auxiliary.foreground",
+                "action.primary.background",
+                "action.primary.border",
+                "action.primary.foreground",
+                "action.secondary.background",
+                "action.secondary.border",
+                "action.secondary.foreground",
+                "control.background",
+                "control.border",
+                "control.foreground",
+                "surface.auxiliary.background",
+                "surface.auxiliary.border",
+                "surface.auxiliary.foreground",
+                "surface.primary.background",
+                "surface.primary.border",
+                "surface.primary.foreground",
+                "surface.secondary.background",
+                "surface.secondary.border",
+                "surface.secondary.foreground",
+                "text.auxiliary.family",
+                "text.auxiliary.lineHeight",
+                "text.auxiliary.size",
+                "text.auxiliary.weight",
+                "text.primary.family",
+                "text.primary.lineHeight",
+                "text.primary.size",
+                "text.primary.weight",
+                "text.secondary.family",
+                "text.secondary.lineHeight",
+                "text.secondary.size",
+                "text.secondary.weight"
+              ]
+            }
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 10000,
+            "maxGraphemes": 1000
+          },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "propDecl": {
+      "type": "object",
+      "description": "One prop. `type` is the value shape a caller may pass; `knownValues` narrows a string to an enum.",
+      "required": ["name", "type"],
+      "properties": {
+        "name": { "type": "string", "maxLength": 128 },
+        "type": {
+          "type": "string",
+          "maxLength": 32,
+          "knownValues": [
+            "string",
+            "integer",
+            "number",
+            "boolean",
+            "array",
+            "object",
+            "element",
+            "ref",
+            "function"
+          ]
+        },
+        "required": { "type": "boolean" },
+        "knownValues": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 256 },
+          "description": "Allowed values when type is string."
+        },
+        "default": {
+          "type": "unknown",
+          "description": "Default value, opaque to this lexicon."
+        },
+        "description": { "type": "string", "maxLength": 2000 }
+      }
+    },
+    "eventDecl": {
+      "type": "object",
+      "description": "One emitted callback. A request an uncontrolled primitive fires; the host may ignore it (the controlled-value model).",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "maxLength": 128 },
+        "payload": {
+          "type": "string",
+          "maxLength": 32,
+          "knownValues": [
+            "none",
+            "string",
+            "integer",
+            "number",
+            "boolean",
+            "object",
+            "element"
+          ]
+        },
+        "description": { "type": "string", "maxLength": 2000 }
+      }
+    }
+  }
+}

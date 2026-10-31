@@ -1,0 +1,878 @@
+{
+  "generatedFrom": "../../specs/moderation/report-resolution.qnt",
+  "specHash": "b18413f4edbb4b2d1cb616ef34a9bc862fed5fdd1efb1221c6295ffd883e99b5",
+  "module": "moderation_report_resolution",
+  "vars": [
+    {
+      "name": "report",
+      "type": "str"
+    },
+    {
+      "name": "decision",
+      "type": "str"
+    },
+    {
+      "name": "appeal",
+      "type": "str"
+    }
+  ],
+  "defs": {
+    "actionable": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "str",
+                "value": "takedown"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "str",
+                "value": "label"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ReportValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "report"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "report"
+              },
+              {
+                "kind": "str",
+                "value": "open"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "report"
+              },
+              {
+                "kind": "str",
+                "value": "triaged"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "report"
+              },
+              {
+                "kind": "str",
+                "value": "resolved"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "report"
+              },
+              {
+                "kind": "str",
+                "value": "dismissed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "DecisionValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "decision"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "decision"
+              },
+              {
+                "kind": "str",
+                "value": "takedown"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "decision"
+              },
+              {
+                "kind": "str",
+                "value": "label"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "decision"
+              },
+              {
+                "kind": "str",
+                "value": "noaction"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AppealValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "appeal"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "appeal"
+              },
+              {
+                "kind": "str",
+                "value": "filed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "appeal"
+              },
+              {
+                "kind": "str",
+                "value": "granted"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "appeal"
+              },
+              {
+                "kind": "str",
+                "value": "denied"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "DecisionNeedsResolution": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "decision"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "report"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "resolved"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "report"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "dismissed"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "DismissedIsNoAction": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "report"
+              },
+              {
+                "kind": "str",
+                "value": "dismissed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "decision"
+              },
+              {
+                "kind": "str",
+                "value": "noaction"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AppealNeedsEnforcement": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "appeal"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "report"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "resolved"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "actionable",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "decision"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "report",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "decision",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "appeal",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "submit",
+      "assignments": [
+        {
+          "field": "report",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "report"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "open"
+              },
+              {
+                "kind": "name",
+                "name": "report"
+              }
+            ]
+          }
+        },
+        {
+          "field": "decision",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "report"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              },
+              {
+                "kind": "name",
+                "name": "decision"
+              }
+            ]
+          }
+        },
+        {
+          "field": "appeal",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "report"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              },
+              {
+                "kind": "name",
+                "name": "appeal"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "triage",
+      "assignments": [
+        {
+          "field": "report",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "report"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "open"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "triaged"
+              },
+              {
+                "kind": "name",
+                "name": "report"
+              }
+            ]
+          }
+        },
+        {
+          "field": "decision",
+          "rhs": {
+            "kind": "name",
+            "name": "decision"
+          }
+        },
+        {
+          "field": "appeal",
+          "rhs": {
+            "kind": "name",
+            "name": "appeal"
+          }
+        }
+      ]
+    },
+    {
+      "name": "decide",
+      "nondet": {
+        "name": "verdict",
+        "kind": "str",
+        "pool": [
+          "takedown",
+          "label",
+          "noaction"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "report",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "report"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "triaged"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "verdict"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "noaction"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "dismissed"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "report"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "triaged"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "resolved"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "report"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "decision",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "report"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "triaged"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "verdict"
+              },
+              {
+                "kind": "name",
+                "name": "decision"
+              }
+            ]
+          }
+        },
+        {
+          "field": "appeal",
+          "rhs": {
+            "kind": "name",
+            "name": "appeal"
+          }
+        }
+      ]
+    },
+    {
+      "name": "fileAppeal",
+      "assignments": [
+        {
+          "field": "report",
+          "rhs": {
+            "kind": "name",
+            "name": "report"
+          }
+        },
+        {
+          "field": "decision",
+          "rhs": {
+            "kind": "name",
+            "name": "decision"
+          }
+        },
+        {
+          "field": "appeal",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "report"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "resolved"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "actionable",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "decision"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "appeal"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "none"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "filed"
+              },
+              {
+                "kind": "name",
+                "name": "appeal"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "decideAppeal",
+      "nondet": {
+        "name": "ruling",
+        "kind": "str",
+        "pool": [
+          "granted",
+          "denied"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "report",
+          "rhs": {
+            "kind": "name",
+            "name": "report"
+          }
+        },
+        {
+          "field": "decision",
+          "rhs": {
+            "kind": "name",
+            "name": "decision"
+          }
+        },
+        {
+          "field": "appeal",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "appeal"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "filed"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "ruling"
+              },
+              {
+                "kind": "name",
+                "name": "appeal"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "submit",
+    "triage",
+    "decide",
+    "fileAppeal",
+    "decideAppeal"
+  ]
+}

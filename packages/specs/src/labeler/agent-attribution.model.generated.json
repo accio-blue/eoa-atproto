@@ -1,0 +1,695 @@
+{
+  "generatedFrom": "../../specs/labeler/agent-attribution.qnt",
+  "specHash": "963b61180e4eb81a7c4332646699cc9ac90c1a1b66472a8327017510c47a5f6e",
+  "module": "labeler_agent_attribution",
+  "vars": [
+    {
+      "name": "author",
+      "type": "str"
+    },
+    {
+      "name": "provenance",
+      "type": "str"
+    },
+    {
+      "name": "label",
+      "type": "str"
+    }
+  ],
+  "defs": {
+    "isAgent": {
+      "kind": "function",
+      "params": [
+        "kind"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "kind"
+          },
+          {
+            "kind": "str",
+            "value": "agent"
+          }
+        ]
+      }
+    },
+    "project": {
+      "kind": "function",
+      "params": [
+        "kind",
+        "prov"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isAgent",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "kind"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "prov"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "declared"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "str",
+            "value": "visible"
+          },
+          {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "isAgent",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "kind"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "prov"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "withdrawn"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "negated"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AuthorValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "author"
+              },
+              {
+                "kind": "str",
+                "value": "unknown"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "author"
+              },
+              {
+                "kind": "str",
+                "value": "human"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "author"
+              },
+              {
+                "kind": "str",
+                "value": "agent"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ProvenanceValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "provenance"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "provenance"
+              },
+              {
+                "kind": "str",
+                "value": "declared"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "provenance"
+              },
+              {
+                "kind": "str",
+                "value": "withdrawn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "LabelValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "label"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "label"
+              },
+              {
+                "kind": "str",
+                "value": "visible"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "label"
+              },
+              {
+                "kind": "str",
+                "value": "negated"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "LabelIsProjection": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "label"
+          },
+          {
+            "kind": "app",
+            "opcode": "project",
+            "args": [
+              {
+                "kind": "name",
+                "name": "author"
+              },
+              {
+                "kind": "name",
+                "name": "provenance"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "VisibleImpliesAgent": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "label"
+              },
+              {
+                "kind": "str",
+                "value": "visible"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isAgent",
+            "args": [
+              {
+                "kind": "name",
+                "name": "author"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "HumanUndecorated": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "author"
+              },
+              {
+                "kind": "str",
+                "value": "human"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "label"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "author",
+          "rhs": {
+            "kind": "str",
+            "value": "unknown"
+          }
+        },
+        {
+          "field": "provenance",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "label",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "resolve",
+      "nondet": {
+        "name": "kind",
+        "kind": "str",
+        "pool": [
+          "human",
+          "agent"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "author",
+          "rhs": {
+            "kind": "name",
+            "name": "kind"
+          }
+        },
+        {
+          "field": "provenance",
+          "rhs": {
+            "kind": "name",
+            "name": "provenance"
+          }
+        },
+        {
+          "field": "label",
+          "rhs": {
+            "kind": "app",
+            "opcode": "project",
+            "args": [
+              {
+                "kind": "name",
+                "name": "kind"
+              },
+              {
+                "kind": "name",
+                "name": "provenance"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "declare",
+      "assignments": [
+        {
+          "field": "author",
+          "rhs": {
+            "kind": "name",
+            "name": "author"
+          }
+        },
+        {
+          "field": "provenance",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isAgent",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "author"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "declared"
+              },
+              {
+                "kind": "name",
+                "name": "provenance"
+              }
+            ]
+          }
+        },
+        {
+          "field": "label",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isAgent",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "author"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "project",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "author"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "declared"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "label"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "withdraw",
+      "assignments": [
+        {
+          "field": "author",
+          "rhs": {
+            "kind": "name",
+            "name": "author"
+          }
+        },
+        {
+          "field": "provenance",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "isAgent",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "author"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "provenance"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "declared"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "withdrawn"
+              },
+              {
+                "kind": "name",
+                "name": "provenance"
+              }
+            ]
+          }
+        },
+        {
+          "field": "label",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "isAgent",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "author"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "provenance"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "declared"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "project",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "author"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "withdrawn"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "label"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "reproject",
+      "assignments": [
+        {
+          "field": "author",
+          "rhs": {
+            "kind": "name",
+            "name": "author"
+          }
+        },
+        {
+          "field": "provenance",
+          "rhs": {
+            "kind": "name",
+            "name": "provenance"
+          }
+        },
+        {
+          "field": "label",
+          "rhs": {
+            "kind": "app",
+            "opcode": "project",
+            "args": [
+              {
+                "kind": "name",
+                "name": "author"
+              },
+              {
+                "kind": "name",
+                "name": "provenance"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "resolve",
+    "declare",
+    "withdraw",
+    "reproject"
+  ]
+}

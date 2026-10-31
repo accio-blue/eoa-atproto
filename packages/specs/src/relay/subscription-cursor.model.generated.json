@@ -1,0 +1,609 @@
+{
+  "generatedFrom": "../../specs/relay/subscription-cursor.qnt",
+  "specHash": "a99e2b8072bcc3a0c5d6acb2db6f257849f5dea6eb1e233bf700f3cf6a81b04c",
+  "module": "relay_subscription_cursor",
+  "vars": [
+    {
+      "name": "status",
+      "type": "str"
+    },
+    {
+      "name": "cursor",
+      "type": "int"
+    },
+    {
+      "name": "resume",
+      "type": "int"
+    },
+    {
+      "name": "attempts",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "StatusValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "subscribing"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "live"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "backfilling"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "backoff"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CursorNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "cursor"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "AttemptsNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "attempts"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "NoGapSkipped": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "resume"
+          },
+          {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "cursor"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "resume",
+          "rhs": {
+            "kind": "int",
+            "value": "1"
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "subscribe",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "subscribing"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "resume",
+          "rhs": {
+            "kind": "name",
+            "name": "resume"
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "name",
+            "name": "attempts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "open",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "live"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "resume",
+          "rhs": {
+            "kind": "name",
+            "name": "resume"
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "commit",
+      "nondet": {
+        "name": "delta",
+        "kind": "int",
+        "pool": [
+          "1",
+          "2",
+          "5",
+          "20",
+          "-1",
+          "0"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "status"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "live"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "igt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "delta"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "backfilling"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "status"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "live"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "delta"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "cursor"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "cursor"
+              }
+            ]
+          }
+        },
+        {
+          "field": "resume",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "status"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "live"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "delta"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "cursor"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "2"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "resume"
+              }
+            ]
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "name",
+            "name": "attempts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "backfill",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "backfilling"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "live"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "resume",
+          "rhs": {
+            "kind": "name",
+            "name": "resume"
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "name",
+            "name": "attempts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "degrade",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "backoff"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "resume",
+          "rhs": {
+            "kind": "name",
+            "name": "resume"
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "attempts"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "retry",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "subscribing"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "resume",
+          "rhs": {
+            "kind": "name",
+            "name": "resume"
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "name",
+            "name": "attempts"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "subscribe",
+    "open",
+    "commit",
+    "backfill",
+    "degrade",
+    "retry"
+  ]
+}

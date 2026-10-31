@@ -1,0 +1,1119 @@
+{
+  "generatedFrom": "../../specs/video/transcode-job.qnt",
+  "specHash": "e3e85446d5070b452d54e5cf2ffe474e544cddd22369a3874466aae27caa6689",
+  "module": "video_transcode_job",
+  "vars": [
+    {
+      "name": "stage",
+      "type": "str"
+    },
+    {
+      "name": "attempts",
+      "type": "int"
+    },
+    {
+      "name": "failures",
+      "type": "int"
+    },
+    {
+      "name": "progress",
+      "type": "int"
+    },
+    {
+      "name": "playlist",
+      "type": "bool"
+    }
+  ],
+  "defs": {
+    "isReady": {
+      "kind": "function",
+      "params": [
+        "now"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "now"
+          },
+          {
+            "kind": "str",
+            "value": "ready"
+          }
+        ]
+      }
+    },
+    "retryable": {
+      "kind": "function",
+      "params": [
+        "now"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "now"
+              },
+              {
+                "kind": "str",
+                "value": "queued"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "now"
+              },
+              {
+                "kind": "str",
+                "value": "failed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canAdvance": {
+      "kind": "function",
+      "params": [
+        "now",
+        "current",
+        "inc"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "now"
+              },
+              {
+                "kind": "str",
+                "value": "running"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilt",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "current"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "inc"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "100"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "playable": {
+      "kind": "function",
+      "params": [
+        "now",
+        "hasPlaylist"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "isReady",
+            "args": [
+              {
+                "kind": "name",
+                "name": "now"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "hasPlaylist"
+          }
+        ]
+      }
+    },
+    "StageValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "queued"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "running"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "ready"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "failed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ProgressBound": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "progress"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "progress"
+              },
+              {
+                "kind": "int",
+                "value": "100"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ProgressZeroWhenQueued": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "queued"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "progress"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ProgressFullWhenReady": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "ready"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "progress"
+              },
+              {
+                "kind": "int",
+                "value": "100"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RunningProgressIncomplete": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "running"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilt",
+            "args": [
+              {
+                "kind": "name",
+                "name": "progress"
+              },
+              {
+                "kind": "int",
+                "value": "100"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AttemptsNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "attempts"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "FailuresNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "failures"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "FailuresWithinAttempts": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "failures"
+          },
+          {
+            "kind": "name",
+            "name": "attempts"
+          }
+        ]
+      }
+    },
+    "RunningImpliesAttempt": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "running"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "attempts"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ReadyImpliesPlaylist": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "ready"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "playlist"
+          }
+        ]
+      }
+    },
+    "PlaylistImpliesReady": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "playlist"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isReady",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ReadyIsPlayable": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "ready"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "playable",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "name",
+                "name": "playlist"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "queued"
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "failures",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "progress",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "playlist",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "start",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "retryable",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "running"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "retryable",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "attempts"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "attempts"
+              }
+            ]
+          }
+        },
+        {
+          "field": "failures",
+          "rhs": {
+            "kind": "name",
+            "name": "failures"
+          }
+        },
+        {
+          "field": "progress",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "retryable",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              },
+              {
+                "kind": "name",
+                "name": "progress"
+              }
+            ]
+          }
+        },
+        {
+          "field": "playlist",
+          "rhs": {
+            "kind": "name",
+            "name": "playlist"
+          }
+        }
+      ]
+    },
+    {
+      "name": "advance",
+      "nondet": {
+        "name": "increment",
+        "kind": "int",
+        "pool": [
+          "10",
+          "25",
+          "50"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "name",
+            "name": "stage"
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "name",
+            "name": "attempts"
+          }
+        },
+        {
+          "field": "failures",
+          "rhs": {
+            "kind": "name",
+            "name": "failures"
+          }
+        },
+        {
+          "field": "progress",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canAdvance",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "progress"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "increment"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "progress"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "increment"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "progress"
+              }
+            ]
+          }
+        },
+        {
+          "field": "playlist",
+          "rhs": {
+            "kind": "name",
+            "name": "playlist"
+          }
+        }
+      ]
+    },
+    {
+      "name": "finish",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "running"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "ready"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "name",
+            "name": "attempts"
+          }
+        },
+        {
+          "field": "failures",
+          "rhs": {
+            "kind": "name",
+            "name": "failures"
+          }
+        },
+        {
+          "field": "progress",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "running"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "100"
+              },
+              {
+                "kind": "name",
+                "name": "progress"
+              }
+            ]
+          }
+        },
+        {
+          "field": "playlist",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "running"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "playlist"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "abort",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "running"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "failed"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "name",
+            "name": "attempts"
+          }
+        },
+        {
+          "field": "failures",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "running"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "failures"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "failures"
+              }
+            ]
+          }
+        },
+        {
+          "field": "progress",
+          "rhs": {
+            "kind": "name",
+            "name": "progress"
+          }
+        },
+        {
+          "field": "playlist",
+          "rhs": {
+            "kind": "name",
+            "name": "playlist"
+          }
+        }
+      ]
+    },
+    {
+      "name": "requeue",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "failed"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "queued"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "name",
+            "name": "attempts"
+          }
+        },
+        {
+          "field": "failures",
+          "rhs": {
+            "kind": "name",
+            "name": "failures"
+          }
+        },
+        {
+          "field": "progress",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "failed"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              },
+              {
+                "kind": "name",
+                "name": "progress"
+              }
+            ]
+          }
+        },
+        {
+          "field": "playlist",
+          "rhs": {
+            "kind": "name",
+            "name": "playlist"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "start",
+    "advance",
+    "finish",
+    "abort",
+    "requeue"
+  ]
+}

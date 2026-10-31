@@ -1,0 +1,38 @@
+{
+  "name": "effects-of-atmosphere",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vp run -r build",
+    "check": "vp check",
+    "dev": "vp run -r --parallel dev",
+    "diff:check": "node --import tsx tools/ai-automation/scripts/diff-check/src/main.ts --config tools/ai-automation/scripts/diff-check/diff-check.config.json",
+    "format": "vp fmt",
+    "format:check": "vp fmt --check",
+    "knip": "knip",
+    "knip:deps": "knip --dependencies",
+    "knip:fix": "knip --fix",
+    "knip:mcp": "knip-mcp",
+    "lint": "vp lint",
+    "lint:fix": "vp lint --fix",
+    "postinstall": "node node_modules/@effect/tsgo/dist/effect-tsgo.cjs patch --typescript --no-oxlint",
+    "test": "vp test",
+    "test:coverage": "vp test --run --coverage",
+    "test:run": "vp test --run",
+    "typecheck": "vp run -r build && vp run -r --concurrency-limit=1 typecheck"
+  },
+  "devDependencies": {
+    "@knip/mcp": "catalog:",
+    "@opencode-ai/plugin": "catalog:",
+    "@types/node": "catalog:",
+    "@yielded/effect-tsrs": "catalog:",
+    "knip": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "pnpm@12.4.1"
+}

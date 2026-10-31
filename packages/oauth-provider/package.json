@@ -1,0 +1,53 @@
+{
+  "name": "@eoa/oauth-provider",
+  "version": "0.1.0",
+  "description": "The atproto OAuth provider: its token authority and, from M3 on, the authorization-server endpoints",
+  "keywords": [
+    "at-protocol",
+    "atproto",
+    "dpop",
+    "oauth",
+    "provider"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "build": "vp pack src/index.ts --dts",
+    "typecheck": "effect-tsrs diagnostics --project tsconfig.json --type-check",
+    "format": "vp fmt",
+    "lint": "vp lint",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@eoa/crypto": "workspace:*",
+    "@eoa/oauth": "workspace:*",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/platform-node": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "effect": "catalog:"
+  }
+}

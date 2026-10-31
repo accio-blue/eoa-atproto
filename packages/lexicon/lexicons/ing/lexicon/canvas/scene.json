@@ -1,0 +1,30 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.canvas.scene",
+  "description": "A canvas scene: nodes and edges with integer geometry. No camera: pan and zoom are UI state.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A scene owned by the tenant that stores it. A viewer's own rearrangement is a ing.lexicon.canvas.override record in the viewer's repo.",
+      "record": {
+        "type": "object",
+        "required": ["nodes", "edges", "createdAt"],
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "nodes": {
+            "type": "array",
+            "items": { "type": "ref", "ref": "ing.lexicon.canvas.defs#node" }
+          },
+          "edges": {
+            "type": "array",
+            "items": { "type": "ref", "ref": "ing.lexicon.canvas.defs#edge" }
+          },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

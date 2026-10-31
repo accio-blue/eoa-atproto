@@ -1,0 +1,117 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.cms.defs",
+  "description": "Shared definitions for the CMS: the field vocabulary a content type is built from, a slice instance, and a strong reference. A content model here is DATA — these defs describe the model, not any one document's values.",
+  "defs": {
+    "fieldDef": {
+      "type": "object",
+      "description": "One field in a content type or a slice variation. `type` is the field kind; the other properties are that kind's options. A group nests its own fields, so a type is a tree.",
+      "required": ["key", "type"],
+      "properties": {
+        "key": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "type": {
+          "type": "string",
+          "knownValues": [
+            "uid",
+            "text",
+            "richText",
+            "image",
+            "link",
+            "embed",
+            "number",
+            "boolean",
+            "date",
+            "timestamp",
+            "select",
+            "color",
+            "group",
+            "sections"
+          ]
+        },
+        "label": { "type": "string" },
+        "placeholder": { "type": "string" },
+        "tab": {
+          "type": "string",
+          "description": "Editor tab the field appears under (Prismic 'Main', 'SEO & Metadata')."
+        },
+        "required": { "type": "boolean" },
+        "repeat": {
+          "type": "boolean",
+          "description": "group: the value is a list of field sets, not one."
+        },
+        "fields": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#fieldDef" },
+          "description": "group: the nested fields."
+        },
+        "single": {
+          "type": "string",
+          "description": "richText: the one block kind allowed (e.g. heading1)."
+        },
+        "multi": {
+          "type": "string",
+          "description": "richText: comma-separated allowed block kinds."
+        },
+        "labels": { "type": "array", "items": { "type": "string" } },
+        "select": {
+          "type": "string",
+          "description": "link: what may be linked — document, media, web, or any."
+        },
+        "customtypes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "link: content-type keys a document link may point at."
+        },
+        "values": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "select: the allowed options."
+        },
+        "constraint": { "type": "ref", "ref": "#imageConstraint" },
+        "allowedSections": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "slices: the slice keys this zone allows. A KNOWN slice outside the list fails validation; an unknown sectionType always passes (the round-trip rule)."
+        },
+        "minSections": { "type": "integer", "minimum": 0 },
+        "maxSections": { "type": "integer", "minimum": 0 },
+        "maxDepth": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "slices: how deep nested zones may go, bounded by the validator's MAX_SECTION_DEPTH."
+        }
+      }
+    },
+    "imageConstraint": {
+      "type": "object",
+      "description": "An image field's expected dimensions (Prismic `constraint`).",
+      "properties": {
+        "width": { "type": "integer", "minimum": 0 },
+        "height": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "sectionEntry": {
+      "type": "object",
+      "description": "A slice instance in a document's body: which slice, which variation, and the values. `primary` and `items` are validated against the slice model, so the lexicon leaves them open.",
+      "required": ["sectionType", "variation"],
+      "properties": {
+        "id": { "type": "string" },
+        "sectionType": { "type": "string", "minLength": 1 },
+        "variation": { "type": "string", "minLength": 1 },
+        "version": { "type": "string" },
+        "label": { "type": "string" },
+        "primary": { "type": "unknown" },
+        "items": { "type": "unknown" }
+      }
+    },
+    "strongRef": {
+      "type": "object",
+      "description": "A stable reference to a record: its at-uri and the cid it was read at.",
+      "required": ["uri", "cid"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" }
+      }
+    }
+  }
+}

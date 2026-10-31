@@ -1,0 +1,959 @@
+{
+  "generatedFrom": "../../specs/feed-generators/generator-lifecycle.qnt",
+  "specHash": "9842e0f3cdaf6c63af89d3fbf3772c70130d1e1ad7440f33f8a430469525c438",
+  "module": "feed_generators_generator_lifecycle",
+  "vars": [
+    {
+      "name": "status",
+      "type": "str"
+    },
+    {
+      "name": "version",
+      "type": "int"
+    },
+    {
+      "name": "recordLive",
+      "type": "bool"
+    },
+    {
+      "name": "everPublished",
+      "type": "bool"
+    },
+    {
+      "name": "requests",
+      "type": "int"
+    },
+    {
+      "name": "served",
+      "type": "int"
+    },
+    {
+      "name": "rejected",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "isPublished": {
+      "kind": "function",
+      "params": [
+        "flag"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "flag"
+          },
+          {
+            "kind": "str",
+            "value": "published"
+          }
+        ]
+      }
+    },
+    "StatusValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "draft"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "published"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "retired"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RecordLiveMatchesStatus": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "recordLive"
+          },
+          {
+            "kind": "app",
+            "opcode": "isPublished",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AccountingExact": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "requests"
+          },
+          {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "served"
+              },
+              {
+                "kind": "name",
+                "name": "rejected"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "NoServeBeforePublish": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "served"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "everPublished"
+          }
+        ]
+      }
+    },
+    "PublishedHasVersion": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "everPublished"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "version"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CountersNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "version"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "requests"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "served"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "rejected"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "draft"
+          }
+        },
+        {
+          "field": "version",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "recordLive",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "everPublished",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "requests",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "rejected",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "publish",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "draft"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "published"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "version",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "draft"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "version"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "version"
+              }
+            ]
+          }
+        },
+        {
+          "field": "recordLive",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "draft"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "recordLive"
+              }
+            ]
+          }
+        },
+        {
+          "field": "everPublished",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "draft"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "everPublished"
+              }
+            ]
+          }
+        },
+        {
+          "field": "requests",
+          "rhs": {
+            "kind": "name",
+            "name": "requests"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "name",
+            "name": "served"
+          }
+        },
+        {
+          "field": "rejected",
+          "rhs": {
+            "kind": "name",
+            "name": "rejected"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update",
+      "nondet": {
+        "name": "bump",
+        "kind": "int",
+        "pool": [
+          "1",
+          "2"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "name",
+            "name": "status"
+          }
+        },
+        {
+          "field": "version",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "published"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "version"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "bump"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "version"
+              }
+            ]
+          }
+        },
+        {
+          "field": "recordLive",
+          "rhs": {
+            "kind": "name",
+            "name": "recordLive"
+          }
+        },
+        {
+          "field": "everPublished",
+          "rhs": {
+            "kind": "name",
+            "name": "everPublished"
+          }
+        },
+        {
+          "field": "requests",
+          "rhs": {
+            "kind": "name",
+            "name": "requests"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "name",
+            "name": "served"
+          }
+        },
+        {
+          "field": "rejected",
+          "rhs": {
+            "kind": "name",
+            "name": "rejected"
+          }
+        }
+      ]
+    },
+    {
+      "name": "retire",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "published"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "retired"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "version",
+          "rhs": {
+            "kind": "name",
+            "name": "version"
+          }
+        },
+        {
+          "field": "recordLive",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "published"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": false
+              },
+              {
+                "kind": "name",
+                "name": "recordLive"
+              }
+            ]
+          }
+        },
+        {
+          "field": "everPublished",
+          "rhs": {
+            "kind": "name",
+            "name": "everPublished"
+          }
+        },
+        {
+          "field": "requests",
+          "rhs": {
+            "kind": "name",
+            "name": "requests"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "name",
+            "name": "served"
+          }
+        },
+        {
+          "field": "rejected",
+          "rhs": {
+            "kind": "name",
+            "name": "rejected"
+          }
+        }
+      ]
+    },
+    {
+      "name": "restore",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "retired"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "published"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "version",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "retired"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "version"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "version"
+              }
+            ]
+          }
+        },
+        {
+          "field": "recordLive",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "retired"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "recordLive"
+              }
+            ]
+          }
+        },
+        {
+          "field": "everPublished",
+          "rhs": {
+            "kind": "name",
+            "name": "everPublished"
+          }
+        },
+        {
+          "field": "requests",
+          "rhs": {
+            "kind": "name",
+            "name": "requests"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "name",
+            "name": "served"
+          }
+        },
+        {
+          "field": "rejected",
+          "rhs": {
+            "kind": "name",
+            "name": "rejected"
+          }
+        }
+      ]
+    },
+    {
+      "name": "query",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "name",
+            "name": "status"
+          }
+        },
+        {
+          "field": "version",
+          "rhs": {
+            "kind": "name",
+            "name": "version"
+          }
+        },
+        {
+          "field": "recordLive",
+          "rhs": {
+            "kind": "name",
+            "name": "recordLive"
+          }
+        },
+        {
+          "field": "everPublished",
+          "rhs": {
+            "kind": "name",
+            "name": "everPublished"
+          }
+        },
+        {
+          "field": "requests",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "requests"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "recordLive"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "served"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "served"
+              }
+            ]
+          }
+        },
+        {
+          "field": "rejected",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "recordLive"
+              },
+              {
+                "kind": "name",
+                "name": "rejected"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "rejected"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "publish",
+    "update",
+    "retire",
+    "restore",
+    "query"
+  ]
+}

@@ -1,0 +1,795 @@
+{
+  "generatedFrom": "../../specs/_shared-proof/auth-decision.qnt",
+  "specHash": "2c89a1c3d7a8248b6d122457ba1a96c4c2b256602c8cf773c5b74f7663029267",
+  "module": "shared_proof_auth_decision",
+  "vars": [
+    {
+      "name": "grant",
+      "type": "str"
+    },
+    {
+      "name": "subjectOk",
+      "type": "bool"
+    },
+    {
+      "name": "verb",
+      "type": "str"
+    },
+    {
+      "name": "selectorOk",
+      "type": "bool"
+    },
+    {
+      "name": "expired",
+      "type": "bool"
+    },
+    {
+      "name": "allowed",
+      "type": "bool"
+    }
+  ],
+  "defs": {
+    "FailClosed": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "allowed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isActive",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "grant"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "subjectOk"
+              },
+              {
+                "kind": "app",
+                "opcode": "verbPermitted",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "verb"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "selectorOk"
+              },
+              {
+                "kind": "app",
+                "opcode": "not",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "expired"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "NoGrantNoAccess": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "isActive",
+            "args": [
+              {
+                "kind": "name",
+                "name": "grant"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "allowed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "isActive": {
+      "kind": "function",
+      "params": [
+        "grant"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "grant"
+          },
+          {
+            "kind": "str",
+            "value": "active"
+          }
+        ]
+      }
+    },
+    "verbPermitted": {
+      "kind": "function",
+      "params": [
+        "verb"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "verb"
+              },
+              {
+                "kind": "str",
+                "value": "view"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "verb"
+              },
+              {
+                "kind": "str",
+                "value": "write"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canAct": {
+      "kind": "function",
+      "params": [
+        "grant",
+        "subjectMatchesViewer",
+        "verb",
+        "selectorMatches",
+        "expired"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "isActive",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "grant"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "name",
+                        "name": "subjectMatchesViewer"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "verbPermitted",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "verb"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "selectorMatches"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "expired"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canView": {
+      "kind": "function",
+      "params": [
+        "grant",
+        "subjectMatchesViewer",
+        "selectorMatches",
+        "expired"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "canAct",
+        "args": [
+          {
+            "kind": "name",
+            "name": "grant"
+          },
+          {
+            "kind": "name",
+            "name": "subjectMatchesViewer"
+          },
+          {
+            "kind": "str",
+            "value": "view"
+          },
+          {
+            "kind": "name",
+            "name": "selectorMatches"
+          },
+          {
+            "kind": "name",
+            "name": "expired"
+          }
+        ]
+      }
+    },
+    "canWrite": {
+      "kind": "function",
+      "params": [
+        "grant",
+        "subjectMatchesViewer",
+        "selectorMatches",
+        "expired"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "canAct",
+        "args": [
+          {
+            "kind": "name",
+            "name": "grant"
+          },
+          {
+            "kind": "name",
+            "name": "subjectMatchesViewer"
+          },
+          {
+            "kind": "str",
+            "value": "write"
+          },
+          {
+            "kind": "name",
+            "name": "selectorMatches"
+          },
+          {
+            "kind": "name",
+            "name": "expired"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "grant",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "subjectOk",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "verb",
+          "rhs": {
+            "kind": "str",
+            "value": "view"
+          }
+        },
+        {
+          "field": "selectorOk",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "expired",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "allowed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "canAct",
+            "args": [
+              {
+                "kind": "str",
+                "value": "none"
+              },
+              {
+                "kind": "bool",
+                "value": false
+              },
+              {
+                "kind": "str",
+                "value": "view"
+              },
+              {
+                "kind": "bool",
+                "value": false
+              },
+              {
+                "kind": "bool",
+                "value": false
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "setGrant",
+      "nondet": {
+        "name": "g",
+        "kind": "str",
+        "pool": [
+          "none",
+          "active",
+          "revoked"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "grant",
+          "rhs": {
+            "kind": "name",
+            "name": "g"
+          }
+        },
+        {
+          "field": "subjectOk",
+          "rhs": {
+            "kind": "name",
+            "name": "subjectOk"
+          }
+        },
+        {
+          "field": "verb",
+          "rhs": {
+            "kind": "name",
+            "name": "verb"
+          }
+        },
+        {
+          "field": "selectorOk",
+          "rhs": {
+            "kind": "name",
+            "name": "selectorOk"
+          }
+        },
+        {
+          "field": "expired",
+          "rhs": {
+            "kind": "name",
+            "name": "expired"
+          }
+        },
+        {
+          "field": "allowed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "canAct",
+            "args": [
+              {
+                "kind": "name",
+                "name": "g"
+              },
+              {
+                "kind": "name",
+                "name": "subjectOk"
+              },
+              {
+                "kind": "name",
+                "name": "verb"
+              },
+              {
+                "kind": "name",
+                "name": "selectorOk"
+              },
+              {
+                "kind": "name",
+                "name": "expired"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "setSubjectOk",
+      "nondet": {
+        "name": "b",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "grant",
+          "rhs": {
+            "kind": "name",
+            "name": "grant"
+          }
+        },
+        {
+          "field": "subjectOk",
+          "rhs": {
+            "kind": "name",
+            "name": "b"
+          }
+        },
+        {
+          "field": "verb",
+          "rhs": {
+            "kind": "name",
+            "name": "verb"
+          }
+        },
+        {
+          "field": "selectorOk",
+          "rhs": {
+            "kind": "name",
+            "name": "selectorOk"
+          }
+        },
+        {
+          "field": "expired",
+          "rhs": {
+            "kind": "name",
+            "name": "expired"
+          }
+        },
+        {
+          "field": "allowed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "canAct",
+            "args": [
+              {
+                "kind": "name",
+                "name": "grant"
+              },
+              {
+                "kind": "name",
+                "name": "b"
+              },
+              {
+                "kind": "name",
+                "name": "verb"
+              },
+              {
+                "kind": "name",
+                "name": "selectorOk"
+              },
+              {
+                "kind": "name",
+                "name": "expired"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "setVerb",
+      "nondet": {
+        "name": "v",
+        "kind": "str",
+        "pool": [
+          "view",
+          "write",
+          "admin"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "grant",
+          "rhs": {
+            "kind": "name",
+            "name": "grant"
+          }
+        },
+        {
+          "field": "subjectOk",
+          "rhs": {
+            "kind": "name",
+            "name": "subjectOk"
+          }
+        },
+        {
+          "field": "verb",
+          "rhs": {
+            "kind": "name",
+            "name": "v"
+          }
+        },
+        {
+          "field": "selectorOk",
+          "rhs": {
+            "kind": "name",
+            "name": "selectorOk"
+          }
+        },
+        {
+          "field": "expired",
+          "rhs": {
+            "kind": "name",
+            "name": "expired"
+          }
+        },
+        {
+          "field": "allowed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "canAct",
+            "args": [
+              {
+                "kind": "name",
+                "name": "grant"
+              },
+              {
+                "kind": "name",
+                "name": "subjectOk"
+              },
+              {
+                "kind": "name",
+                "name": "v"
+              },
+              {
+                "kind": "name",
+                "name": "selectorOk"
+              },
+              {
+                "kind": "name",
+                "name": "expired"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "setSelectorOk",
+      "nondet": {
+        "name": "b",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "grant",
+          "rhs": {
+            "kind": "name",
+            "name": "grant"
+          }
+        },
+        {
+          "field": "subjectOk",
+          "rhs": {
+            "kind": "name",
+            "name": "subjectOk"
+          }
+        },
+        {
+          "field": "verb",
+          "rhs": {
+            "kind": "name",
+            "name": "verb"
+          }
+        },
+        {
+          "field": "selectorOk",
+          "rhs": {
+            "kind": "name",
+            "name": "b"
+          }
+        },
+        {
+          "field": "expired",
+          "rhs": {
+            "kind": "name",
+            "name": "expired"
+          }
+        },
+        {
+          "field": "allowed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "canAct",
+            "args": [
+              {
+                "kind": "name",
+                "name": "grant"
+              },
+              {
+                "kind": "name",
+                "name": "subjectOk"
+              },
+              {
+                "kind": "name",
+                "name": "verb"
+              },
+              {
+                "kind": "name",
+                "name": "b"
+              },
+              {
+                "kind": "name",
+                "name": "expired"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "setExpired",
+      "nondet": {
+        "name": "b",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "grant",
+          "rhs": {
+            "kind": "name",
+            "name": "grant"
+          }
+        },
+        {
+          "field": "subjectOk",
+          "rhs": {
+            "kind": "name",
+            "name": "subjectOk"
+          }
+        },
+        {
+          "field": "verb",
+          "rhs": {
+            "kind": "name",
+            "name": "verb"
+          }
+        },
+        {
+          "field": "selectorOk",
+          "rhs": {
+            "kind": "name",
+            "name": "selectorOk"
+          }
+        },
+        {
+          "field": "expired",
+          "rhs": {
+            "kind": "name",
+            "name": "b"
+          }
+        },
+        {
+          "field": "allowed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "canAct",
+            "args": [
+              {
+                "kind": "name",
+                "name": "grant"
+              },
+              {
+                "kind": "name",
+                "name": "subjectOk"
+              },
+              {
+                "kind": "name",
+                "name": "verb"
+              },
+              {
+                "kind": "name",
+                "name": "selectorOk"
+              },
+              {
+                "kind": "name",
+                "name": "b"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "setGrant",
+    "setSubjectOk",
+    "setVerb",
+    "setSelectorOk",
+    "setExpired"
+  ]
+}

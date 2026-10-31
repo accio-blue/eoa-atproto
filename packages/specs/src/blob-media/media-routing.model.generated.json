@@ -1,0 +1,1423 @@
+{
+  "generatedFrom": "../../specs/blob-media/media-routing.qnt",
+  "specHash": "efc750d46347f9c7de32e91baedcd796c8fc208ca84175ba0f246bf6257e06b5",
+  "module": "blob_media_media_routing",
+  "vars": [
+    {
+      "name": "phase",
+      "type": "str"
+    },
+    {
+      "name": "requested",
+      "type": "str"
+    },
+    {
+      "name": "availability",
+      "type": "str"
+    },
+    {
+      "name": "route",
+      "type": "str"
+    },
+    {
+      "name": "served",
+      "type": "int"
+    },
+    {
+      "name": "redirected",
+      "type": "int"
+    },
+    {
+      "name": "rejected",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "isLocal": {
+      "kind": "function",
+      "params": [
+        "want"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "want"
+              },
+              {
+                "kind": "str",
+                "value": "cache"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "want"
+              },
+              {
+                "kind": "str",
+                "value": "derive"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "PhaseValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "routing"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "resolved"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "served"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "redirected"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "rejected"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RouteValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "route"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "route"
+              },
+              {
+                "kind": "str",
+                "value": "cache"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "route"
+              },
+              {
+                "kind": "str",
+                "value": "derive"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "route"
+              },
+              {
+                "kind": "str",
+                "value": "origin"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "route"
+              },
+              {
+                "kind": "str",
+                "value": "reject"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CountersNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "served"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "redirected"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "rejected"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ResolvedHasRoute": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "resolved"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "route"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "IdleHasNoRoute": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "route"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ServedLocally": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "served"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isLocal",
+            "args": [
+              {
+                "kind": "name",
+                "name": "route"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RejectOnlyUnknown": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "rejected"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "requested"
+              },
+              {
+                "kind": "str",
+                "value": "unknown"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "availability",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "route",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "redirected",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "rejected",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "accept",
+      "nondet": {
+        "name": "pick",
+        "kind": "str",
+        "pool": [
+          "thumb",
+          "feed",
+          "full",
+          "unknown"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "idle"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "routing"
+              },
+              {
+                "kind": "name",
+                "name": "phase"
+              }
+            ]
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "idle"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "pick"
+              },
+              {
+                "kind": "name",
+                "name": "requested"
+              }
+            ]
+          }
+        },
+        {
+          "field": "availability",
+          "rhs": {
+            "kind": "name",
+            "name": "availability"
+          }
+        },
+        {
+          "field": "route",
+          "rhs": {
+            "kind": "name",
+            "name": "route"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "name",
+            "name": "served"
+          }
+        },
+        {
+          "field": "redirected",
+          "rhs": {
+            "kind": "name",
+            "name": "redirected"
+          }
+        },
+        {
+          "field": "rejected",
+          "rhs": {
+            "kind": "name",
+            "name": "rejected"
+          }
+        }
+      ]
+    },
+    {
+      "name": "probe",
+      "nondet": {
+        "name": "found",
+        "kind": "str",
+        "pool": [
+          "hot",
+          "cold",
+          "remote"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "routing"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "resolved"
+              },
+              {
+                "kind": "name",
+                "name": "phase"
+              }
+            ]
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "name",
+            "name": "requested"
+          }
+        },
+        {
+          "field": "availability",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "routing"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "found"
+              },
+              {
+                "kind": "name",
+                "name": "availability"
+              }
+            ]
+          }
+        },
+        {
+          "field": "route",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "routing"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "requested"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "unknown"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "reject"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "ite",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "found"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "hot"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "str",
+                        "value": "cache"
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "ite",
+                        "args": [
+                          {
+                            "kind": "app",
+                            "opcode": "eq",
+                            "args": [
+                              {
+                                "kind": "name",
+                                "name": "found"
+                              },
+                              {
+                                "kind": "str",
+                                "value": "cold"
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "str",
+                            "value": "derive"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "origin"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "route"
+              }
+            ]
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "name",
+            "name": "served"
+          }
+        },
+        {
+          "field": "redirected",
+          "rhs": {
+            "kind": "name",
+            "name": "redirected"
+          }
+        },
+        {
+          "field": "rejected",
+          "rhs": {
+            "kind": "name",
+            "name": "rejected"
+          }
+        }
+      ]
+    },
+    {
+      "name": "deliver",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "resolved"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "isLocal",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "route"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "served"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "ite",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "route"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "origin"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "str",
+                        "value": "redirected"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "rejected"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "phase"
+              }
+            ]
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "name",
+            "name": "requested"
+          }
+        },
+        {
+          "field": "availability",
+          "rhs": {
+            "kind": "name",
+            "name": "availability"
+          }
+        },
+        {
+          "field": "route",
+          "rhs": {
+            "kind": "name",
+            "name": "route"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "resolved"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "isLocal",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "route"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "served"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "served"
+              }
+            ]
+          }
+        },
+        {
+          "field": "redirected",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "resolved"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "route"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "origin"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "redirected"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "redirected"
+              }
+            ]
+          }
+        },
+        {
+          "field": "rejected",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "resolved"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "route"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "reject"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "rejected"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "rejected"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "reset",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "or",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "phase"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "served"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "phase"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "redirected"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "rejected"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              },
+              {
+                "kind": "name",
+                "name": "phase"
+              }
+            ]
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "or",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "phase"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "served"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "phase"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "redirected"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "rejected"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              },
+              {
+                "kind": "name",
+                "name": "requested"
+              }
+            ]
+          }
+        },
+        {
+          "field": "availability",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "or",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "phase"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "served"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "phase"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "redirected"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "rejected"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              },
+              {
+                "kind": "name",
+                "name": "availability"
+              }
+            ]
+          }
+        },
+        {
+          "field": "route",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "or",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "phase"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "served"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "phase"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "redirected"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "rejected"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              },
+              {
+                "kind": "name",
+                "name": "route"
+              }
+            ]
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "name",
+            "name": "served"
+          }
+        },
+        {
+          "field": "redirected",
+          "rhs": {
+            "kind": "name",
+            "name": "redirected"
+          }
+        },
+        {
+          "field": "rejected",
+          "rhs": {
+            "kind": "name",
+            "name": "rejected"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "accept",
+    "probe",
+    "deliver",
+    "reset"
+  ]
+}

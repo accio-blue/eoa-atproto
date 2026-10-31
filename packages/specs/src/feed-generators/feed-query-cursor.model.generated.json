@@ -1,0 +1,779 @@
+{
+  "generatedFrom": "../../specs/feed-generators/feed-query-cursor.qnt",
+  "specHash": "1d3b589f05482ccf32ad43f429751228fad59c88328a248853adc7b8bda5927c",
+  "module": "feed_generators_feed_query_cursor",
+  "vars": [
+    {
+      "name": "status",
+      "type": "str"
+    },
+    {
+      "name": "fetched",
+      "type": "int"
+    },
+    {
+      "name": "served",
+      "type": "int"
+    },
+    {
+      "name": "deduped",
+      "type": "int"
+    },
+    {
+      "name": "cursor",
+      "type": "int"
+    },
+    {
+      "name": "pages",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "StatusValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "serving"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "exhausted"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AccountingExact": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "fetched"
+          },
+          {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "served"
+              },
+              {
+                "kind": "name",
+                "name": "deduped"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CursorTracksServed": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "cursor"
+          },
+          {
+            "kind": "name",
+            "name": "served"
+          }
+        ]
+      }
+    },
+    "CountersNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "fetched"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "served"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "deduped"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "cursor"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "pages"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "fetched",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "deduped",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "pages",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "open",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "idle"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "serving"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "fetched",
+          "rhs": {
+            "kind": "name",
+            "name": "fetched"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "name",
+            "name": "served"
+          }
+        },
+        {
+          "field": "deduped",
+          "rhs": {
+            "kind": "name",
+            "name": "deduped"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "pages",
+          "rhs": {
+            "kind": "name",
+            "name": "pages"
+          }
+        }
+      ]
+    },
+    {
+      "name": "page",
+      "nondet": {
+        "name": "fresh",
+        "kind": "int",
+        "pool": [
+          "0",
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "status"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "serving"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "fresh"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "0"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "exhausted"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "fetched",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "serving"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "fetched"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "fresh"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "fetched"
+              }
+            ]
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "serving"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "served"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "fresh"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "served"
+              }
+            ]
+          }
+        },
+        {
+          "field": "deduped",
+          "rhs": {
+            "kind": "name",
+            "name": "deduped"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "serving"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "served"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "fresh"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "cursor"
+              }
+            ]
+          }
+        },
+        {
+          "field": "pages",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "serving"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "pages"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "pages"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "replay",
+      "nondet": {
+        "name": "stale",
+        "kind": "int",
+        "pool": [
+          "1",
+          "2"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "name",
+            "name": "status"
+          }
+        },
+        {
+          "field": "fetched",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "serving"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "fetched"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "stale"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "fetched"
+              }
+            ]
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "name",
+            "name": "served"
+          }
+        },
+        {
+          "field": "deduped",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "serving"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "deduped"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "stale"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "deduped"
+              }
+            ]
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "pages",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "serving"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "pages"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "pages"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "reset",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "fetched",
+          "rhs": {
+            "kind": "name",
+            "name": "fetched"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "name",
+            "name": "served"
+          }
+        },
+        {
+          "field": "deduped",
+          "rhs": {
+            "kind": "name",
+            "name": "deduped"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "pages",
+          "rhs": {
+            "kind": "name",
+            "name": "pages"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "open",
+    "page",
+    "replay",
+    "reset"
+  ]
+}

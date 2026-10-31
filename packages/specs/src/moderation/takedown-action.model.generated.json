@@ -1,0 +1,845 @@
+{
+  "generatedFrom": "../../specs/moderation/takedown-action.qnt",
+  "specHash": "edfbdfed25af198ccada95523a27ad2bdee59b8fa39d4a53d01bd69955878cdf",
+  "module": "moderation_takedown_action",
+  "vars": [
+    {
+      "name": "enforcement",
+      "type": "str"
+    },
+    {
+      "name": "stage",
+      "type": "str"
+    },
+    {
+      "name": "temporary",
+      "type": "bool"
+    },
+    {
+      "name": "applied",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "enforceable": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "str",
+                "value": "label"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "str",
+                "value": "takedown"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "EnforcementValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "enforcement"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "enforcement"
+              },
+              {
+                "kind": "str",
+                "value": "label"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "enforcement"
+              },
+              {
+                "kind": "str",
+                "value": "takedown"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "StageValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "reversed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "expired"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ActiveHasEnforcement": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "enforceable",
+            "args": [
+              {
+                "kind": "name",
+                "name": "enforcement"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ExpiredWasTemporary": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "expired"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "temporary"
+          }
+        ]
+      }
+    },
+    "ReversedHasEnforcement": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "reversed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "enforceable",
+            "args": [
+              {
+                "kind": "name",
+                "name": "enforcement"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "EnforcementApplied": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "applied"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AppliedNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "nonNegative",
+        "args": [
+          {
+            "kind": "name",
+            "name": "applied"
+          }
+        ]
+      }
+    },
+    "nonNegative": {
+      "kind": "function",
+      "params": [
+        "x"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "x"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "nonPositive": {
+      "kind": "function",
+      "params": [
+        "x"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "x"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "positive": {
+      "kind": "function",
+      "params": [
+        "x"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "igt",
+        "args": [
+          {
+            "kind": "name",
+            "name": "x"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "inRange": {
+      "kind": "function",
+      "params": [
+        "x",
+        "low",
+        "high"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "x"
+              },
+              {
+                "kind": "name",
+                "name": "low"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "x"
+              },
+              {
+                "kind": "name",
+                "name": "high"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "monotone": {
+      "kind": "function",
+      "params": [
+        "after",
+        "previous"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "after"
+          },
+          {
+            "kind": "name",
+            "name": "previous"
+          }
+        ]
+      }
+    },
+    "implication": {
+      "kind": "function",
+      "params": [
+        "condition",
+        "consequence"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "condition"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "consequence"
+          }
+        ]
+      }
+    },
+    "exclusive": {
+      "kind": "function",
+      "params": [
+        "a",
+        "b"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "neq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "a"
+          },
+          {
+            "kind": "name",
+            "name": "b"
+          }
+        ]
+      }
+    },
+    "unchanged": {
+      "kind": "function",
+      "params": [
+        "after",
+        "previous"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "after"
+          },
+          {
+            "kind": "name",
+            "name": "previous"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "enforcement",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "temporary",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "applied",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "apply",
+      "nondet": {
+        "name": "kind",
+        "kind": "str",
+        "pool": [
+          "label",
+          "takedown"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "enforcement",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "neq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "active"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "kind"
+              },
+              {
+                "kind": "name",
+                "name": "enforcement"
+              }
+            ]
+          }
+        },
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "neq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "active"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "temporary",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "neq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "active"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "kind"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "label"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "temporary"
+              }
+            ]
+          }
+        },
+        {
+          "field": "applied",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "neq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "active"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "applied"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "applied"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "reverse",
+      "assignments": [
+        {
+          "field": "enforcement",
+          "rhs": {
+            "kind": "name",
+            "name": "enforcement"
+          }
+        },
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "active"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "reversed"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "temporary",
+          "rhs": {
+            "kind": "name",
+            "name": "temporary"
+          }
+        },
+        {
+          "field": "applied",
+          "rhs": {
+            "kind": "name",
+            "name": "applied"
+          }
+        }
+      ]
+    },
+    {
+      "name": "expire",
+      "assignments": [
+        {
+          "field": "enforcement",
+          "rhs": {
+            "kind": "name",
+            "name": "enforcement"
+          }
+        },
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "active"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "temporary"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "expired"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "temporary",
+          "rhs": {
+            "kind": "name",
+            "name": "temporary"
+          }
+        },
+        {
+          "field": "applied",
+          "rhs": {
+            "kind": "name",
+            "name": "applied"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "apply",
+    "reverse",
+    "expire"
+  ]
+}

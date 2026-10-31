@@ -1,0 +1,711 @@
+{
+  "generatedFrom": "../../specs/notifications/delivery-lifecycle.qnt",
+  "specHash": "385626ddd3b17f9a3cd64f223a3652c45761c215ff2ece451f45fd9b48f1d1cf",
+  "module": "notifications_delivery_lifecycle",
+  "vars": [
+    {
+      "name": "stage",
+      "type": "str"
+    },
+    {
+      "name": "attempts",
+      "type": "int"
+    },
+    {
+      "name": "unread",
+      "type": "int"
+    },
+    {
+      "name": "pushed",
+      "type": "bool"
+    }
+  ],
+  "defs": {
+    "deliverable": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "str",
+                "value": "created"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "str",
+                "value": "failed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "StageValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "created"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "delivered"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "failed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "read"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "withdrawn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "UnreadBound": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "unread"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "unread"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "UnreadOnlyWhenDelivered": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "unread"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "delivered"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "PushedImpliesAttempt": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "pushed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "attempts"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ReadStaysCleared": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "read"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "unread"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AttemptsNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "attempts"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "created"
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "unread",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "pushed",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "deliver",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "deliverable",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "delivered"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "deliverable",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "stage"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "not",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "ok"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "failed"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "deliverable",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "attempts"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "attempts"
+              }
+            ]
+          }
+        },
+        {
+          "field": "unread",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "deliverable",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              },
+              {
+                "kind": "name",
+                "name": "unread"
+              }
+            ]
+          }
+        },
+        {
+          "field": "pushed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "deliverable",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "pushed"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "read",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "delivered"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "read"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "name",
+            "name": "attempts"
+          }
+        },
+        {
+          "field": "unread",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "delivered"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              },
+              {
+                "kind": "name",
+                "name": "unread"
+              }
+            ]
+          }
+        },
+        {
+          "field": "pushed",
+          "rhs": {
+            "kind": "name",
+            "name": "pushed"
+          }
+        }
+      ]
+    },
+    {
+      "name": "withdraw",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "read"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "withdrawn"
+              }
+            ]
+          }
+        },
+        {
+          "field": "attempts",
+          "rhs": {
+            "kind": "name",
+            "name": "attempts"
+          }
+        },
+        {
+          "field": "unread",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "read"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "unread"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        },
+        {
+          "field": "pushed",
+          "rhs": {
+            "kind": "name",
+            "name": "pushed"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "deliver",
+    "read",
+    "withdraw"
+  ]
+}

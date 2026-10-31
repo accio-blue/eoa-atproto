@@ -1,0 +1,1111 @@
+{
+  "generatedFrom": "../../specs/blob-media/transform-pipeline.qnt",
+  "specHash": "69fa0bf66eec36fb951d4dff187b9c2365870661141505fa0cd2ab90af2a4ac2",
+  "module": "blob_media_transform_pipeline",
+  "vars": [
+    {
+      "name": "phase",
+      "type": "str"
+    },
+    {
+      "name": "wanted",
+      "type": "str"
+    },
+    {
+      "name": "cached",
+      "type": "str"
+    },
+    {
+      "name": "cache",
+      "type": "str"
+    },
+    {
+      "name": "derived",
+      "type": "int"
+    },
+    {
+      "name": "hits",
+      "type": "int"
+    },
+    {
+      "name": "served",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "isWarm": {
+      "kind": "function",
+      "params": [
+        "look"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "look"
+          },
+          {
+            "kind": "str",
+            "value": "warm"
+          }
+        ]
+      }
+    },
+    "cacheHit": {
+      "kind": "function",
+      "params": [
+        "warm",
+        "asked",
+        "held"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "name",
+            "name": "warm"
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "asked"
+              },
+              {
+                "kind": "name",
+                "name": "held"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "PhaseValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "deriving"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "phase"
+              },
+              {
+                "kind": "str",
+                "value": "serving"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "WantedValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "wanted"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "wanted"
+              },
+              {
+                "kind": "str",
+                "value": "thumb"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "wanted"
+              },
+              {
+                "kind": "str",
+                "value": "feed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "wanted"
+              },
+              {
+                "kind": "str",
+                "value": "full"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CachedValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "cached"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "cached"
+              },
+              {
+                "kind": "str",
+                "value": "thumb"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "cached"
+              },
+              {
+                "kind": "str",
+                "value": "feed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "cached"
+              },
+              {
+                "kind": "str",
+                "value": "full"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CacheValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "cache"
+              },
+              {
+                "kind": "str",
+                "value": "cold"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "cache"
+              },
+              {
+                "kind": "str",
+                "value": "warm"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CountersNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "derived"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "hits"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "served"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ServedBacked": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "served"
+          },
+          {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "hits"
+              },
+              {
+                "kind": "name",
+                "name": "derived"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "WarmImpliesDerived": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "cache"
+              },
+              {
+                "kind": "str",
+                "value": "warm"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "derived"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "neq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "cached"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "wanted",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "cached",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "cache",
+          "rhs": {
+            "kind": "str",
+            "value": "cold"
+          }
+        },
+        {
+          "field": "derived",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "hits",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "request",
+      "nondet": {
+        "name": "pick",
+        "kind": "str",
+        "pool": [
+          "thumb",
+          "feed",
+          "full"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "idle"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "cacheHit",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "isWarm",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "cache"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "name",
+                        "name": "pick"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "cached"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "serving"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "deriving"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "phase"
+              }
+            ]
+          }
+        },
+        {
+          "field": "wanted",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "idle"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "pick"
+              },
+              {
+                "kind": "name",
+                "name": "wanted"
+              }
+            ]
+          }
+        },
+        {
+          "field": "cached",
+          "rhs": {
+            "kind": "name",
+            "name": "cached"
+          }
+        },
+        {
+          "field": "cache",
+          "rhs": {
+            "kind": "name",
+            "name": "cache"
+          }
+        },
+        {
+          "field": "derived",
+          "rhs": {
+            "kind": "name",
+            "name": "derived"
+          }
+        },
+        {
+          "field": "hits",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "idle"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "cacheHit",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "isWarm",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "cache"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "name",
+                        "name": "pick"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "cached"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "hits"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "hits"
+              }
+            ]
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "phase"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "idle"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "cacheHit",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "isWarm",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "cache"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "name",
+                        "name": "pick"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "cached"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "served"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "served"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "derive",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "deriving"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "serving"
+              },
+              {
+                "kind": "name",
+                "name": "phase"
+              }
+            ]
+          }
+        },
+        {
+          "field": "wanted",
+          "rhs": {
+            "kind": "name",
+            "name": "wanted"
+          }
+        },
+        {
+          "field": "cached",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "deriving"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "wanted"
+              },
+              {
+                "kind": "name",
+                "name": "cached"
+              }
+            ]
+          }
+        },
+        {
+          "field": "cache",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "deriving"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "warm"
+              },
+              {
+                "kind": "name",
+                "name": "cache"
+              }
+            ]
+          }
+        },
+        {
+          "field": "derived",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "deriving"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "derived"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "derived"
+              }
+            ]
+          }
+        },
+        {
+          "field": "hits",
+          "rhs": {
+            "kind": "name",
+            "name": "hits"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "deriving"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "served"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "served"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "settle",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "phase"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "serving"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              },
+              {
+                "kind": "name",
+                "name": "phase"
+              }
+            ]
+          }
+        },
+        {
+          "field": "wanted",
+          "rhs": {
+            "kind": "name",
+            "name": "wanted"
+          }
+        },
+        {
+          "field": "cached",
+          "rhs": {
+            "kind": "name",
+            "name": "cached"
+          }
+        },
+        {
+          "field": "cache",
+          "rhs": {
+            "kind": "name",
+            "name": "cache"
+          }
+        },
+        {
+          "field": "derived",
+          "rhs": {
+            "kind": "name",
+            "name": "derived"
+          }
+        },
+        {
+          "field": "hits",
+          "rhs": {
+            "kind": "name",
+            "name": "hits"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "name",
+            "name": "served"
+          }
+        }
+      ]
+    },
+    {
+      "name": "evict",
+      "assignments": [
+        {
+          "field": "phase",
+          "rhs": {
+            "kind": "name",
+            "name": "phase"
+          }
+        },
+        {
+          "field": "wanted",
+          "rhs": {
+            "kind": "name",
+            "name": "wanted"
+          }
+        },
+        {
+          "field": "cached",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "cache",
+          "rhs": {
+            "kind": "str",
+            "value": "cold"
+          }
+        },
+        {
+          "field": "derived",
+          "rhs": {
+            "kind": "name",
+            "name": "derived"
+          }
+        },
+        {
+          "field": "hits",
+          "rhs": {
+            "kind": "name",
+            "name": "hits"
+          }
+        },
+        {
+          "field": "served",
+          "rhs": {
+            "kind": "name",
+            "name": "served"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "request",
+    "derive",
+    "settle",
+    "evict"
+  ]
+}

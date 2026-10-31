@@ -1,0 +1,438 @@
+{
+  "generatedFrom": "../../specs/payments/access-decoupling.qnt",
+  "specHash": "5b0814020c6eb45f7fa1027d71ee80a233d10126f408712e71c40bea1b7cc2ea",
+  "module": "payments_access_decoupling",
+  "vars": [
+    {
+      "name": "billing",
+      "type": "str"
+    },
+    {
+      "name": "accessGrant",
+      "type": "bool"
+    },
+    {
+      "name": "accessDecision",
+      "type": "str"
+    }
+  ],
+  "defs": {
+    "billingKnown": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "value"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "active"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "value"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "grace"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "or",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "value"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "lapsed"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "value"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "refunded"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "BillingValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "billingKnown",
+        "args": [
+          {
+            "kind": "name",
+            "name": "billing"
+          }
+        ]
+      }
+    },
+    "DecisionValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "accessDecision"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "accessDecision"
+              },
+              {
+                "kind": "str",
+                "value": "allowed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "accessDecision"
+              },
+              {
+                "kind": "str",
+                "value": "denied"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AccessFollowsGrantOnly": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "accessDecision"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "accessDecision"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "allowed"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "accessGrant"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "accessDecision"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "denied"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "not",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "accessGrant"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "PaymentNeverGrantsAccess": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "accessDecision"
+              },
+              {
+                "kind": "str",
+                "value": "allowed"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "accessGrant"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "billing",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "accessGrant",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "accessDecision",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "setBilling",
+      "nondet": {
+        "name": "value",
+        "kind": "str",
+        "pool": [
+          "none",
+          "active",
+          "grace",
+          "lapsed",
+          "refunded"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "billing",
+          "rhs": {
+            "kind": "name",
+            "name": "value"
+          }
+        },
+        {
+          "field": "accessGrant",
+          "rhs": {
+            "kind": "name",
+            "name": "accessGrant"
+          }
+        },
+        {
+          "field": "accessDecision",
+          "rhs": {
+            "kind": "name",
+            "name": "accessDecision"
+          }
+        }
+      ]
+    },
+    {
+      "name": "setAccessGrant",
+      "nondet": {
+        "name": "granted",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "billing",
+          "rhs": {
+            "kind": "name",
+            "name": "billing"
+          }
+        },
+        {
+          "field": "accessGrant",
+          "rhs": {
+            "kind": "name",
+            "name": "granted"
+          }
+        },
+        {
+          "field": "accessDecision",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "evaluateAccess",
+      "assignments": [
+        {
+          "field": "billing",
+          "rhs": {
+            "kind": "name",
+            "name": "billing"
+          }
+        },
+        {
+          "field": "accessGrant",
+          "rhs": {
+            "kind": "name",
+            "name": "accessGrant"
+          }
+        },
+        {
+          "field": "accessDecision",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "accessGrant"
+              },
+              {
+                "kind": "str",
+                "value": "allowed"
+              },
+              {
+                "kind": "str",
+                "value": "denied"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "setBilling",
+    "setAccessGrant",
+    "evaluateAccess"
+  ]
+}

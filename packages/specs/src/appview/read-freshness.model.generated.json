@@ -1,0 +1,450 @@
+{
+  "generatedFrom": "../../specs/appview/read-freshness.qnt",
+  "specHash": "9b5ef38f81e382f496371e5cd2997b18e2ad4cb958beb69eac868e477e5cffe4",
+  "module": "appview_read_freshness",
+  "vars": [
+    {
+      "name": "indexVersion",
+      "type": "int"
+    },
+    {
+      "name": "projectionVersion",
+      "type": "int"
+    },
+    {
+      "name": "servedVersion",
+      "type": "int"
+    },
+    {
+      "name": "state",
+      "type": "str"
+    }
+  ],
+  "defs": {
+    "IndexConsistent": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "projectionVersion"
+          },
+          {
+            "kind": "name",
+            "name": "indexVersion"
+          }
+        ]
+      }
+    },
+    "NoReadAheadOfProjection": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "servedVersion"
+          },
+          {
+            "kind": "name",
+            "name": "projectionVersion"
+          }
+        ]
+      }
+    },
+    "FreshnessStateValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "fresh"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "lagging"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "FreshnessBound": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "fresh"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "projectionVersion"
+              },
+              {
+                "kind": "name",
+                "name": "indexVersion"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "indexVersion",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "projectionVersion",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "servedVersion",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "str",
+            "value": "fresh"
+          }
+        }
+      ]
+    },
+    {
+      "name": "advanceIndex",
+      "nondet": {
+        "name": "step",
+        "kind": "int",
+        "pool": [
+          "1",
+          "2"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "indexVersion",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "indexVersion"
+              },
+              {
+                "kind": "name",
+                "name": "step"
+              }
+            ]
+          }
+        },
+        {
+          "field": "projectionVersion",
+          "rhs": {
+            "kind": "name",
+            "name": "projectionVersion"
+          }
+        },
+        {
+          "field": "servedVersion",
+          "rhs": {
+            "kind": "name",
+            "name": "servedVersion"
+          }
+        },
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "ilt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "projectionVersion"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "iadd",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "indexVersion"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "step"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "lagging"
+              },
+              {
+                "kind": "str",
+                "value": "fresh"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "refreshProjection",
+      "nondet": {
+        "name": "step",
+        "kind": "int",
+        "pool": [
+          "1",
+          "2"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "projectionVersion",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igte",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "iadd",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "projectionVersion"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "step"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "indexVersion"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "indexVersion"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "projectionVersion"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "step"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "indexVersion",
+          "rhs": {
+            "kind": "name",
+            "name": "indexVersion"
+          }
+        },
+        {
+          "field": "servedVersion",
+          "rhs": {
+            "kind": "name",
+            "name": "servedVersion"
+          }
+        },
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igte",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "iadd",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "projectionVersion"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "step"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "indexVersion"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "fresh"
+              },
+              {
+                "kind": "str",
+                "value": "lagging"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "read",
+      "nondet": {
+        "name": "snapshot",
+        "kind": "int",
+        "pool": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "5"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "servedVersion",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "ilte",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "snapshot"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "projectionVersion"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "snapshot"
+              },
+              {
+                "kind": "name",
+                "name": "servedVersion"
+              }
+            ]
+          }
+        },
+        {
+          "field": "indexVersion",
+          "rhs": {
+            "kind": "name",
+            "name": "indexVersion"
+          }
+        },
+        {
+          "field": "projectionVersion",
+          "rhs": {
+            "kind": "name",
+            "name": "projectionVersion"
+          }
+        },
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "name",
+            "name": "state"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "advanceIndex",
+    "refreshProjection",
+    "read"
+  ]
+}

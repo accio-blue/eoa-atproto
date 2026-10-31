@@ -1,0 +1,824 @@
+{
+  "generatedFrom": "../../specs/plugin-host/plugin_lifecycle.qnt",
+  "specHash": "c6ac281c1090ed90c33406b283e11fa4fcf182f0ff70bf6b19945e1e0909b0d3",
+  "module": "plugin_lifecycle",
+  "vars": [
+    {
+      "name": "status",
+      "type": "str"
+    },
+    {
+      "name": "manifest",
+      "type": "str"
+    },
+    {
+      "name": "gate",
+      "type": "str"
+    },
+    {
+      "name": "isolate",
+      "type": "str"
+    },
+    {
+      "name": "requested",
+      "type": "str"
+    }
+  ],
+  "defs": {
+    "NoEscalationWithoutGate": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "manifest"
+              },
+              {
+                "kind": "str",
+                "value": "widened"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "gate"
+              },
+              {
+                "kind": "str",
+                "value": "approved"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "IsolateBound": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "uninstalled"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "isolate"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "neq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "uninstalled"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "isolate"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "allocated"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "StatusValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "uninstalled"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "installed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RequestedValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "requested"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "requested"
+              },
+              {
+                "kind": "str",
+                "value": "read"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "requested"
+              },
+              {
+                "kind": "str",
+                "value": "write"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "uninstalled"
+          }
+        },
+        {
+          "field": "manifest",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "gate",
+          "rhs": {
+            "kind": "str",
+            "value": "closed"
+          }
+        },
+        {
+          "field": "isolate",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "install",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "uninstalled"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "installed"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "manifest",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "uninstalled"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "declared"
+              },
+              {
+                "kind": "name",
+                "name": "manifest"
+              }
+            ]
+          }
+        },
+        {
+          "field": "isolate",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "uninstalled"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "allocated"
+              },
+              {
+                "kind": "name",
+                "name": "isolate"
+              }
+            ]
+          }
+        },
+        {
+          "field": "gate",
+          "rhs": {
+            "kind": "name",
+            "name": "gate"
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "name",
+            "name": "requested"
+          }
+        }
+      ]
+    },
+    {
+      "name": "activate",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "status"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "installed"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "manifest"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "declared"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "manifest",
+          "rhs": {
+            "kind": "name",
+            "name": "manifest"
+          }
+        },
+        {
+          "field": "isolate",
+          "rhs": {
+            "kind": "name",
+            "name": "isolate"
+          }
+        },
+        {
+          "field": "gate",
+          "rhs": {
+            "kind": "name",
+            "name": "gate"
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "name",
+            "name": "requested"
+          }
+        }
+      ]
+    },
+    {
+      "name": "escalate",
+      "nondet": {
+        "name": "scope",
+        "kind": "str",
+        "pool": [
+          "read",
+          "write"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "name",
+            "name": "status"
+          }
+        },
+        {
+          "field": "manifest",
+          "rhs": {
+            "kind": "name",
+            "name": "manifest"
+          }
+        },
+        {
+          "field": "isolate",
+          "rhs": {
+            "kind": "name",
+            "name": "isolate"
+          }
+        },
+        {
+          "field": "gate",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "status"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "active"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "manifest"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "declared"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "pending"
+              },
+              {
+                "kind": "name",
+                "name": "gate"
+              }
+            ]
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "status"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "active"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "manifest"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "declared"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "scope"
+              },
+              {
+                "kind": "name",
+                "name": "requested"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "approve",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "name",
+            "name": "status"
+          }
+        },
+        {
+          "field": "manifest",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "gate"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "pending"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "widened"
+              },
+              {
+                "kind": "name",
+                "name": "manifest"
+              }
+            ]
+          }
+        },
+        {
+          "field": "isolate",
+          "rhs": {
+            "kind": "name",
+            "name": "isolate"
+          }
+        },
+        {
+          "field": "gate",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "gate"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "pending"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "approved"
+              },
+              {
+                "kind": "name",
+                "name": "gate"
+              }
+            ]
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "name",
+            "name": "requested"
+          }
+        }
+      ]
+    },
+    {
+      "name": "reject",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "name",
+            "name": "status"
+          }
+        },
+        {
+          "field": "manifest",
+          "rhs": {
+            "kind": "name",
+            "name": "manifest"
+          }
+        },
+        {
+          "field": "isolate",
+          "rhs": {
+            "kind": "name",
+            "name": "isolate"
+          }
+        },
+        {
+          "field": "gate",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "gate"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "pending"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "rejected"
+              },
+              {
+                "kind": "name",
+                "name": "gate"
+              }
+            ]
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "name",
+            "name": "requested"
+          }
+        }
+      ]
+    },
+    {
+      "name": "uninstall",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "uninstalled"
+          }
+        },
+        {
+          "field": "manifest",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "isolate",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "gate",
+          "rhs": {
+            "kind": "str",
+            "value": "closed"
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "install",
+    "activate",
+    "escalate",
+    "approve",
+    "reject",
+    "uninstall"
+  ]
+}

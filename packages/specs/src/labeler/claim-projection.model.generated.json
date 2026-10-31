@@ -1,0 +1,995 @@
+{
+  "generatedFrom": "../../specs/labeler/claim-projection.qnt",
+  "specHash": "a5774be8579f9d5f59ec6da4d68c8cba33cf95fc72578651d0560b1740fa8558",
+  "module": "labeler_claim_projection",
+  "vars": [
+    {
+      "name": "claim",
+      "type": "str"
+    },
+    {
+      "name": "label",
+      "type": "str"
+    },
+    {
+      "name": "revision",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "project": {
+      "kind": "function",
+      "params": [
+        "claimState"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "claimState"
+              },
+              {
+                "kind": "str",
+                "value": "filed"
+              }
+            ]
+          },
+          {
+            "kind": "str",
+            "value": "visible"
+          },
+          {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claimState"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "upheld"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "visible"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "claimState"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "dismissed"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "negated"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "ite",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "claimState"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "withdrawn"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "str",
+                        "value": "negated"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "none"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "resolvable": {
+      "kind": "function",
+      "params": [
+        "claimState"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "claimState"
+              },
+              {
+                "kind": "str",
+                "value": "filed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "claimState"
+              },
+              {
+                "kind": "str",
+                "value": "upheld"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ClaimValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "claim"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "claim"
+              },
+              {
+                "kind": "str",
+                "value": "filed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "claim"
+              },
+              {
+                "kind": "str",
+                "value": "upheld"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "claim"
+              },
+              {
+                "kind": "str",
+                "value": "dismissed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "claim"
+              },
+              {
+                "kind": "str",
+                "value": "withdrawn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "LabelValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "label"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "label"
+              },
+              {
+                "kind": "str",
+                "value": "visible"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "label"
+              },
+              {
+                "kind": "str",
+                "value": "negated"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "LabelIsView": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "label"
+          },
+          {
+            "kind": "app",
+            "opcode": "project",
+            "args": [
+              {
+                "kind": "name",
+                "name": "claim"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "VisibleBackedByClaim": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "label"
+              },
+              {
+                "kind": "str",
+                "value": "visible"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "filed"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "upheld"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "NegationDeniesClaim": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "label"
+              },
+              {
+                "kind": "str",
+                "value": "negated"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "dismissed"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "withdrawn"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "NoLabelWithoutClaim": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "label"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "claim"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RevisionNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "revision"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "claim",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "label",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "revision",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "file",
+      "assignments": [
+        {
+          "field": "claim",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "filed"
+              },
+              {
+                "kind": "name",
+                "name": "claim"
+              }
+            ]
+          }
+        },
+        {
+          "field": "label",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "project",
+                "args": [
+                  {
+                    "kind": "str",
+                    "value": "filed"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "label"
+              }
+            ]
+          }
+        },
+        {
+          "field": "revision",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "revision"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "revision"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "uphold",
+      "assignments": [
+        {
+          "field": "claim",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "filed"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "upheld"
+              },
+              {
+                "kind": "name",
+                "name": "claim"
+              }
+            ]
+          }
+        },
+        {
+          "field": "label",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "filed"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "project",
+                "args": [
+                  {
+                    "kind": "str",
+                    "value": "upheld"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "label"
+              }
+            ]
+          }
+        },
+        {
+          "field": "revision",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "filed"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "revision"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "revision"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "dismiss",
+      "assignments": [
+        {
+          "field": "claim",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "resolvable",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "dismissed"
+              },
+              {
+                "kind": "name",
+                "name": "claim"
+              }
+            ]
+          }
+        },
+        {
+          "field": "label",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "resolvable",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "project",
+                "args": [
+                  {
+                    "kind": "str",
+                    "value": "dismissed"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "label"
+              }
+            ]
+          }
+        },
+        {
+          "field": "revision",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "resolvable",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "revision"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "revision"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "withdraw",
+      "assignments": [
+        {
+          "field": "claim",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "resolvable",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "withdrawn"
+              },
+              {
+                "kind": "name",
+                "name": "claim"
+              }
+            ]
+          }
+        },
+        {
+          "field": "label",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "resolvable",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "project",
+                "args": [
+                  {
+                    "kind": "str",
+                    "value": "withdrawn"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "label"
+              }
+            ]
+          }
+        },
+        {
+          "field": "revision",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "resolvable",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "claim"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "revision"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "revision"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "reproject",
+      "assignments": [
+        {
+          "field": "claim",
+          "rhs": {
+            "kind": "name",
+            "name": "claim"
+          }
+        },
+        {
+          "field": "label",
+          "rhs": {
+            "kind": "app",
+            "opcode": "project",
+            "args": [
+              {
+                "kind": "name",
+                "name": "claim"
+              }
+            ]
+          }
+        },
+        {
+          "field": "revision",
+          "rhs": {
+            "kind": "name",
+            "name": "revision"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "file",
+    "uphold",
+    "dismiss",
+    "withdraw",
+    "reproject"
+  ]
+}

@@ -1,0 +1,1117 @@
+{
+  "generatedFrom": "../../specs/payments/subscription-lifecycle.qnt",
+  "specHash": "94f4b2e06312de7e6607ae825e95919e973a4fe7300ef1f203fa4bc54f9118cb",
+  "module": "payments_subscription_lifecycle",
+  "vars": [
+    {
+      "name": "state",
+      "type": "str"
+    },
+    {
+      "name": "paid",
+      "type": "bool"
+    },
+    {
+      "name": "failedRenewals",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "isFresh": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "value"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "lapsed"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "value"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "canceled"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canRenew": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "value"
+          },
+          {
+            "kind": "str",
+            "value": "active"
+          }
+        ]
+      }
+    },
+    "inDunning": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "value"
+          },
+          {
+            "kind": "str",
+            "value": "grace"
+          }
+        ]
+      }
+    },
+    "canCancel": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "str",
+                "value": "intent"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "value"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "active"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "value"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "grace"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "StateValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "intent"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "grace"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "lapsed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "canceled"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ActiveImpliesPaid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "paid"
+          }
+        ]
+      }
+    },
+    "GraceImpliesPaid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "grace"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "paid"
+          }
+        ]
+      }
+    },
+    "IntentUnpaid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "intent"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "paid"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "NoPaymentInAbsentState": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "paid"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "GraceHasFailure": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "state"
+              },
+              {
+                "kind": "str",
+                "value": "grace"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "failedRenewals"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "FailedRenewalsNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "failedRenewals"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "paid",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "failedRenewals",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "beginIntent",
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isFresh",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "state"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "intent"
+              },
+              {
+                "kind": "name",
+                "name": "state"
+              }
+            ]
+          }
+        },
+        {
+          "field": "paid",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isFresh",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "state"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": false
+              },
+              {
+                "kind": "name",
+                "name": "paid"
+              }
+            ]
+          }
+        },
+        {
+          "field": "failedRenewals",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isFresh",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "state"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              },
+              {
+                "kind": "name",
+                "name": "failedRenewals"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "settleIntent",
+      "nondet": {
+        "name": "cleared",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "state"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "intent"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "cleared"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "state"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "intent"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "not",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "cleared"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "state"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "paid",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "state"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "intent"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "cleared"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "paid"
+              }
+            ]
+          }
+        },
+        {
+          "field": "failedRenewals",
+          "rhs": {
+            "kind": "name",
+            "name": "failedRenewals"
+          }
+        }
+      ]
+    },
+    {
+      "name": "renew",
+      "nondet": {
+        "name": "cleared",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "canRenew",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "state"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "cleared"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "canRenew",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "state"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "not",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "cleared"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "grace"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "state"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "paid",
+          "rhs": {
+            "kind": "name",
+            "name": "paid"
+          }
+        },
+        {
+          "field": "failedRenewals",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "canRenew",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "state"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "not",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "cleared"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "failedRenewals"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "canRenew",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "state"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "name",
+                        "name": "cleared"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "failedRenewals"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "retryRenewal",
+      "nondet": {
+        "name": "cleared",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "inDunning",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "state"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "cleared"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "inDunning",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "state"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "not",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "cleared"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "lapsed"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "state"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "paid",
+          "rhs": {
+            "kind": "name",
+            "name": "paid"
+          }
+        },
+        {
+          "field": "failedRenewals",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "inDunning",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "state"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "not",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "cleared"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "failedRenewals"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "inDunning",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "state"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "name",
+                        "name": "cleared"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "failedRenewals"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "cancel",
+      "assignments": [
+        {
+          "field": "state",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canCancel",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "state"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "canceled"
+              },
+              {
+                "kind": "name",
+                "name": "state"
+              }
+            ]
+          }
+        },
+        {
+          "field": "paid",
+          "rhs": {
+            "kind": "name",
+            "name": "paid"
+          }
+        },
+        {
+          "field": "failedRenewals",
+          "rhs": {
+            "kind": "name",
+            "name": "failedRenewals"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "beginIntent",
+    "settleIntent",
+    "renew",
+    "retryRenewal",
+    "cancel"
+  ]
+}

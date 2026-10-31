@@ -1,0 +1,18 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.cms.content",
+  "description": "The CMS payload carried inside a standard.site document's open `content` union: the slice body and the typed data. Emitted only when a site opts into the standard.site projection for atproto visibility.",
+  "defs": {
+    "main": {
+      "type": "object",
+      "required": ["data"],
+      "properties": {
+        "body": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "ing.lexicon.cms.defs#sectionEntry" }
+        },
+        "data": { "type": "unknown" }
+      }
+    }
+  }
+}

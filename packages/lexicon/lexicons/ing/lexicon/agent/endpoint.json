@@ -1,0 +1,42 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.agent.endpoint",
+  "description": "Where an agent is reachable and which MCP servers it provides. A link from the agent's repo to its ACP endpoint, so a client can discover how to open a session with it.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "literal:self",
+      "description": "One endpoint record per agent, at the literal rkey `self`.",
+      "record": {
+        "type": "object",
+        "required": ["acp", "createdAt"],
+        "properties": {
+          "acp": {
+            "type": "object",
+            "required": ["transport"],
+            "properties": {
+              "transport": {
+                "type": "string",
+                "knownValues": ["stdio", "websocket", "http", "sse"]
+              },
+              "url": { "type": "string", "format": "uri" },
+              "protocolVersion": { "type": "integer" }
+            }
+          },
+          "mcpServers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["serverId", "name"],
+              "properties": {
+                "serverId": { "type": "string", "maxLength": 128 },
+                "name": { "type": "string", "maxLength": 128 }
+              }
+            }
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

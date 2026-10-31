@@ -1,0 +1,765 @@
+{
+  "generatedFrom": "../../specs/notifications/cursor-reconcile.qnt",
+  "specHash": "d51cd82a5121d6886c19bf75d29e55db1ef127fadfaee2fe521ff99903da1642",
+  "module": "notifications_cursor_reconcile",
+  "vars": [
+    {
+      "name": "headSeq",
+      "type": "int"
+    },
+    {
+      "name": "cursor",
+      "type": "int"
+    },
+    {
+      "name": "missingAt",
+      "type": "int"
+    },
+    {
+      "name": "mode",
+      "type": "str"
+    }
+  ],
+  "defs": {
+    "CursorNeverAhead": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "cursor"
+          },
+          {
+            "kind": "name",
+            "name": "headSeq"
+          }
+        ]
+      }
+    },
+    "MissingWithinHead": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "missingAt"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "missingAt"
+              },
+              {
+                "kind": "name",
+                "name": "headSeq"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ModeValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "mode"
+              },
+              {
+                "kind": "str",
+                "value": "synced"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "mode"
+              },
+              {
+                "kind": "str",
+                "value": "gapped"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "GappedHasMissing": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "mode"
+              },
+              {
+                "kind": "str",
+                "value": "gapped"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igt",
+            "args": [
+              {
+                "kind": "name",
+                "name": "missingAt"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "SyncedHasNoGap": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "mode"
+              },
+              {
+                "kind": "str",
+                "value": "synced"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "missingAt"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CountersNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "headSeq"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "cursor"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "missingAt"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "headSeq",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "missingAt",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "mode",
+          "rhs": {
+            "kind": "str",
+            "value": "synced"
+          }
+        }
+      ]
+    },
+    {
+      "name": "publish",
+      "nondet": {
+        "name": "delta",
+        "kind": "int",
+        "pool": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "headSeq",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "headSeq"
+              },
+              {
+                "kind": "name",
+                "name": "delta"
+              }
+            ]
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "missingAt",
+          "rhs": {
+            "kind": "name",
+            "name": "missingAt"
+          }
+        },
+        {
+          "field": "mode",
+          "rhs": {
+            "kind": "name",
+            "name": "mode"
+          }
+        }
+      ]
+    },
+    {
+      "name": "consume",
+      "nondet": {
+        "name": "offset",
+        "kind": "int",
+        "pool": [
+          "1",
+          "2",
+          "4",
+          "0",
+          "-1"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "headSeq",
+          "rhs": {
+            "kind": "name",
+            "name": "headSeq"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "neq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "mode"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "gapped"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "offset"
+                          },
+                          {
+                            "kind": "int",
+                            "value": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "ilt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "cursor"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "headSeq"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "cursor"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "cursor"
+              }
+            ]
+          }
+        },
+        {
+          "field": "missingAt",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "neq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "mode"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "gapped"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "igt",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "offset"
+                          },
+                          {
+                            "kind": "int",
+                            "value": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "ilt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "cursor"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "headSeq"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "cursor"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "missingAt"
+              }
+            ]
+          }
+        },
+        {
+          "field": "mode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "neq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "mode"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "gapped"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "igt",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "offset"
+                          },
+                          {
+                            "kind": "int",
+                            "value": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "ilt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "cursor"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "headSeq"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "gapped"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "and",
+                        "args": [
+                          {
+                            "kind": "app",
+                            "opcode": "neq",
+                            "args": [
+                              {
+                                "kind": "name",
+                                "name": "mode"
+                              },
+                              {
+                                "kind": "str",
+                                "value": "gapped"
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "app",
+                            "opcode": "eq",
+                            "args": [
+                              {
+                                "kind": "name",
+                                "name": "offset"
+                              },
+                              {
+                                "kind": "int",
+                                "value": "1"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "ilt",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "cursor"
+                          },
+                          {
+                            "kind": "name",
+                            "name": "headSeq"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "synced"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "mode"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "reconcile",
+      "assignments": [
+        {
+          "field": "headSeq",
+          "rhs": {
+            "kind": "name",
+            "name": "headSeq"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "mode"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "gapped"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "headSeq"
+              },
+              {
+                "kind": "name",
+                "name": "cursor"
+              }
+            ]
+          }
+        },
+        {
+          "field": "missingAt",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "mode"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "gapped"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              },
+              {
+                "kind": "name",
+                "name": "missingAt"
+              }
+            ]
+          }
+        },
+        {
+          "field": "mode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "mode"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "gapped"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "synced"
+              },
+              {
+                "kind": "name",
+                "name": "mode"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "publish",
+    "consume",
+    "reconcile"
+  ]
+}

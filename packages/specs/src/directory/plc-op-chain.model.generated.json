@@ -1,0 +1,1758 @@
+{
+  "generatedFrom": "../../specs/directory/plc-op-chain.qnt",
+  "specHash": "85c4c13436ad0012c90b1beb5471ea8f7143096f2062c9b04a5d6bed5a848666",
+  "module": "plc_op_chain",
+  "vars": [
+    {
+      "name": "lifecycle",
+      "type": "str"
+    },
+    {
+      "name": "did",
+      "type": "str"
+    },
+    {
+      "name": "headKind",
+      "type": "str"
+    },
+    {
+      "name": "rotationKey",
+      "type": "str"
+    },
+    {
+      "name": "signingKey",
+      "type": "str"
+    },
+    {
+      "name": "handle",
+      "type": "str"
+    },
+    {
+      "name": "pds",
+      "type": "str"
+    },
+    {
+      "name": "logLen",
+      "type": "int"
+    },
+    {
+      "name": "canonicalLen",
+      "type": "int"
+    },
+    {
+      "name": "nullified",
+      "type": "int"
+    },
+    {
+      "name": "forkCount",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "canExtend": {
+      "kind": "function",
+      "params": [
+        "l",
+        "k"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "l"
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "k"
+              },
+              {
+                "kind": "str",
+                "value": "plc_operation"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canFork": {
+      "kind": "function",
+      "params": [
+        "l",
+        "k",
+        "n"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "l"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "active"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "k"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "plc_operation"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "n"
+              },
+              {
+                "kind": "int",
+                "value": "2"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "DidStableAcrossRotation": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "lifecycle"
+              },
+              {
+                "kind": "str",
+                "value": "empty"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "did"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "did"
+              },
+              {
+                "kind": "str",
+                "value": "did:plc:genesis"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ForkNullified": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canonicalLen"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "nullified"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "logLen"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "forkCount"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "nullified"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "LifecycleValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "empty"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "active"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "lifecycle"
+              },
+              {
+                "kind": "str",
+                "value": "tombstoned"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "HeadKindValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "plc_operation"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "headKind"
+              },
+              {
+                "kind": "str",
+                "value": "plc_tombstone"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "lifecycle",
+          "rhs": {
+            "kind": "str",
+            "value": "empty"
+          }
+        },
+        {
+          "field": "did",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "headKind",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "rotationKey",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "signingKey",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "handle",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "pds",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "logLen",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "canonicalLen",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "nullified",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "forkCount",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "create",
+      "assignments": [
+        {
+          "field": "lifecycle",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "empty"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "active"
+              },
+              {
+                "kind": "name",
+                "name": "lifecycle"
+              }
+            ]
+          }
+        },
+        {
+          "field": "did",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "empty"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "did:plc:genesis"
+              },
+              {
+                "kind": "name",
+                "name": "did"
+              }
+            ]
+          }
+        },
+        {
+          "field": "headKind",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "empty"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "plc_operation"
+              },
+              {
+                "kind": "name",
+                "name": "headKind"
+              }
+            ]
+          }
+        },
+        {
+          "field": "rotationKey",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "empty"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "keyA"
+              },
+              {
+                "kind": "name",
+                "name": "rotationKey"
+              }
+            ]
+          }
+        },
+        {
+          "field": "signingKey",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "empty"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "sigA"
+              },
+              {
+                "kind": "name",
+                "name": "signingKey"
+              }
+            ]
+          }
+        },
+        {
+          "field": "handle",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "empty"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "alice.example.com"
+              },
+              {
+                "kind": "name",
+                "name": "handle"
+              }
+            ]
+          }
+        },
+        {
+          "field": "pds",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "empty"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "pds.one"
+              },
+              {
+                "kind": "name",
+                "name": "pds"
+              }
+            ]
+          }
+        },
+        {
+          "field": "logLen",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "empty"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "logLen"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "logLen"
+              }
+            ]
+          }
+        },
+        {
+          "field": "canonicalLen",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "empty"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canonicalLen"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "canonicalLen"
+              }
+            ]
+          }
+        },
+        {
+          "field": "nullified",
+          "rhs": {
+            "kind": "name",
+            "name": "nullified"
+          }
+        },
+        {
+          "field": "forkCount",
+          "rhs": {
+            "kind": "name",
+            "name": "forkCount"
+          }
+        }
+      ]
+    },
+    {
+      "name": "rotate",
+      "nondet": {
+        "name": "newKey",
+        "kind": "str",
+        "pool": [
+          "keyA",
+          "keyB"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "lifecycle",
+          "rhs": {
+            "kind": "name",
+            "name": "lifecycle"
+          }
+        },
+        {
+          "field": "did",
+          "rhs": {
+            "kind": "name",
+            "name": "did"
+          }
+        },
+        {
+          "field": "headKind",
+          "rhs": {
+            "kind": "name",
+            "name": "headKind"
+          }
+        },
+        {
+          "field": "rotationKey",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canExtend",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "newKey"
+              },
+              {
+                "kind": "name",
+                "name": "rotationKey"
+              }
+            ]
+          }
+        },
+        {
+          "field": "signingKey",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canExtend",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "sigB"
+              },
+              {
+                "kind": "name",
+                "name": "signingKey"
+              }
+            ]
+          }
+        },
+        {
+          "field": "handle",
+          "rhs": {
+            "kind": "name",
+            "name": "handle"
+          }
+        },
+        {
+          "field": "pds",
+          "rhs": {
+            "kind": "name",
+            "name": "pds"
+          }
+        },
+        {
+          "field": "logLen",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canExtend",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "logLen"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "logLen"
+              }
+            ]
+          }
+        },
+        {
+          "field": "canonicalLen",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canExtend",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canonicalLen"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "canonicalLen"
+              }
+            ]
+          }
+        },
+        {
+          "field": "nullified",
+          "rhs": {
+            "kind": "name",
+            "name": "nullified"
+          }
+        },
+        {
+          "field": "forkCount",
+          "rhs": {
+            "kind": "name",
+            "name": "forkCount"
+          }
+        }
+      ]
+    },
+    {
+      "name": "rebind",
+      "nondet": {
+        "name": "target",
+        "kind": "str",
+        "pool": [
+          "alice.example.com",
+          "bob.example.com"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "lifecycle",
+          "rhs": {
+            "kind": "name",
+            "name": "lifecycle"
+          }
+        },
+        {
+          "field": "did",
+          "rhs": {
+            "kind": "name",
+            "name": "did"
+          }
+        },
+        {
+          "field": "headKind",
+          "rhs": {
+            "kind": "name",
+            "name": "headKind"
+          }
+        },
+        {
+          "field": "rotationKey",
+          "rhs": {
+            "kind": "name",
+            "name": "rotationKey"
+          }
+        },
+        {
+          "field": "signingKey",
+          "rhs": {
+            "kind": "name",
+            "name": "signingKey"
+          }
+        },
+        {
+          "field": "handle",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canExtend",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "target"
+              },
+              {
+                "kind": "name",
+                "name": "handle"
+              }
+            ]
+          }
+        },
+        {
+          "field": "pds",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canExtend",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "target"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "alice.example.com"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "pds.one"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "pds.two"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "pds"
+              }
+            ]
+          }
+        },
+        {
+          "field": "logLen",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canExtend",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "logLen"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "logLen"
+              }
+            ]
+          }
+        },
+        {
+          "field": "canonicalLen",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canExtend",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canonicalLen"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "canonicalLen"
+              }
+            ]
+          }
+        },
+        {
+          "field": "nullified",
+          "rhs": {
+            "kind": "name",
+            "name": "nullified"
+          }
+        },
+        {
+          "field": "forkCount",
+          "rhs": {
+            "kind": "name",
+            "name": "forkCount"
+          }
+        }
+      ]
+    },
+    {
+      "name": "nullify",
+      "nondet": {
+        "name": "scope",
+        "kind": "str",
+        "pool": [
+          "head",
+          "ancestor"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "lifecycle",
+          "rhs": {
+            "kind": "name",
+            "name": "lifecycle"
+          }
+        },
+        {
+          "field": "did",
+          "rhs": {
+            "kind": "name",
+            "name": "did"
+          }
+        },
+        {
+          "field": "headKind",
+          "rhs": {
+            "kind": "name",
+            "name": "headKind"
+          }
+        },
+        {
+          "field": "rotationKey",
+          "rhs": {
+            "kind": "name",
+            "name": "rotationKey"
+          }
+        },
+        {
+          "field": "signingKey",
+          "rhs": {
+            "kind": "name",
+            "name": "signingKey"
+          }
+        },
+        {
+          "field": "handle",
+          "rhs": {
+            "kind": "name",
+            "name": "handle"
+          }
+        },
+        {
+          "field": "pds",
+          "rhs": {
+            "kind": "name",
+            "name": "pds"
+          }
+        },
+        {
+          "field": "logLen",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "scope"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "ancestor"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "canFork",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "lifecycle"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "headKind"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "canonicalLen"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "logLen"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "logLen"
+              }
+            ]
+          }
+        },
+        {
+          "field": "canonicalLen",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "scope"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "ancestor"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "canFork",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "lifecycle"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "headKind"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "canonicalLen"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "2"
+              },
+              {
+                "kind": "name",
+                "name": "canonicalLen"
+              }
+            ]
+          }
+        },
+        {
+          "field": "nullified",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "scope"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "ancestor"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "canFork",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "lifecycle"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "headKind"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "canonicalLen"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "nullified"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "isub",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "canonicalLen"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "nullified"
+              }
+            ]
+          }
+        },
+        {
+          "field": "forkCount",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "scope"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "ancestor"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "canFork",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "lifecycle"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "headKind"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "canonicalLen"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "forkCount"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "forkCount"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tombstone",
+      "assignments": [
+        {
+          "field": "lifecycle",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canExtend",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "tombstoned"
+              },
+              {
+                "kind": "name",
+                "name": "lifecycle"
+              }
+            ]
+          }
+        },
+        {
+          "field": "did",
+          "rhs": {
+            "kind": "name",
+            "name": "did"
+          }
+        },
+        {
+          "field": "headKind",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canExtend",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "plc_tombstone"
+              },
+              {
+                "kind": "name",
+                "name": "headKind"
+              }
+            ]
+          }
+        },
+        {
+          "field": "rotationKey",
+          "rhs": {
+            "kind": "name",
+            "name": "rotationKey"
+          }
+        },
+        {
+          "field": "signingKey",
+          "rhs": {
+            "kind": "name",
+            "name": "signingKey"
+          }
+        },
+        {
+          "field": "handle",
+          "rhs": {
+            "kind": "name",
+            "name": "handle"
+          }
+        },
+        {
+          "field": "pds",
+          "rhs": {
+            "kind": "name",
+            "name": "pds"
+          }
+        },
+        {
+          "field": "logLen",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canExtend",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "logLen"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "logLen"
+              }
+            ]
+          }
+        },
+        {
+          "field": "canonicalLen",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canExtend",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "lifecycle"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canonicalLen"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "canonicalLen"
+              }
+            ]
+          }
+        },
+        {
+          "field": "nullified",
+          "rhs": {
+            "kind": "name",
+            "name": "nullified"
+          }
+        },
+        {
+          "field": "forkCount",
+          "rhs": {
+            "kind": "name",
+            "name": "forkCount"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "create",
+    "rotate",
+    "rebind",
+    "nullify",
+    "tombstone"
+  ]
+}

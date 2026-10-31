@@ -1,0 +1,1488 @@
+{
+  "generatedFrom": "../../specs/backlink-index/backfill-live.qnt",
+  "specHash": "f943fefa723a17788317bccc75980da4844af57f5a24cc679e568cde3e549394",
+  "module": "backlink_backfill_live",
+  "vars": [
+    {
+      "name": "mode",
+      "type": "str"
+    },
+    {
+      "name": "target",
+      "type": "int"
+    },
+    {
+      "name": "backfillCursor",
+      "type": "int"
+    },
+    {
+      "name": "liveCursor",
+      "type": "int"
+    },
+    {
+      "name": "deferred",
+      "type": "int"
+    },
+    {
+      "name": "entries",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "maxOf": {
+      "kind": "function",
+      "params": [
+        "a",
+        "b"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igt",
+            "args": [
+              {
+                "kind": "name",
+                "name": "a"
+              },
+              {
+                "kind": "name",
+                "name": "b"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "a"
+          },
+          {
+            "kind": "name",
+            "name": "b"
+          }
+        ]
+      }
+    },
+    "NoDoubleIndex": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "liveCursor"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "liveCursor"
+              },
+              {
+                "kind": "name",
+                "name": "target"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "BackfillWithinTarget": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "backfillCursor"
+          },
+          {
+            "kind": "name",
+            "name": "target"
+          }
+        ]
+      }
+    },
+    "CursorMonotonic": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "mode"
+              },
+              {
+                "kind": "str",
+                "value": "live"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "liveCursor"
+              },
+              {
+                "kind": "name",
+                "name": "target"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "HandoffConsistent": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "mode"
+              },
+              {
+                "kind": "str",
+                "value": "live"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "backfillCursor"
+              },
+              {
+                "kind": "name",
+                "name": "target"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "EntriesCoverHighest": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "entries"
+          },
+          {
+            "kind": "app",
+            "opcode": "maxOf",
+            "args": [
+              {
+                "kind": "name",
+                "name": "backfillCursor"
+              },
+              {
+                "kind": "name",
+                "name": "liveCursor"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CursorsNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "backfillCursor"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "liveCursor"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "deferred"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "entries"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "none": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "none"
+      }
+    },
+    "isNone": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "value"
+          },
+          {
+            "kind": "name",
+            "name": "none"
+          }
+        ]
+      }
+    },
+    "didPlcSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "did:plc:genesis"
+      }
+    },
+    "didWebSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "did:web:example.com"
+      }
+    },
+    "isDid": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "didPlcSample"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "didWebSample"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "handleSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "alice.example.com"
+      }
+    },
+    "isHandle": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "value"
+          },
+          {
+            "kind": "name",
+            "name": "handleSample"
+          }
+        ]
+      }
+    },
+    "nsidSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "app.bsky.feed.post"
+      }
+    },
+    "isNsid": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "nsidSample"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isNone",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "atUriSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "at://did:plc:genesis/app.bsky.feed.post/3jzsm4zqb2s2a"
+      }
+    },
+    "isAtUri": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "atUriSample"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isNone",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "cidSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "bafyreib2rxk3rybk3aobmv5cjuql3bm2twh4jo5uygzv5kkz2rq7v5test"
+      }
+    },
+    "isCid": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "cidSample"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isNone",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "tidSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "3jzsm4zqb2s2a"
+      }
+    },
+    "isTid": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "value"
+          },
+          {
+            "kind": "name",
+            "name": "tidSample"
+          }
+        ]
+      }
+    },
+    "rkeySample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "3jzsm4zqb2s2a"
+      }
+    },
+    "isRkey": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "rkeySample"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isNone",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "mode",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "target",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "backfillCursor",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "liveCursor",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "deferred",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "entries",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "startBackfill",
+      "nondet": {
+        "name": "startTarget",
+        "kind": "int",
+        "pool": [
+          "2",
+          "3",
+          "5"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "mode",
+          "rhs": {
+            "kind": "str",
+            "value": "backfilling"
+          }
+        },
+        {
+          "field": "target",
+          "rhs": {
+            "kind": "name",
+            "name": "startTarget"
+          }
+        },
+        {
+          "field": "backfillCursor",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "liveCursor",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "deferred",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "entries",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "backfillPage",
+      "nondet": {
+        "name": "seq",
+        "kind": "int",
+        "pool": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "5"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "mode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "mode"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "backfilling"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "igte",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "seq"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "target"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "live"
+              },
+              {
+                "kind": "name",
+                "name": "mode"
+              }
+            ]
+          }
+        },
+        {
+          "field": "target",
+          "rhs": {
+            "kind": "name",
+            "name": "target"
+          }
+        },
+        {
+          "field": "backfillCursor",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "mode"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "backfilling"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "igt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "seq"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "backfillCursor"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "igte",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "seq"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "target"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "target"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "seq"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "backfillCursor"
+              }
+            ]
+          }
+        },
+        {
+          "field": "liveCursor",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "mode"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "backfilling"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "igte",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "seq"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "target"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "target"
+              },
+              {
+                "kind": "name",
+                "name": "liveCursor"
+              }
+            ]
+          }
+        },
+        {
+          "field": "deferred",
+          "rhs": {
+            "kind": "name",
+            "name": "deferred"
+          }
+        },
+        {
+          "field": "entries",
+          "rhs": {
+            "kind": "app",
+            "opcode": "maxOf",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "mode"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "backfilling"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "igt",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "seq"
+                          },
+                          {
+                            "kind": "name",
+                            "name": "backfillCursor"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "ite",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "igte",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "seq"
+                          },
+                          {
+                            "kind": "name",
+                            "name": "target"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "name",
+                        "name": "target"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "seq"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "backfillCursor"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "mode"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "backfilling"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "igte",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "seq"
+                          },
+                          {
+                            "kind": "name",
+                            "name": "target"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "target"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "liveCursor"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "liveEvent",
+      "nondet": {
+        "name": "seq",
+        "kind": "int",
+        "pool": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "5",
+          "6"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "mode",
+          "rhs": {
+            "kind": "name",
+            "name": "mode"
+          }
+        },
+        {
+          "field": "target",
+          "rhs": {
+            "kind": "name",
+            "name": "target"
+          }
+        },
+        {
+          "field": "backfillCursor",
+          "rhs": {
+            "kind": "name",
+            "name": "backfillCursor"
+          }
+        },
+        {
+          "field": "liveCursor",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "mode"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "live"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "igt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "seq"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "liveCursor"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "seq"
+              },
+              {
+                "kind": "name",
+                "name": "liveCursor"
+              }
+            ]
+          }
+        },
+        {
+          "field": "deferred",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "mode"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "backfilling"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "igt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "seq"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "target"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "deferred"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "deferred"
+              }
+            ]
+          }
+        },
+        {
+          "field": "entries",
+          "rhs": {
+            "kind": "app",
+            "opcode": "maxOf",
+            "args": [
+              {
+                "kind": "name",
+                "name": "backfillCursor"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "mode"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "live"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "igt",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "seq"
+                          },
+                          {
+                            "kind": "name",
+                            "name": "liveCursor"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "seq"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "liveCursor"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "drainDeferred",
+      "assignments": [
+        {
+          "field": "mode",
+          "rhs": {
+            "kind": "name",
+            "name": "mode"
+          }
+        },
+        {
+          "field": "target",
+          "rhs": {
+            "kind": "name",
+            "name": "target"
+          }
+        },
+        {
+          "field": "backfillCursor",
+          "rhs": {
+            "kind": "name",
+            "name": "backfillCursor"
+          }
+        },
+        {
+          "field": "liveCursor",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "mode"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "live"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "igt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "deferred"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "0"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "liveCursor"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "liveCursor"
+              }
+            ]
+          }
+        },
+        {
+          "field": "deferred",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "mode"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "live"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "igt",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "deferred"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "0"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "isub",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "deferred"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "deferred"
+              }
+            ]
+          }
+        },
+        {
+          "field": "entries",
+          "rhs": {
+            "kind": "app",
+            "opcode": "maxOf",
+            "args": [
+              {
+                "kind": "name",
+                "name": "backfillCursor"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "mode"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "live"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "igt",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "deferred"
+                          },
+                          {
+                            "kind": "int",
+                            "value": "0"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "iadd",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "liveCursor"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "1"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "liveCursor"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "startBackfill",
+    "backfillPage",
+    "liveEvent",
+    "drainDeferred"
+  ]
+}

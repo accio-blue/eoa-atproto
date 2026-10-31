@@ -1,0 +1,743 @@
+{
+  "generatedFrom": "../../specs/appview/ingestion-pipeline.qnt",
+  "specHash": "fbb3221e2eceedd0ce62a59df5863b39e9c82260f99b47fbad6f4b56b78129d5",
+  "module": "appview_ingestion_pipeline",
+  "vars": [
+    {
+      "name": "stage",
+      "type": "str"
+    },
+    {
+      "name": "cursor",
+      "type": "int"
+    },
+    {
+      "name": "buffered",
+      "type": "int"
+    },
+    {
+      "name": "applied",
+      "type": "int"
+    },
+    {
+      "name": "projected",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "NoDoubleApply": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "applied"
+          },
+          {
+            "kind": "name",
+            "name": "cursor"
+          }
+        ]
+      }
+    },
+    "IndexConsistent": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "projected"
+              },
+              {
+                "kind": "name",
+                "name": "applied"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "applied"
+              },
+              {
+                "kind": "name",
+                "name": "cursor"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "buffered"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CursorNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "cursor"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "StageValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "receiving"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "applying"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "projecting"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "blocked"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "buffered",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "applied",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "projected",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "start",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "receiving"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "buffered",
+          "rhs": {
+            "kind": "name",
+            "name": "buffered"
+          }
+        },
+        {
+          "field": "applied",
+          "rhs": {
+            "kind": "name",
+            "name": "applied"
+          }
+        },
+        {
+          "field": "projected",
+          "rhs": {
+            "kind": "name",
+            "name": "projected"
+          }
+        }
+      ]
+    },
+    {
+      "name": "receive",
+      "nondet": {
+        "name": "delta",
+        "kind": "int",
+        "pool": [
+          "1",
+          "2",
+          "5",
+          "0",
+          "-1"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "receiving"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "delta"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "applying"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "stage"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "receiving"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "igt",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "delta"
+                          },
+                          {
+                            "kind": "int",
+                            "value": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "blocked"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "buffered",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "receiving"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "delta"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "buffered"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "buffered"
+              }
+            ]
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "applied",
+          "rhs": {
+            "kind": "name",
+            "name": "applied"
+          }
+        },
+        {
+          "field": "projected",
+          "rhs": {
+            "kind": "name",
+            "name": "projected"
+          }
+        }
+      ]
+    },
+    {
+      "name": "apply",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "buffered"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "projecting"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "buffered",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "buffered"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "isub",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "buffered"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "buffered"
+              }
+            ]
+          }
+        },
+        {
+          "field": "applied",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "buffered"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "applied"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "applied"
+              }
+            ]
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "buffered"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "cursor"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "cursor"
+              }
+            ]
+          }
+        },
+        {
+          "field": "projected",
+          "rhs": {
+            "kind": "name",
+            "name": "projected"
+          }
+        }
+      ]
+    },
+    {
+      "name": "project",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "ilt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "projected"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "applied"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "receiving"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "projected",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "ilt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "projected"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "applied"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "projected"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "projected"
+              }
+            ]
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "buffered",
+          "rhs": {
+            "kind": "name",
+            "name": "buffered"
+          }
+        },
+        {
+          "field": "applied",
+          "rhs": {
+            "kind": "name",
+            "name": "applied"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "start",
+    "receive",
+    "apply",
+    "project"
+  ]
+}

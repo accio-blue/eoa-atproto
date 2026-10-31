@@ -1,0 +1,759 @@
+{
+  "generatedFrom": "../../specs/moderation/reply-window.qnt",
+  "specHash": "fa76686bca51784b0fdc6e59df940709825865da68d431bb74fcb680fbaac0e7",
+  "module": "moderation_reply_window",
+  "vars": [
+    {
+      "name": "notice",
+      "type": "str"
+    },
+    {
+      "name": "window",
+      "type": "str"
+    },
+    {
+      "name": "reply",
+      "type": "str"
+    },
+    {
+      "name": "rounds",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "NoticeValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "notice"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "notice"
+              },
+              {
+                "kind": "str",
+                "value": "sent"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "WindowValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "window"
+              },
+              {
+                "kind": "str",
+                "value": "closed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "window"
+              },
+              {
+                "kind": "str",
+                "value": "open"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "window"
+              },
+              {
+                "kind": "str",
+                "value": "expired"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ReplyValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "reply"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "reply"
+              },
+              {
+                "kind": "str",
+                "value": "submitted"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "reply"
+              },
+              {
+                "kind": "str",
+                "value": "published"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "reply"
+              },
+              {
+                "kind": "str",
+                "value": "rejected"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "WindowNeedsNotice": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "window"
+              },
+              {
+                "kind": "str",
+                "value": "closed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "notice"
+              },
+              {
+                "kind": "str",
+                "value": "sent"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ReplyNeedsNotice": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "reply"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "notice"
+              },
+              {
+                "kind": "str",
+                "value": "sent"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RoundsBound": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "rounds"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ilte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "rounds"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RoundsTracksReply": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "reply"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "rounds"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "notice",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "window",
+          "rhs": {
+            "kind": "str",
+            "value": "closed"
+          }
+        },
+        {
+          "field": "reply",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "rounds",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "notify",
+      "assignments": [
+        {
+          "field": "notice",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "notice"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "sent"
+              },
+              {
+                "kind": "name",
+                "name": "notice"
+              }
+            ]
+          }
+        },
+        {
+          "field": "window",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "notice"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "open"
+              },
+              {
+                "kind": "name",
+                "name": "window"
+              }
+            ]
+          }
+        },
+        {
+          "field": "reply",
+          "rhs": {
+            "kind": "name",
+            "name": "reply"
+          }
+        },
+        {
+          "field": "rounds",
+          "rhs": {
+            "kind": "name",
+            "name": "rounds"
+          }
+        }
+      ]
+    },
+    {
+      "name": "submit",
+      "assignments": [
+        {
+          "field": "notice",
+          "rhs": {
+            "kind": "name",
+            "name": "notice"
+          }
+        },
+        {
+          "field": "window",
+          "rhs": {
+            "kind": "name",
+            "name": "window"
+          }
+        },
+        {
+          "field": "reply",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "window"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "open"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "reply"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "none"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "submitted"
+              },
+              {
+                "kind": "name",
+                "name": "reply"
+              }
+            ]
+          }
+        },
+        {
+          "field": "rounds",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "window"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "open"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "reply"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "none"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "rounds"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "rounds"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "expire",
+      "assignments": [
+        {
+          "field": "notice",
+          "rhs": {
+            "kind": "name",
+            "name": "notice"
+          }
+        },
+        {
+          "field": "window",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "window"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "open"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "expired"
+              },
+              {
+                "kind": "name",
+                "name": "window"
+              }
+            ]
+          }
+        },
+        {
+          "field": "reply",
+          "rhs": {
+            "kind": "name",
+            "name": "reply"
+          }
+        },
+        {
+          "field": "rounds",
+          "rhs": {
+            "kind": "name",
+            "name": "rounds"
+          }
+        }
+      ]
+    },
+    {
+      "name": "publish",
+      "assignments": [
+        {
+          "field": "notice",
+          "rhs": {
+            "kind": "name",
+            "name": "notice"
+          }
+        },
+        {
+          "field": "window",
+          "rhs": {
+            "kind": "name",
+            "name": "window"
+          }
+        },
+        {
+          "field": "reply",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "reply"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "submitted"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "published"
+              },
+              {
+                "kind": "name",
+                "name": "reply"
+              }
+            ]
+          }
+        },
+        {
+          "field": "rounds",
+          "rhs": {
+            "kind": "name",
+            "name": "rounds"
+          }
+        }
+      ]
+    },
+    {
+      "name": "discard",
+      "assignments": [
+        {
+          "field": "notice",
+          "rhs": {
+            "kind": "name",
+            "name": "notice"
+          }
+        },
+        {
+          "field": "window",
+          "rhs": {
+            "kind": "name",
+            "name": "window"
+          }
+        },
+        {
+          "field": "reply",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "reply"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "submitted"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "rejected"
+              },
+              {
+                "kind": "name",
+                "name": "reply"
+              }
+            ]
+          }
+        },
+        {
+          "field": "rounds",
+          "rhs": {
+            "kind": "name",
+            "name": "rounds"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "notify",
+    "submit",
+    "expire",
+    "publish",
+    "discard"
+  ]
+}

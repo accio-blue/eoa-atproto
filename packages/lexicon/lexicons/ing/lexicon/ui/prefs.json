@@ -1,0 +1,57 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.ui.prefs",
+  "description": "A user's accessibility and UI preferences for the headless primitives. One per repo (the record key is the literal self). Every preference is optional: an absent field means the primitive's default, so the record stays small and a later field can be added without invalidating old records. Prefers-reduced-motion is a media query the host reads; `motion` here overrides it.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "literal:self",
+      "description": "The user's own preferences. The host resolves this record and injects the resolved values into the primitives; @cssints/headless never imports atproto. Look-related policy (colour, type, focus-ring styling) is the look layer's job (ADR 0002), not a preference.",
+      "record": {
+        "type": "object",
+        "required": ["createdAt"],
+        "properties": {
+          "motion": {
+            "type": "string",
+            "knownValues": ["system", "reduce", "full"],
+            "description": "Motion preference. system (the default) follows prefers-reduced-motion; reduce forces reduced motion; full forces animation on. A reduce preference also makes motionDurationMs 0."
+          },
+          "motionDurationMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "Tween duration for camera and disclosure-style transitions. Default 200. Forced to 0 when motion resolves to reduce."
+          },
+          "typeaheadDelayMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "How long a typeahead buffer lives before it resets (listbox, combobox, menus). Default 500."
+          },
+          "tooltipShowDelayMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "Hover/focus delay before a tooltip shows. Default 600."
+          },
+          "tooltipHideDelayMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "Grace period after the pointer leaves before a tooltip hides. Default 300."
+          },
+          "announce": {
+            "type": "boolean",
+            "description": "Whether the primitives emit live-region announcements at all (keyboard moves, selection changes). Default true. An off value silences the region without removing real focus."
+          },
+          "focusFollowsCamera": {
+            "type": "boolean",
+            "description": "Whether focusing a node outside the viewport pans the camera to it (the canvas). Default true."
+          },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.issue.comment",
+  "description": "A comment on an issue. Flat and append-only: what somebody said, and when.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "One comment.",
+      "required": ["subject", "text", "createdAt"],
+      "properties": {
+        "subject": {
+          "type": "ref",
+          "ref": "ing.lexicon.cms.defs#strongRef"
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    }
+  }
+}

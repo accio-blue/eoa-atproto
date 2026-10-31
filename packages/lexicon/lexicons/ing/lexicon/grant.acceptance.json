@@ -1,0 +1,27 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.grant.acceptance",
+  "description": "A subject taking up a grant -- the second half of consent when a purpose or a body of user data needs it. It names the exact grant by its strongRef, so any edit to the grant is a different grant that has not been accepted.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["grant", "acceptedBy", "acceptedAt"],
+        "properties": {
+          "grant": {
+            "type": "ref",
+            "ref": "ing.lexicon.cms.defs#strongRef"
+          },
+          "acceptedBy": {
+            "type": "string",
+            "format": "did",
+            "description": "The subject of the grant it names; the evaluator refuses an acceptance from anyone else."
+          },
+          "acceptedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.agent.provenance",
+  "description": "Who an agent acts for. A link from the agent's repo to the account that operates it, so moderation and labeling can attribute agent-authored records to a principal.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "literal:self",
+      "description": "One provenance record per agent, at the literal rkey `self`.",
+      "record": {
+        "type": "object",
+        "required": ["account", "createdAt"],
+        "properties": {
+          "account": {
+            "type": "string",
+            "format": "did",
+            "description": "The DID of the account this agent acts for."
+          },
+          "operator": { "type": "string", "maxLength": 640 },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

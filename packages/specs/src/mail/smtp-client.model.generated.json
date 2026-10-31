@@ -1,0 +1,2195 @@
+{
+  "generatedFrom": "../../specs/mail/smtp-client.qnt",
+  "specHash": "9c8be84e16d834dfe5b65d84975e7918e803d27c3ba93ecb4c73929f553d9bb3",
+  "module": "mail_smtp_client",
+  "vars": [
+    {
+      "name": "stage",
+      "type": "str"
+    },
+    {
+      "name": "tls",
+      "type": "bool"
+    },
+    {
+      "name": "advertised",
+      "type": "bool"
+    },
+    {
+      "name": "authed",
+      "type": "bool"
+    },
+    {
+      "name": "accepted",
+      "type": "int"
+    },
+    {
+      "name": "refused",
+      "type": "int"
+    },
+    {
+      "name": "tries",
+      "type": "int"
+    },
+    {
+      "name": "regreeted",
+      "type": "bool"
+    },
+    {
+      "name": "sent",
+      "type": "bool"
+    },
+    {
+      "name": "lastCode",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "open": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "not",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "closed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canGreet": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "name",
+            "name": "open"
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "idle"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "greeted"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canUpgrade": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "name",
+                "name": "advertised"
+              },
+              {
+                "kind": "name",
+                "name": "open"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "tries"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canAuth": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "name",
+                "name": "tls"
+              },
+              {
+                "kind": "name",
+                "name": "regreeted"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "open"
+          }
+        ]
+      }
+    },
+    "canEnvelope": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "name",
+                "name": "authed"
+              },
+              {
+                "kind": "name",
+                "name": "open"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "greeted"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canRcpt": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "envelope"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "open"
+          }
+        ]
+      }
+    },
+    "canData": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "accepted"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "envelope"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "open"
+          }
+        ]
+      }
+    },
+    "StageValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "greeted"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "envelope"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "sent"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "closed"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "NoCredentialsInTheClear": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "authed"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "tls"
+          }
+        ]
+      }
+    },
+    "AuthOnlyAfterReGreeting": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "authed"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "regreeted"
+          }
+        ]
+      }
+    },
+    "TlsImpliesAdvertised": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "tls"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "advertised"
+          }
+        ]
+      }
+    },
+    "UpgradeAtMostOnce": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "tries"
+          },
+          {
+            "kind": "int",
+            "value": "1"
+          }
+        ]
+      }
+    },
+    "SentImpliesAccepted": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "sent"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igt",
+            "args": [
+              {
+                "kind": "name",
+                "name": "accepted"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "EnvelopeImpliesAuthed": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "envelope"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "sent"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "authed"
+          }
+        ]
+      }
+    },
+    "NoSecondEnvelope": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "sent"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "sent"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "closed"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "advertised",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "refused",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "tries",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "regreeted",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "greeting",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canGreet"
+              },
+              {
+                "kind": "str",
+                "value": "greeted"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "advertised",
+          "rhs": {
+            "kind": "name",
+            "name": "advertised"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "name",
+            "name": "accepted"
+          }
+        },
+        {
+          "field": "refused",
+          "rhs": {
+            "kind": "name",
+            "name": "refused"
+          }
+        },
+        {
+          "field": "tries",
+          "rhs": {
+            "kind": "name",
+            "name": "tries"
+          }
+        },
+        {
+          "field": "regreeted",
+          "rhs": {
+            "kind": "name",
+            "name": "regreeted"
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "name",
+            "name": "sent"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canGreet"
+              },
+              {
+                "kind": "int",
+                "value": "220"
+              },
+              {
+                "kind": "name",
+                "name": "lastCode"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ehlo",
+      "nondet": {
+        "name": "advertises",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canGreet"
+              },
+              {
+                "kind": "str",
+                "value": "greeted"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "advertised",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canGreet"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "advertises"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "advertised"
+              }
+            ]
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "name",
+            "name": "accepted"
+          }
+        },
+        {
+          "field": "refused",
+          "rhs": {
+            "kind": "name",
+            "name": "refused"
+          }
+        },
+        {
+          "field": "tries",
+          "rhs": {
+            "kind": "name",
+            "name": "tries"
+          }
+        },
+        {
+          "field": "regreeted",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canGreet"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "tls"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "regreeted"
+              }
+            ]
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "name",
+            "name": "sent"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canGreet"
+              },
+              {
+                "kind": "int",
+                "value": "250"
+              },
+              {
+                "kind": "name",
+                "name": "lastCode"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "starttls",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canUpgrade"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "greeted"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canUpgrade"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "tls"
+              }
+            ]
+          }
+        },
+        {
+          "field": "advertised",
+          "rhs": {
+            "kind": "name",
+            "name": "advertised"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canUpgrade"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": false
+              },
+              {
+                "kind": "name",
+                "name": "authed"
+              }
+            ]
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canUpgrade"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              },
+              {
+                "kind": "name",
+                "name": "accepted"
+              }
+            ]
+          }
+        },
+        {
+          "field": "refused",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canUpgrade"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              },
+              {
+                "kind": "name",
+                "name": "refused"
+              }
+            ]
+          }
+        },
+        {
+          "field": "tries",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canUpgrade"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "tries"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "tries"
+              }
+            ]
+          }
+        },
+        {
+          "field": "regreeted",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canUpgrade"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": false
+              },
+              {
+                "kind": "name",
+                "name": "regreeted"
+              }
+            ]
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "name",
+            "name": "sent"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canUpgrade"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "220"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canUpgrade"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "454"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "ite",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "open"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "503"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "lastCode"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "auth",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "name",
+            "name": "stage"
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "advertised",
+          "rhs": {
+            "kind": "name",
+            "name": "advertised"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canAuth"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "authed"
+              }
+            ]
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "name",
+            "name": "accepted"
+          }
+        },
+        {
+          "field": "refused",
+          "rhs": {
+            "kind": "name",
+            "name": "refused"
+          }
+        },
+        {
+          "field": "tries",
+          "rhs": {
+            "kind": "name",
+            "name": "tries"
+          }
+        },
+        {
+          "field": "regreeted",
+          "rhs": {
+            "kind": "name",
+            "name": "regreeted"
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "name",
+            "name": "sent"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canAuth"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "235"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "535"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "open"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "530"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "lastCode"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "abandon",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "not",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "canAuth"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "open"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "closed"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "advertised",
+          "rhs": {
+            "kind": "name",
+            "name": "advertised"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "name",
+            "name": "accepted"
+          }
+        },
+        {
+          "field": "refused",
+          "rhs": {
+            "kind": "name",
+            "name": "refused"
+          }
+        },
+        {
+          "field": "tries",
+          "rhs": {
+            "kind": "name",
+            "name": "tries"
+          }
+        },
+        {
+          "field": "regreeted",
+          "rhs": {
+            "kind": "name",
+            "name": "regreeted"
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "name",
+            "name": "sent"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "not",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "canAuth"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "open"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "530"
+              },
+              {
+                "kind": "name",
+                "name": "lastCode"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "mailFrom",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canEnvelope"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "envelope"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "advertised",
+          "rhs": {
+            "kind": "name",
+            "name": "advertised"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "name",
+            "name": "accepted"
+          }
+        },
+        {
+          "field": "refused",
+          "rhs": {
+            "kind": "name",
+            "name": "refused"
+          }
+        },
+        {
+          "field": "tries",
+          "rhs": {
+            "kind": "name",
+            "name": "tries"
+          }
+        },
+        {
+          "field": "regreeted",
+          "rhs": {
+            "kind": "name",
+            "name": "regreeted"
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "name",
+            "name": "sent"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canEnvelope"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "250"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "550"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "open"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "503"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "lastCode"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "rcpt",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "name",
+            "name": "stage"
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "advertised",
+          "rhs": {
+            "kind": "name",
+            "name": "advertised"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canRcpt"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "accepted"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "accepted"
+              }
+            ]
+          }
+        },
+        {
+          "field": "refused",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canRcpt"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "refused"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canRcpt"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "iadd",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "refused"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "1"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "refused"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "tries",
+          "rhs": {
+            "kind": "name",
+            "name": "tries"
+          }
+        },
+        {
+          "field": "regreeted",
+          "rhs": {
+            "kind": "name",
+            "name": "regreeted"
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "name",
+            "name": "sent"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canRcpt"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "250"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "550"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "open"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "503"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "lastCode"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "data",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canData"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "sent"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "advertised",
+          "rhs": {
+            "kind": "name",
+            "name": "advertised"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "name",
+            "name": "accepted"
+          }
+        },
+        {
+          "field": "refused",
+          "rhs": {
+            "kind": "name",
+            "name": "refused"
+          }
+        },
+        {
+          "field": "tries",
+          "rhs": {
+            "kind": "name",
+            "name": "tries"
+          }
+        },
+        {
+          "field": "regreeted",
+          "rhs": {
+            "kind": "name",
+            "name": "regreeted"
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canData"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "sent"
+              }
+            ]
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canData"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "250"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "451"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "open"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "503"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "lastCode"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "quit",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "open"
+              },
+              {
+                "kind": "str",
+                "value": "closed"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "advertised",
+          "rhs": {
+            "kind": "name",
+            "name": "advertised"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "name",
+            "name": "accepted"
+          }
+        },
+        {
+          "field": "refused",
+          "rhs": {
+            "kind": "name",
+            "name": "refused"
+          }
+        },
+        {
+          "field": "tries",
+          "rhs": {
+            "kind": "name",
+            "name": "tries"
+          }
+        },
+        {
+          "field": "regreeted",
+          "rhs": {
+            "kind": "name",
+            "name": "regreeted"
+          }
+        },
+        {
+          "field": "sent",
+          "rhs": {
+            "kind": "name",
+            "name": "sent"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "open"
+              },
+              {
+                "kind": "int",
+                "value": "221"
+              },
+              {
+                "kind": "name",
+                "name": "lastCode"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "greeting",
+    "ehlo",
+    "starttls",
+    "auth",
+    "abandon",
+    "mailFrom",
+    "rcpt",
+    "data",
+    "quit"
+  ]
+}

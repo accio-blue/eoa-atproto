@@ -1,0 +1,32 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.issue.label",
+  "description": "A label, as a definition: what a label IS, not that something has it. Applying one is an op (`ing.lexicon.issue.labelOp`), so a label can be renamed or recoloured without touching the thousands of records that reference it.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "One label definition.",
+      "required": ["name", "createdAt"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "color": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "A token or a literal, whichever the UI decides; the lexicon does not."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    }
+  }
+}

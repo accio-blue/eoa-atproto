@@ -1,0 +1,799 @@
+{
+  "generatedFrom": "../../specs/plugin-host/registry_gate.qnt",
+  "specHash": "6b1a6f212e5683b73d127951c2132950f5cc8f3ddb34fdfdb92124c7ec309448",
+  "module": "registry_gate",
+  "vars": [
+    {
+      "name": "stage",
+      "type": "str"
+    },
+    {
+      "name": "signature",
+      "type": "str"
+    },
+    {
+      "name": "width",
+      "type": "str"
+    }
+  ],
+  "defs": {
+    "NoEscalationWithoutGate": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "width"
+              },
+              {
+                "kind": "str",
+                "value": "wide"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "live"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "signature"
+              },
+              {
+                "kind": "str",
+                "value": "valid"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "StageValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "submitted"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "attested"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "live"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "rejected"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "SignatureValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "signature"
+              },
+              {
+                "kind": "str",
+                "value": "missing"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "signature"
+              },
+              {
+                "kind": "str",
+                "value": "valid"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "signature"
+              },
+              {
+                "kind": "str",
+                "value": "invalid"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "signature",
+          "rhs": {
+            "kind": "str",
+            "value": "missing"
+          }
+        },
+        {
+          "field": "width",
+          "rhs": {
+            "kind": "str",
+            "value": "narrow"
+          }
+        }
+      ]
+    },
+    {
+      "name": "submit",
+      "nondet": {
+        "name": "scope",
+        "kind": "str",
+        "pool": [
+          "narrow",
+          "wide"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "or",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "stage"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "idle"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "stage"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "live"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "rejected"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "submitted"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "signature",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "or",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "stage"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "idle"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "stage"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "live"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "rejected"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "missing"
+              },
+              {
+                "kind": "name",
+                "name": "signature"
+              }
+            ]
+          }
+        },
+        {
+          "field": "width",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "or",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "stage"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "idle"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "stage"
+                          },
+                          {
+                            "kind": "str",
+                            "value": "live"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "rejected"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "scope"
+              },
+              {
+                "kind": "name",
+                "name": "width"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "attest",
+      "nondet": {
+        "name": "sig",
+        "kind": "str",
+        "pool": [
+          "valid",
+          "invalid"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "submitted"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "attested"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "attested"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "signature",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "submitted"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "attested"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "sig"
+              },
+              {
+                "kind": "name",
+                "name": "signature"
+              }
+            ]
+          }
+        },
+        {
+          "field": "width",
+          "rhs": {
+            "kind": "name",
+            "name": "width"
+          }
+        }
+      ]
+    },
+    {
+      "name": "publish",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "submitted"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "width"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "narrow"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "live"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "signature",
+          "rhs": {
+            "kind": "name",
+            "name": "signature"
+          }
+        },
+        {
+          "field": "width",
+          "rhs": {
+            "kind": "name",
+            "name": "width"
+          }
+        }
+      ]
+    },
+    {
+      "name": "approve",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "attested"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "signature"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "valid"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "live"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "signature",
+          "rhs": {
+            "kind": "name",
+            "name": "signature"
+          }
+        },
+        {
+          "field": "width",
+          "rhs": {
+            "kind": "name",
+            "name": "width"
+          }
+        }
+      ]
+    },
+    {
+      "name": "reject",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "submitted"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "attested"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "rejected"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "signature",
+          "rhs": {
+            "kind": "name",
+            "name": "signature"
+          }
+        },
+        {
+          "field": "width",
+          "rhs": {
+            "kind": "name",
+            "name": "width"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "submit",
+    "attest",
+    "publish",
+    "approve",
+    "reject"
+  ]
+}

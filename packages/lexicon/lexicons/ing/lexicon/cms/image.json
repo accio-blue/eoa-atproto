@@ -1,0 +1,58 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.cms.image",
+  "description": "An image's bytes and what was derived from them, kept beside the documents that show it. A picture can appear in many documents and locales; its palette and its placeholder are facts about the picture, not about any one page, so they rest here once — keyed by nothing but the record's own rkey — and an image value points at this record instead of repeating them. Derived data is also the part most likely to be recomputed, and a sidecar can be rewritten without touching a document.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["ref", "createdAt"],
+        "properties": {
+          "ref": {
+            "type": "blob",
+            "accept": ["image/*"],
+            "maxSize": 10000000,
+            "description": "The bytes. Held here so the PDS keeps them alive for as long as the record does."
+          },
+          "width": { "type": "integer", "minimum": 1 },
+          "height": { "type": "integer", "minimum": 1 },
+          "dominantColor": {
+            "type": "string",
+            "description": "The colour the box behind the image is painted with, before the bytes arrive."
+          },
+          "palette": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "The palette extractor's swatches, as hex."
+          },
+          "thumbhash": {
+            "type": "string",
+            "description": "A ThumbHash placeholder, base64."
+          },
+          "variants": {
+            "type": "array",
+            "items": { "type": "ref", "ref": "#variant" },
+            "description": "The resized copies a `srcset` chooses from, smallest first."
+          },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "variant": {
+      "type": "object",
+      "required": ["width"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "url": {
+          "type": "string",
+          "description": "Where the copy is served from, when it is not a blob on this repo."
+        },
+        "ref": { "type": "blob", "accept": ["image/*"] }
+      }
+    }
+  }
+}

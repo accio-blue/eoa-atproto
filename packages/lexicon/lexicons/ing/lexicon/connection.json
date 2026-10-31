@@ -1,0 +1,28 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.connection",
+  "description": "One half of a connection, written by each party: consent that is mutual only when both halves are present and point at each other. A half cannot be written for somebody else -- the repo it lives in is the signature.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["subject", "connection", "createdAt"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "format": "did",
+            "description": "The other party."
+          },
+          "connection": {
+            "type": "ref",
+            "ref": "ing.lexicon.cms.defs#strongRef",
+            "description": "Their half, as it was read. A half that is edited afterwards is no longer the half that was agreed to."
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

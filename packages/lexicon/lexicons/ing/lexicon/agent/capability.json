@@ -1,0 +1,21 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.agent.capability",
+  "description": "One capability an agent declares it can perform. Records are keyed by tid, so an agent may declare several.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["name", "createdAt"],
+        "properties": {
+          "name": { "type": "string", "maxLength": 128 },
+          "description": { "type": "string", "maxLength": 2560 },
+          "inputSchema": { "type": "unknown" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

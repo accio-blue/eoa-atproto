@@ -1,0 +1,136 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'tools/*'
+
+# pnpm 11+ reads non-auth config from here, not from .npmrc or package.json#pnpm.
+nodeLinker: hoisted
+
+overrides:
+  '@effect/platform-node-shared': 4.1.1
+  # Force one Effect copy; duplicate copies break Effect's module identity.
+  effect: 4.1.1
+
+peerDependencyRules:
+  allowedVersions:
+    effect: 4.1.1
+
+# Dependency lifecycle scripts must be explicitly allow-listed in pnpm 11+.
+allowBuilds:
+  chdb: true
+  core-js: true
+  esbuild: true
+  msgpackr-extract: true
+  protobufjs: true
+  # tsc-rs needed a build script to link its platform binary; effect-tsrs ships
+  # the binary as an optional dependency, so nothing to allow here.
+  # Not a nicety: pnpm refuses to install while a script is neither allowed nor denied
+  # (`ERR_PNPM_IGNORED_BUILDS`), which blocks any deployment that installs from the lockfile —
+  # the PDS container did. Approving it is also what local `wrangler`/`workerd` dev wants.
+  workerd: true
+
+# Single source of truth for every external dependency version.
+# Workspace members reference these with `"<pkg>": "catalog:"`.
+catalog:
+  # The deploy path: Infrastructure-as-Effects (alchemy-run). It bundles the Worker from source and
+  # reconciles bindings, routes and DNS itself, which is why `wrangler` stops being the deploy tool —
+  # and why `cf deploy` cannot be it, since it shells out to a wrangler the hoisted linker never puts
+  # in an app's `node_modules`. `cf` stays for API operations (versions, secrets, routes).
+  # Pinned, not ranged: 2.0.0-beta.84 publishes without the provider packages
+  # (`alchemy/Cloudflare` and friends are missing from the tarball), so the
+  # caret would break every deploy. Move off beta.83 once that publish is fixed.
+  alchemy: 2.0.0-beta.83
+  '@atproto/api': ^0.29.4
+  '@atproto/oauth-client-node': ^0.5.12
+  # Babel 8 is a breaking API change and @solidjs/babel-plugin (and the JSX
+  # syntax plugin it pulls) still peer on ^7, so the latest 7.x is the ceiling.
+  '@babel/core': ^7.29.7
+  '@babel/preset-typescript': ^7.29.7
+  # Effect 4, kept in lockstep across effect / @effect/platform-node*.
+  # The machine tooling follows the stable line: @typeonce/effect-machine 0.46
+  # peers effect@^4.0.0. @quint-machine/connect is the published fork of @firfi/quint-connect.
+  # Effect v4's TypeSafe System One provider for `DecisionModel` (typed judgments).
+  '@cloudflare/workers-types': ^5.20261025.1
+  '@effect/ai-typesafe': 4.1.1
+  # Alchemy's CLI runs under Bun and takes this as a peer, so the deploy tool needs it here too.
+  '@effect/platform-bun': 4.1.1
+  '@effect/platform-node': 4.1.1
+  '@effect/tsgo': ^0.57.0
+  '@ipld/dag-cbor': ^10.0.2
+  '@knip/mcp': ^0.0.36
+  # secp256k1, which WebCrypto does not have (and ES256K, `did:plc`'s older
+  # curve). The same library the atproto ecosystem uses for it; pure JS, so it
+  # runs in Workers and browsers as well as Node.
+  '@noble/curves': ^2.4.0
+  '@opencode-ai/plugin': ^1.19.4
+  '@opentui/core': ^0.6.8
+  '@solidjs/babel-plugin': 2.0.0-rc.9
+  '@solidjs/router': 2.0.0-next.34
+  '@solidjs/universal': 2.0.0-rc.13
+  # next.51 peers on solid-js ^2.0.0-rc.16 and the catalog stays on rc.13 (one
+  # Solid runtime, both `solid-js` and `@solidjs/web`); next.44 is the last
+  # plugin that supports it. Move both together, not one.
+  '@solidjs/vite-plugin': 3.0.0-next.44
+  '@solidjs/web': 2.0.0-rc.13
+  '@standard-schema/spec': ^1.1.0
+  '@typeonce/effect-machine': 0.46.0
+  '@types/bun': ^1.4.4
+  '@types/node': ^26.6.5
+  '@typescript/native': npm:typescript@7.0.2
+  '@typescript/native-preview': 7.0.0-dev.20260707.2
+  'culori': ^4.0.2
+  'effect': 4.1.1
+  'fast-check': ^4.10.2
+  'ghostty-opentui': ^1.5.0
+  'knip': ^6.43.0
+  # The markdown lexer the cssints docs site builds its pages with; the importer reads the same tokens.
+  'marked': 18.1.1
+  'mediabunny': ^1.62.1
+  'oxlint': ^1.89.0
+  'playwright': 1.64.1
+  # Solid 2 is the single Solid runtime for the whole repo. The former dual
+  # catalog (Solid 1.9.12 for @opentui/solid + `solid2next`) is gone; the TUI
+  # apps now use @eoa/opentui-solid2 on this same runtime.
+  'solid-js': 2.0.0-rc.13
+  # Effect diagnostics on the tsrs compiler (the Rust port of TS7). `diagnostics
+  # --type-check` is the combined check tsc-rs used to do, but the Effect rules
+  # run natively in Rust rather than through the JS language-service plugin.
+  '@yielded/effect-tsrs': 0.2.2
+  'tsx': ^4.23.15
+  # `typescript` 7.x is the native compiler; it no longer ships the JS compiler
+  # API (`ts.factory`, `SyntaxKind`, ...) that the codegen scripts need, so those
+  # consumer (ai-automation) uses the `typescript-legacy` alias.
+  # Typechecking uses the native compiler (`tsgo` via `@typescript/native-preview`).
+  'typescript': ^7.0.2
+  'typescript-legacy': npm:typescript@5.9.3
+  'vite-plus': ^1.4.0
+  'vitest': 5.0.5
+  wrangler: ^4.152.0
+  'ws': 8.22.0
+  'zigpty': ^0.2.1
+
+minimumReleaseAgeExclude:
+  - fast-check@4.10.2
+  - mediabunny@1.61.1
+  - cssints@0.13.0 || 0.20.0 || 0.22.0
+  - '@cssints/css-grammar@0.13.0 || 0.20.0 || 0.22.0'
+  - '@cssints/icons@0.13.0 || 0.20.0 || 0.22.0'
+  - '@cssints/mise-en-mode@0.13.0 || 0.20.0 || 0.22.0'
+  - '@cssints/headless@0.13.0 || 0.13.1 || 0.20.0 || 0.22.0 || 0.24.0'
+  - '@cssints/apg-specs@0.5.2'
+  - '@cloudflare/workers-types@5.20261012.1'
+  - '@quint-machine/core@0.2.0'
+  - '@quint-machine/connect@0.1.0'
+  - '@effect/ai-typesafe@4.1.1'
+  - '@effect/platform-bun@4.1.1'
+  - '@effect/platform-node-shared@4.1.1'
+  - '@effect/platform-node@4.1.1'
+  - effect@4.1.1
+
+# `alchemy` is the deploy path, and every published beta (through 2.0.0-beta.84) still imports
+# `effect/Crypto`, which effect 4.1 removed. The patch is the mechanical translation: OAuth PKCE asks
+# `SecureRandom`/`Digest` instead of `Crypto`, the platform layer supplies `NodeCrypto`/`BunCrypto` (4.1
+# keeps crypto out of `NodeServices`), and the type references follow. Drop it as soon as upstream
+# publishes a 4.1-compatible beta — `patches/` is not a place to live.
+patchedDependencies:
+  alchemy@2.0.0-beta.83: patches/alchemy@2.0.0-beta.83.patch

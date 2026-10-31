@@ -1,0 +1,839 @@
+{
+  "generatedFrom": "../../specs/directory/did-doc-derivation.qnt",
+  "specHash": "bae08f1fe092889c6aae551b0d394289dcc63c722807f0052a379e886a7cd9f7",
+  "module": "did_doc_derivation",
+  "vars": [
+    {
+      "name": "headKind",
+      "type": "str"
+    },
+    {
+      "name": "headSigningKey",
+      "type": "str"
+    },
+    {
+      "name": "headHandle",
+      "type": "str"
+    },
+    {
+      "name": "headPds",
+      "type": "str"
+    },
+    {
+      "name": "headEpoch",
+      "type": "int"
+    },
+    {
+      "name": "docEpoch",
+      "type": "int"
+    },
+    {
+      "name": "docRendered",
+      "type": "bool"
+    },
+    {
+      "name": "docId",
+      "type": "str"
+    },
+    {
+      "name": "docAlias",
+      "type": "str"
+    },
+    {
+      "name": "docKey",
+      "type": "str"
+    },
+    {
+      "name": "docService",
+      "type": "str"
+    },
+    {
+      "name": "docRotationExposed",
+      "type": "bool"
+    }
+  ],
+  "defs": {
+    "isOperation": {
+      "kind": "function",
+      "params": [
+        "k"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "k"
+          },
+          {
+            "kind": "str",
+            "value": "plc_operation"
+          }
+        ]
+      }
+    },
+    "DocumentEpochNotAhead": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "docEpoch"
+          },
+          {
+            "kind": "name",
+            "name": "headEpoch"
+          }
+        ]
+      }
+    },
+    "DocMatchesHeadWhenRendered": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "docEpoch"
+              },
+              {
+                "kind": "name",
+                "name": "headEpoch"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isOperation",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "and",
+                        "args": [
+                          {
+                            "kind": "app",
+                            "opcode": "and",
+                            "args": [
+                              {
+                                "kind": "name",
+                                "name": "docRendered"
+                              },
+                              {
+                                "kind": "app",
+                                "opcode": "eq",
+                                "args": [
+                                  {
+                                    "kind": "name",
+                                    "name": "docId"
+                                  },
+                                  {
+                                    "kind": "str",
+                                    "value": "did:plc:genesis"
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "app",
+                            "opcode": "eq",
+                            "args": [
+                              {
+                                "kind": "name",
+                                "name": "docAlias"
+                              },
+                              {
+                                "kind": "name",
+                                "name": "headHandle"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "app",
+                        "opcode": "eq",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "docKey"
+                          },
+                          {
+                            "kind": "name",
+                            "name": "headSigningKey"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "docService"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "headPds"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "not",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "docRendered"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "bool",
+            "value": true
+          }
+        ]
+      }
+    },
+    "RotationKeysNeverExposed": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "not",
+        "args": [
+          {
+            "kind": "name",
+            "name": "docRotationExposed"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "headKind",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "headSigningKey",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "headHandle",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "headPds",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "headEpoch",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "docEpoch",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "docRendered",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "docId",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "docAlias",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "docKey",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "docService",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "docRotationExposed",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "install",
+      "nondet": {
+        "name": "bundle",
+        "kind": "str",
+        "pool": [
+          "genesis-A",
+          "genesis-B",
+          "tombstone",
+          "none"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "headKind",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "bundle"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "genesis-A"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "bundle"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "genesis-B"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "plc_operation"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "bundle"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "tombstone"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "plc_tombstone"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "headSigningKey",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "bundle"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "genesis-A"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "sigA"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "bundle"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "genesis-B"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "sigB"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "headHandle",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "bundle"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "genesis-A"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "alice.example.com"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "bundle"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "genesis-B"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "bob.example.com"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "headPds",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "bundle"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "genesis-A"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "pds.one"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "bundle"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "genesis-B"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "str",
+                    "value": "pds.two"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "headEpoch",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "headEpoch"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "docEpoch",
+          "rhs": {
+            "kind": "name",
+            "name": "docEpoch"
+          }
+        },
+        {
+          "field": "docRendered",
+          "rhs": {
+            "kind": "name",
+            "name": "docRendered"
+          }
+        },
+        {
+          "field": "docId",
+          "rhs": {
+            "kind": "name",
+            "name": "docId"
+          }
+        },
+        {
+          "field": "docAlias",
+          "rhs": {
+            "kind": "name",
+            "name": "docAlias"
+          }
+        },
+        {
+          "field": "docKey",
+          "rhs": {
+            "kind": "name",
+            "name": "docKey"
+          }
+        },
+        {
+          "field": "docService",
+          "rhs": {
+            "kind": "name",
+            "name": "docService"
+          }
+        },
+        {
+          "field": "docRotationExposed",
+          "rhs": {
+            "kind": "name",
+            "name": "docRotationExposed"
+          }
+        }
+      ]
+    },
+    {
+      "name": "render",
+      "assignments": [
+        {
+          "field": "headKind",
+          "rhs": {
+            "kind": "name",
+            "name": "headKind"
+          }
+        },
+        {
+          "field": "headSigningKey",
+          "rhs": {
+            "kind": "name",
+            "name": "headSigningKey"
+          }
+        },
+        {
+          "field": "headHandle",
+          "rhs": {
+            "kind": "name",
+            "name": "headHandle"
+          }
+        },
+        {
+          "field": "headPds",
+          "rhs": {
+            "kind": "name",
+            "name": "headPds"
+          }
+        },
+        {
+          "field": "headEpoch",
+          "rhs": {
+            "kind": "name",
+            "name": "headEpoch"
+          }
+        },
+        {
+          "field": "docEpoch",
+          "rhs": {
+            "kind": "name",
+            "name": "headEpoch"
+          }
+        },
+        {
+          "field": "docRendered",
+          "rhs": {
+            "kind": "app",
+            "opcode": "isOperation",
+            "args": [
+              {
+                "kind": "name",
+                "name": "headKind"
+              }
+            ]
+          }
+        },
+        {
+          "field": "docId",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isOperation",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "did:plc:genesis"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        },
+        {
+          "field": "docAlias",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isOperation",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "headHandle"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        },
+        {
+          "field": "docKey",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isOperation",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "headSigningKey"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        },
+        {
+          "field": "docService",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isOperation",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "headKind"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "headPds"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        },
+        {
+          "field": "docRotationExposed",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "install",
+    "render"
+  ]
+}

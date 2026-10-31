@@ -1,0 +1,1425 @@
+{
+  "generatedFrom": "../../specs/oauth/session-lifecycle.qnt",
+  "specHash": "f245cc64c5827f32a6adc73f66fd254204ef081dd014d89057b8be2b405ccab7",
+  "module": "oauth_session_lifecycle",
+  "vars": [
+    {
+      "name": "stage",
+      "type": "str"
+    },
+    {
+      "name": "parPushed",
+      "type": "bool"
+    },
+    {
+      "name": "codeIssued",
+      "type": "bool"
+    },
+    {
+      "name": "codeUsed",
+      "type": "bool"
+    },
+    {
+      "name": "pkceVerified",
+      "type": "bool"
+    },
+    {
+      "name": "accessGeneration",
+      "type": "int"
+    },
+    {
+      "name": "refreshGeneration",
+      "type": "int"
+    },
+    {
+      "name": "refreshUsable",
+      "type": "bool"
+    },
+    {
+      "name": "revoked",
+      "type": "bool"
+    }
+  ],
+  "defs": {
+    "canExchange": {
+      "kind": "function",
+      "params": [
+        "issued",
+        "used",
+        "revoked"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "name",
+                "name": "issued"
+              },
+              {
+                "kind": "app",
+                "opcode": "not",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "used"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "revoked"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "exchangeOk": {
+      "kind": "function",
+      "params": [
+        "issued",
+        "used",
+        "revoked",
+        "pkceMatch"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "canExchange",
+            "args": [
+              {
+                "kind": "name",
+                "name": "issued"
+              },
+              {
+                "kind": "name",
+                "name": "used"
+              },
+              {
+                "kind": "name",
+                "name": "revoked"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "pkceMatch"
+          }
+        ]
+      }
+    },
+    "canRefresh": {
+      "kind": "function",
+      "params": [
+        "usable",
+        "revoked"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "name",
+            "name": "usable"
+          },
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "revoked"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "inAuthorized": {
+      "kind": "function",
+      "params": [
+        "s"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "s"
+              },
+              {
+                "kind": "str",
+                "value": "par_pushed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "s"
+              },
+              {
+                "kind": "str",
+                "value": "authorized"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RevokedCannotRefresh": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "revoked"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "refreshUsable"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "NoTokenWithoutPkce": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "accessGeneration"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "pkceVerified"
+          }
+        ]
+      }
+    },
+    "NoCodeWithoutPar": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "codeIssued"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "parPushed"
+          }
+        ]
+      }
+    },
+    "CodeUsedImpliesIssued": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "codeUsed"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "codeIssued"
+          }
+        ]
+      }
+    },
+    "RefreshWithinAccess": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "refreshGeneration"
+          },
+          {
+            "kind": "name",
+            "name": "accessGeneration"
+          }
+        ]
+      }
+    },
+    "StageValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "new"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "par_pushed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "authorized"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "issued"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "refreshed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "revoked"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "new"
+          }
+        },
+        {
+          "field": "parPushed",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "codeIssued",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "codeUsed",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "pkceVerified",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "accessGeneration",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "refreshGeneration",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "refreshUsable",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "revoked",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "push_request",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "new"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "par_pushed"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "parPushed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "new"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "parPushed"
+              }
+            ]
+          }
+        },
+        {
+          "field": "codeIssued",
+          "rhs": {
+            "kind": "name",
+            "name": "codeIssued"
+          }
+        },
+        {
+          "field": "codeUsed",
+          "rhs": {
+            "kind": "name",
+            "name": "codeUsed"
+          }
+        },
+        {
+          "field": "pkceVerified",
+          "rhs": {
+            "kind": "name",
+            "name": "pkceVerified"
+          }
+        },
+        {
+          "field": "accessGeneration",
+          "rhs": {
+            "kind": "name",
+            "name": "accessGeneration"
+          }
+        },
+        {
+          "field": "refreshGeneration",
+          "rhs": {
+            "kind": "name",
+            "name": "refreshGeneration"
+          }
+        },
+        {
+          "field": "refreshUsable",
+          "rhs": {
+            "kind": "name",
+            "name": "refreshUsable"
+          }
+        },
+        {
+          "field": "revoked",
+          "rhs": {
+            "kind": "name",
+            "name": "revoked"
+          }
+        }
+      ]
+    },
+    {
+      "name": "authorize",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "par_pushed"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "authorized"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "parPushed",
+          "rhs": {
+            "kind": "name",
+            "name": "parPushed"
+          }
+        },
+        {
+          "field": "codeIssued",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "par_pushed"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "codeIssued"
+              }
+            ]
+          }
+        },
+        {
+          "field": "codeUsed",
+          "rhs": {
+            "kind": "name",
+            "name": "codeUsed"
+          }
+        },
+        {
+          "field": "pkceVerified",
+          "rhs": {
+            "kind": "name",
+            "name": "pkceVerified"
+          }
+        },
+        {
+          "field": "accessGeneration",
+          "rhs": {
+            "kind": "name",
+            "name": "accessGeneration"
+          }
+        },
+        {
+          "field": "refreshGeneration",
+          "rhs": {
+            "kind": "name",
+            "name": "refreshGeneration"
+          }
+        },
+        {
+          "field": "refreshUsable",
+          "rhs": {
+            "kind": "name",
+            "name": "refreshUsable"
+          }
+        },
+        {
+          "field": "revoked",
+          "rhs": {
+            "kind": "name",
+            "name": "revoked"
+          }
+        }
+      ]
+    },
+    {
+      "name": "deny",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "inAuthorized",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "revoked"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "parPushed",
+          "rhs": {
+            "kind": "name",
+            "name": "parPushed"
+          }
+        },
+        {
+          "field": "codeIssued",
+          "rhs": {
+            "kind": "name",
+            "name": "codeIssued"
+          }
+        },
+        {
+          "field": "codeUsed",
+          "rhs": {
+            "kind": "name",
+            "name": "codeUsed"
+          }
+        },
+        {
+          "field": "pkceVerified",
+          "rhs": {
+            "kind": "name",
+            "name": "pkceVerified"
+          }
+        },
+        {
+          "field": "accessGeneration",
+          "rhs": {
+            "kind": "name",
+            "name": "accessGeneration"
+          }
+        },
+        {
+          "field": "refreshGeneration",
+          "rhs": {
+            "kind": "name",
+            "name": "refreshGeneration"
+          }
+        },
+        {
+          "field": "refreshUsable",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "revoked",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "inAuthorized",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "revoked"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "exchange",
+      "nondet": {
+        "name": "pkce",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "exchangeOk",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "codeIssued"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "codeUsed"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "revoked"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "pkce"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "issued"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "parPushed",
+          "rhs": {
+            "kind": "name",
+            "name": "parPushed"
+          }
+        },
+        {
+          "field": "codeIssued",
+          "rhs": {
+            "kind": "name",
+            "name": "codeIssued"
+          }
+        },
+        {
+          "field": "codeUsed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canExchange",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "codeIssued"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "codeUsed"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "revoked"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "codeUsed"
+              }
+            ]
+          }
+        },
+        {
+          "field": "pkceVerified",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "exchangeOk",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "codeIssued"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "codeUsed"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "revoked"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "pkce"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "pkceVerified"
+              }
+            ]
+          }
+        },
+        {
+          "field": "accessGeneration",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "exchangeOk",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "codeIssued"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "codeUsed"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "revoked"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "pkce"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "accessGeneration"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "accessGeneration"
+              }
+            ]
+          }
+        },
+        {
+          "field": "refreshGeneration",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "exchangeOk",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "codeIssued"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "codeUsed"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "revoked"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "pkce"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "refreshGeneration"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "refreshGeneration"
+              }
+            ]
+          }
+        },
+        {
+          "field": "refreshUsable",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "exchangeOk",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "codeIssued"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "codeUsed"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "revoked"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "pkce"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "refreshUsable"
+              }
+            ]
+          }
+        },
+        {
+          "field": "revoked",
+          "rhs": {
+            "kind": "name",
+            "name": "revoked"
+          }
+        }
+      ]
+    },
+    {
+      "name": "refresh",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canRefresh",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "refreshUsable"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "revoked"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "refreshed"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "parPushed",
+          "rhs": {
+            "kind": "name",
+            "name": "parPushed"
+          }
+        },
+        {
+          "field": "codeIssued",
+          "rhs": {
+            "kind": "name",
+            "name": "codeIssued"
+          }
+        },
+        {
+          "field": "codeUsed",
+          "rhs": {
+            "kind": "name",
+            "name": "codeUsed"
+          }
+        },
+        {
+          "field": "pkceVerified",
+          "rhs": {
+            "kind": "name",
+            "name": "pkceVerified"
+          }
+        },
+        {
+          "field": "accessGeneration",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canRefresh",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "refreshUsable"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "revoked"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "accessGeneration"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "accessGeneration"
+              }
+            ]
+          }
+        },
+        {
+          "field": "refreshGeneration",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "canRefresh",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "refreshUsable"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "revoked"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "refreshGeneration"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "refreshGeneration"
+              }
+            ]
+          }
+        },
+        {
+          "field": "refreshUsable",
+          "rhs": {
+            "kind": "name",
+            "name": "refreshUsable"
+          }
+        },
+        {
+          "field": "revoked",
+          "rhs": {
+            "kind": "name",
+            "name": "revoked"
+          }
+        }
+      ]
+    },
+    {
+      "name": "expire_refresh",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "name",
+            "name": "stage"
+          }
+        },
+        {
+          "field": "parPushed",
+          "rhs": {
+            "kind": "name",
+            "name": "parPushed"
+          }
+        },
+        {
+          "field": "codeIssued",
+          "rhs": {
+            "kind": "name",
+            "name": "codeIssued"
+          }
+        },
+        {
+          "field": "codeUsed",
+          "rhs": {
+            "kind": "name",
+            "name": "codeUsed"
+          }
+        },
+        {
+          "field": "pkceVerified",
+          "rhs": {
+            "kind": "name",
+            "name": "pkceVerified"
+          }
+        },
+        {
+          "field": "accessGeneration",
+          "rhs": {
+            "kind": "name",
+            "name": "accessGeneration"
+          }
+        },
+        {
+          "field": "refreshGeneration",
+          "rhs": {
+            "kind": "name",
+            "name": "refreshGeneration"
+          }
+        },
+        {
+          "field": "refreshUsable",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "revoked",
+          "rhs": {
+            "kind": "name",
+            "name": "revoked"
+          }
+        }
+      ]
+    },
+    {
+      "name": "revoke",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "revoked"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "revoked"
+              }
+            ]
+          }
+        },
+        {
+          "field": "parPushed",
+          "rhs": {
+            "kind": "name",
+            "name": "parPushed"
+          }
+        },
+        {
+          "field": "codeIssued",
+          "rhs": {
+            "kind": "name",
+            "name": "codeIssued"
+          }
+        },
+        {
+          "field": "codeUsed",
+          "rhs": {
+            "kind": "name",
+            "name": "codeUsed"
+          }
+        },
+        {
+          "field": "pkceVerified",
+          "rhs": {
+            "kind": "name",
+            "name": "pkceVerified"
+          }
+        },
+        {
+          "field": "accessGeneration",
+          "rhs": {
+            "kind": "name",
+            "name": "accessGeneration"
+          }
+        },
+        {
+          "field": "refreshGeneration",
+          "rhs": {
+            "kind": "name",
+            "name": "refreshGeneration"
+          }
+        },
+        {
+          "field": "refreshUsable",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "revoked",
+          "rhs": {
+            "kind": "bool",
+            "value": true
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "push_request",
+    "authorize",
+    "deny",
+    "exchange",
+    "refresh",
+    "expire_refresh",
+    "revoke"
+  ]
+}

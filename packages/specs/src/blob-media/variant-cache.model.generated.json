@@ -1,0 +1,846 @@
+{
+  "generatedFrom": "../../specs/blob-media/variant-cache.qnt",
+  "specHash": "aae40443e0683e9e4db8afe91b9e04f5096a472ea52cb45563058bc5ac5577b1",
+  "module": "blob_media_variant_cache",
+  "vars": [
+    {
+      "name": "newest",
+      "type": "str"
+    },
+    {
+      "name": "older",
+      "type": "str"
+    },
+    {
+      "name": "placed",
+      "type": "int"
+    },
+    {
+      "name": "evicted",
+      "type": "int"
+    },
+    {
+      "name": "refreshed",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "slotCount": {
+      "kind": "function",
+      "params": [
+        "slot"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "slot"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          },
+          {
+            "kind": "int",
+            "value": "1"
+          }
+        ]
+      }
+    },
+    "occupied": {
+      "kind": "function",
+      "params": [
+        "first",
+        "second"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "iadd",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "slotCount",
+            "args": [
+              {
+                "kind": "name",
+                "name": "first"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "slotCount",
+            "args": [
+              {
+                "kind": "name",
+                "name": "second"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "NewestValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "newest"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "newest"
+              },
+              {
+                "kind": "str",
+                "value": "thumb"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "newest"
+              },
+              {
+                "kind": "str",
+                "value": "feed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "newest"
+              },
+              {
+                "kind": "str",
+                "value": "full"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "OlderValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "older"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "older"
+              },
+              {
+                "kind": "str",
+                "value": "thumb"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "older"
+              },
+              {
+                "kind": "str",
+                "value": "feed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "older"
+              },
+              {
+                "kind": "str",
+                "value": "full"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "SlotsDistinct": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "older"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "newest"
+              },
+              {
+                "kind": "name",
+                "name": "older"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "OlderImpliesNewest": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "older"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "newest"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CountersNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "placed"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "evicted"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "refreshed"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "PlacementAccounting": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "placed"
+          },
+          {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "occupied",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "newest"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "older"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "evicted"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "newest",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "older",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "placed",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "evicted",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "refreshed",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "touch",
+      "nondet": {
+        "name": "pick",
+        "kind": "str",
+        "pool": [
+          "thumb",
+          "feed",
+          "full"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "newest",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "pick"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "newest"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "newest"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "pick"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "older"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "pick"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "pick"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "older",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "pick"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "newest"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "older"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "pick"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "older"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "newest"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "newest"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "placed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "pick"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "newest"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "pick"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "older"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "placed"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "placed"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "evicted",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "pick"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "newest"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "pick"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "older"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "evicted"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "older"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "evicted"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "iadd",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "evicted"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "1"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "refreshed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "pick"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "newest"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "pick"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "older"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "refreshed"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "refreshed"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "expire",
+      "assignments": [
+        {
+          "field": "newest",
+          "rhs": {
+            "kind": "name",
+            "name": "newest"
+          }
+        },
+        {
+          "field": "older",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "placed",
+          "rhs": {
+            "kind": "name",
+            "name": "placed"
+          }
+        },
+        {
+          "field": "evicted",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "older"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "none"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "evicted"
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "evicted"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "refreshed",
+          "rhs": {
+            "kind": "name",
+            "name": "refreshed"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "touch",
+    "expire"
+  ]
+}

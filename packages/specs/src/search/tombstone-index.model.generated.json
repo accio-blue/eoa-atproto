@@ -1,0 +1,458 @@
+{
+  "generatedFrom": "../../specs/search/tombstone-index.qnt",
+  "specHash": "766e8dc9faf209e32881bd96340a6f6c8e728e898a2713a8bf1a9b1c1707f0bb",
+  "module": "search_tombstone_index",
+  "vars": [
+    {
+      "name": "entry",
+      "type": "str"
+    },
+    {
+      "name": "revision",
+      "type": "int"
+    },
+    {
+      "name": "requested",
+      "type": "bool"
+    },
+    {
+      "name": "decision",
+      "type": "str"
+    }
+  ],
+  "defs": {
+    "EntryValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "entry"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "entry"
+              },
+              {
+                "kind": "str",
+                "value": "indexed"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "entry"
+              },
+              {
+                "kind": "str",
+                "value": "deleted"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "DecisionValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "decision"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "decision"
+              },
+              {
+                "kind": "str",
+                "value": "present"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "decision"
+              },
+              {
+                "kind": "str",
+                "value": "absent"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "DeletedNeverPresent": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "neq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "decision"
+              },
+              {
+                "kind": "str",
+                "value": "present"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "entry"
+              },
+              {
+                "kind": "str",
+                "value": "indexed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "NoDecisionWithoutQuery": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "decision"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "requested"
+          }
+        ]
+      }
+    },
+    "RevisionNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "revision"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "entry",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "revision",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "decision",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ingest",
+      "nondet": {
+        "name": "version",
+        "kind": "int",
+        "pool": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "entry",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "version"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "revision"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "indexed"
+              },
+              {
+                "kind": "name",
+                "name": "entry"
+              }
+            ]
+          }
+        },
+        {
+          "field": "revision",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "version"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "revision"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "version"
+              },
+              {
+                "kind": "name",
+                "name": "revision"
+              }
+            ]
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "decision",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "deleteDoc",
+      "assignments": [
+        {
+          "field": "entry",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "entry"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "indexed"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "deleted"
+              },
+              {
+                "kind": "name",
+                "name": "entry"
+              }
+            ]
+          }
+        },
+        {
+          "field": "revision",
+          "rhs": {
+            "kind": "name",
+            "name": "revision"
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "decision",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "runQuery",
+      "assignments": [
+        {
+          "field": "entry",
+          "rhs": {
+            "kind": "name",
+            "name": "entry"
+          }
+        },
+        {
+          "field": "revision",
+          "rhs": {
+            "kind": "name",
+            "name": "revision"
+          }
+        },
+        {
+          "field": "requested",
+          "rhs": {
+            "kind": "bool",
+            "value": true
+          }
+        },
+        {
+          "field": "decision",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "entry"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "indexed"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "present"
+              },
+              {
+                "kind": "str",
+                "value": "absent"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "ingest",
+    "deleteDoc",
+    "runQuery"
+  ]
+}

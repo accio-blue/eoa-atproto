@@ -1,0 +1,1455 @@
+{
+  "generatedFrom": "../../specs/mail/smtp-server.qnt",
+  "specHash": "70ac1e6dfc6a47aca16153645d536789a5a3083ccf56cb38eb92283122efd4e9",
+  "module": "mail_smtp_server",
+  "vars": [
+    {
+      "name": "stage",
+      "type": "str"
+    },
+    {
+      "name": "helo",
+      "type": "bool"
+    },
+    {
+      "name": "sender",
+      "type": "str"
+    },
+    {
+      "name": "recipient",
+      "type": "str"
+    },
+    {
+      "name": "durable",
+      "type": "bool"
+    },
+    {
+      "name": "accepted",
+      "type": "bool"
+    },
+    {
+      "name": "lastCode",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "isOurs": {
+      "kind": "function",
+      "params": [
+        "r"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "r"
+          },
+          {
+            "kind": "str",
+            "value": "bob@org.example"
+          }
+        ]
+      }
+    },
+    "hasSender": {
+      "kind": "function",
+      "params": [
+        "v"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "not",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "v"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "hasRecipient": {
+      "kind": "function",
+      "params": [
+        "v"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "not",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "v"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canMailFrom": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "name",
+            "name": "helo"
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "greeted"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canRcptTo": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "name",
+            "name": "helo"
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "envelope"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canTakeData": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "envelope"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "hasRecipient",
+            "args": [
+              {
+                "kind": "name",
+                "name": "recipient"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canSpool": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "stage"
+          },
+          {
+            "kind": "str",
+            "value": "data"
+          }
+        ]
+      }
+    },
+    "canAccept": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "data"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "durable"
+          }
+        ]
+      }
+    },
+    "StageValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "greeted"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "envelope"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "data"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "queued"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "closed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RecipientIsOurs": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "recipient"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isOurs",
+            "args": [
+              {
+                "kind": "name",
+                "name": "recipient"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AcceptedImpliesDurable": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "accepted"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "durable"
+          }
+        ]
+      }
+    },
+    "AcceptedImpliesRecipient": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "accepted"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "hasRecipient",
+            "args": [
+              {
+                "kind": "name",
+                "name": "recipient"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "QueuedIsDurable": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "queued"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "durable"
+          }
+        ]
+      }
+    },
+    "SenderImpliesGreeted": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "hasSender",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "sender"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "helo"
+          }
+        ]
+      }
+    },
+    "DataImpliesRecipient": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "data"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "hasRecipient",
+            "args": [
+              {
+                "kind": "name",
+                "name": "recipient"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "helo",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "durable",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ehlo",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "idle"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "greeted"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "helo",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "idle"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "helo"
+              }
+            ]
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "name",
+            "name": "sender"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "name",
+            "name": "recipient"
+          }
+        },
+        {
+          "field": "durable",
+          "rhs": {
+            "kind": "name",
+            "name": "durable"
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "name",
+            "name": "accepted"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "idle"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "250"
+              },
+              {
+                "kind": "name",
+                "name": "lastCode"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "mailFrom",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canMailFrom"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "envelope"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "helo",
+          "rhs": {
+            "kind": "name",
+            "name": "helo"
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canMailFrom"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "alice@elsewhere.example"
+              },
+              {
+                "kind": "name",
+                "name": "sender"
+              }
+            ]
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "name",
+            "name": "recipient"
+          }
+        },
+        {
+          "field": "durable",
+          "rhs": {
+            "kind": "name",
+            "name": "durable"
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "name",
+            "name": "accepted"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canMailFrom"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "250"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canMailFrom"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "550"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "503"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "rcptTo",
+      "nondet": {
+        "name": "asked",
+        "kind": "str",
+        "pool": [
+          "bob@org.example",
+          "carol@other.example"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canRcptTo"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "isOurs",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "asked"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "envelope"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "helo",
+          "rhs": {
+            "kind": "name",
+            "name": "helo"
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "name",
+            "name": "sender"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canRcptTo"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "isOurs",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "asked"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "asked"
+              },
+              {
+                "kind": "name",
+                "name": "recipient"
+              }
+            ]
+          }
+        },
+        {
+          "field": "durable",
+          "rhs": {
+            "kind": "name",
+            "name": "durable"
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "name",
+            "name": "accepted"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canRcptTo"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "isOurs",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "asked"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "250"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canRcptTo"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "554"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "503"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "data",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canTakeData"
+              },
+              {
+                "kind": "str",
+                "value": "data"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "helo",
+          "rhs": {
+            "kind": "name",
+            "name": "helo"
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "name",
+            "name": "sender"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "name",
+            "name": "recipient"
+          }
+        },
+        {
+          "field": "durable",
+          "rhs": {
+            "kind": "name",
+            "name": "durable"
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "name",
+            "name": "accepted"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canTakeData"
+              },
+              {
+                "kind": "int",
+                "value": "354"
+              },
+              {
+                "kind": "int",
+                "value": "503"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "spool",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canSpool"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "data"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canSpool"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "envelope"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "helo",
+          "rhs": {
+            "kind": "name",
+            "name": "helo"
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "name",
+            "name": "sender"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "name",
+            "name": "recipient"
+          }
+        },
+        {
+          "field": "durable",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canSpool"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "durable"
+              }
+            ]
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "name",
+            "name": "accepted"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canSpool"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "lastCode"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canSpool"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "451"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "lastCode"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "accept",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canAccept"
+              },
+              {
+                "kind": "str",
+                "value": "queued"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "helo",
+          "rhs": {
+            "kind": "name",
+            "name": "helo"
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "name",
+            "name": "sender"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "name",
+            "name": "recipient"
+          }
+        },
+        {
+          "field": "durable",
+          "rhs": {
+            "kind": "name",
+            "name": "durable"
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canAccept"
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "accepted"
+              }
+            ]
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "canAccept"
+              },
+              {
+                "kind": "int",
+                "value": "250"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "data"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "int",
+                    "value": "451"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "lastCode"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "quit",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "closed"
+          }
+        },
+        {
+          "field": "helo",
+          "rhs": {
+            "kind": "name",
+            "name": "helo"
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "name",
+            "name": "sender"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "name",
+            "name": "recipient"
+          }
+        },
+        {
+          "field": "durable",
+          "rhs": {
+            "kind": "name",
+            "name": "durable"
+          }
+        },
+        {
+          "field": "accepted",
+          "rhs": {
+            "kind": "name",
+            "name": "accepted"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "int",
+            "value": "221"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "ehlo",
+    "mailFrom",
+    "rcptTo",
+    "data",
+    "spool",
+    "accept",
+    "quit"
+  ]
+}

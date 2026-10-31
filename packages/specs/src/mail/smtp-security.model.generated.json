@@ -1,0 +1,2523 @@
+{
+  "generatedFrom": "../../specs/mail/smtp-security.qnt",
+  "specHash": "9f5a079fd14f9a66c55e49235080f192f67d6702f99037c989f0ea8f58049904",
+  "module": "mail_smtp_security",
+  "vars": [
+    {
+      "name": "stage",
+      "type": "str"
+    },
+    {
+      "name": "tls",
+      "type": "bool"
+    },
+    {
+      "name": "offers",
+      "type": "bool"
+    },
+    {
+      "name": "strict",
+      "type": "bool"
+    },
+    {
+      "name": "upgrades",
+      "type": "int"
+    },
+    {
+      "name": "authed",
+      "type": "bool"
+    },
+    {
+      "name": "sender",
+      "type": "str"
+    },
+    {
+      "name": "recipient",
+      "type": "str"
+    },
+    {
+      "name": "epoch",
+      "type": "int"
+    },
+    {
+      "name": "senderEpoch",
+      "type": "int"
+    },
+    {
+      "name": "awaitingAuth",
+      "type": "bool"
+    },
+    {
+      "name": "lastCode",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "hasSender": {
+      "kind": "function",
+      "params": [
+        "v"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "not",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "v"
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "isRemote": {
+      "kind": "function",
+      "params": [
+        "v"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "v"
+          },
+          {
+            "kind": "str",
+            "value": "remote"
+          }
+        ]
+      }
+    },
+    "offersFor": {
+      "kind": "function",
+      "params": [
+        "s"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "s"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "s"
+              },
+              {
+                "kind": "int",
+                "value": "3"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "strictFor": {
+      "kind": "function",
+      "params": [
+        "s"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "s"
+              },
+              {
+                "kind": "int",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "s"
+              },
+              {
+                "kind": "int",
+                "value": "3"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "canStartTls": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "and",
+            "args": [
+              {
+                "kind": "name",
+                "name": "offers"
+              },
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "greeted"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "envelope"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "upgrades"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "mayOpenEnvelope": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "greeted"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "not",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "strict"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "tls"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "StageValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "stage"
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "greeted"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "envelope"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "closed"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "NoAuthBeforeTls": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "authed"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "tls"
+          }
+        ]
+      }
+    },
+    "AskingImpliesTls": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "awaitingAuth"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "tls"
+          }
+        ]
+      }
+    },
+    "TlsImpliesOffered": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "tls"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "offers"
+          }
+        ]
+      }
+    },
+    "UpgradeAtMostOnce": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "ilte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "upgrades"
+          },
+          {
+            "kind": "int",
+            "value": "1"
+          }
+        ]
+      }
+    },
+    "EnvelopeFromThisEpoch": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "hasSender",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "sender"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "senderEpoch"
+              },
+              {
+                "kind": "name",
+                "name": "epoch"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "StrictImpliesTlsForEnvelope": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "strict"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "not",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "hasSender",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "sender"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "tls"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "TlsImpliesGreeted": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "name",
+                "name": "tls"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "idle"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "RemoteImpliesAuthed": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "not",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "isRemote",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "recipient"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "authed"
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "offers",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "strict",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "upgrades",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "awaitingAuth",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "senderEpoch",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "configure",
+      "nondet": {
+        "name": "setup",
+        "kind": "int",
+        "pool": [
+          "0",
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "name",
+            "name": "stage"
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "offers",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "idle"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "offersFor",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "setup"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "offers"
+              }
+            ]
+          }
+        },
+        {
+          "field": "strict",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "idle"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "strictFor",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "setup"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "strict"
+              }
+            ]
+          }
+        },
+        {
+          "field": "upgrades",
+          "rhs": {
+            "kind": "name",
+            "name": "upgrades"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "awaitingAuth",
+          "rhs": {
+            "kind": "name",
+            "name": "awaitingAuth"
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "name",
+            "name": "sender"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "name",
+            "name": "recipient"
+          }
+        },
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "name",
+            "name": "epoch"
+          }
+        },
+        {
+          "field": "senderEpoch",
+          "rhs": {
+            "kind": "name",
+            "name": "senderEpoch"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "name",
+            "name": "lastCode"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ehlo",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "greeted"
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "offers",
+          "rhs": {
+            "kind": "name",
+            "name": "offers"
+          }
+        },
+        {
+          "field": "strict",
+          "rhs": {
+            "kind": "name",
+            "name": "strict"
+          }
+        },
+        {
+          "field": "upgrades",
+          "rhs": {
+            "kind": "name",
+            "name": "upgrades"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "awaitingAuth",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "epoch"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "senderEpoch",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "epoch"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "int",
+            "value": "250"
+          }
+        }
+      ]
+    },
+    {
+      "name": "starttls",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canStartTls"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "greeted"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canStartTls"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "tls"
+              }
+            ]
+          }
+        },
+        {
+          "field": "offers",
+          "rhs": {
+            "kind": "name",
+            "name": "offers"
+          }
+        },
+        {
+          "field": "strict",
+          "rhs": {
+            "kind": "name",
+            "name": "strict"
+          }
+        },
+        {
+          "field": "upgrades",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canStartTls"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "upgrades"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "upgrades"
+              }
+            ]
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "awaitingAuth",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canStartTls"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              },
+              {
+                "kind": "name",
+                "name": "sender"
+              }
+            ]
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canStartTls"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              },
+              {
+                "kind": "name",
+                "name": "recipient"
+              }
+            ]
+          }
+        },
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canStartTls"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "epoch"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "epoch"
+              }
+            ]
+          }
+        },
+        {
+          "field": "senderEpoch",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canStartTls"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "epoch"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "senderEpoch"
+              }
+            ]
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canStartTls"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "220"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "canStartTls"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "454"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "503"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "auth",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "name",
+            "name": "stage"
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "offers",
+          "rhs": {
+            "kind": "name",
+            "name": "offers"
+          }
+        },
+        {
+          "field": "strict",
+          "rhs": {
+            "kind": "name",
+            "name": "strict"
+          }
+        },
+        {
+          "field": "upgrades",
+          "rhs": {
+            "kind": "name",
+            "name": "upgrades"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "name",
+                "name": "authed"
+              },
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "tls"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "field": "awaitingAuth",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "name",
+            "name": "sender"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "name",
+            "name": "recipient"
+          }
+        },
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "name",
+            "name": "epoch"
+          }
+        },
+        {
+          "field": "senderEpoch",
+          "rhs": {
+            "kind": "name",
+            "name": "senderEpoch"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "tls"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "235"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "535"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "530"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "authStart",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "name",
+            "name": "stage"
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "offers",
+          "rhs": {
+            "kind": "name",
+            "name": "offers"
+          }
+        },
+        {
+          "field": "strict",
+          "rhs": {
+            "kind": "name",
+            "name": "strict"
+          }
+        },
+        {
+          "field": "upgrades",
+          "rhs": {
+            "kind": "name",
+            "name": "upgrades"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "awaitingAuth",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "tls"
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "awaitingAuth"
+              }
+            ]
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "name",
+            "name": "sender"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "name",
+            "name": "recipient"
+          }
+        },
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "name",
+            "name": "epoch"
+          }
+        },
+        {
+          "field": "senderEpoch",
+          "rhs": {
+            "kind": "name",
+            "name": "senderEpoch"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "tls"
+              },
+              {
+                "kind": "int",
+                "value": "334"
+              },
+              {
+                "kind": "int",
+                "value": "530"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "authPayload",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "name",
+            "name": "stage"
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "offers",
+          "rhs": {
+            "kind": "name",
+            "name": "offers"
+          }
+        },
+        {
+          "field": "strict",
+          "rhs": {
+            "kind": "name",
+            "name": "strict"
+          }
+        },
+        {
+          "field": "upgrades",
+          "rhs": {
+            "kind": "name",
+            "name": "upgrades"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "awaitingAuth"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "name",
+                "name": "authed"
+              }
+            ]
+          }
+        },
+        {
+          "field": "awaitingAuth",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "name",
+            "name": "sender"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "name",
+            "name": "recipient"
+          }
+        },
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "name",
+            "name": "epoch"
+          }
+        },
+        {
+          "field": "senderEpoch",
+          "rhs": {
+            "kind": "name",
+            "name": "senderEpoch"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "name",
+                "name": "awaitingAuth"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "235"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "535"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "503"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "mailFrom",
+      "nondet": {
+        "name": "ok",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "mayOpenEnvelope"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "envelope"
+              },
+              {
+                "kind": "name",
+                "name": "stage"
+              }
+            ]
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "offers",
+          "rhs": {
+            "kind": "name",
+            "name": "offers"
+          }
+        },
+        {
+          "field": "strict",
+          "rhs": {
+            "kind": "name",
+            "name": "strict"
+          }
+        },
+        {
+          "field": "upgrades",
+          "rhs": {
+            "kind": "name",
+            "name": "upgrades"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "awaitingAuth",
+          "rhs": {
+            "kind": "name",
+            "name": "awaitingAuth"
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "mayOpenEnvelope"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "alice@elsewhere.example"
+              },
+              {
+                "kind": "name",
+                "name": "sender"
+              }
+            ]
+          }
+        },
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "name",
+            "name": "epoch"
+          }
+        },
+        {
+          "field": "senderEpoch",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "mayOpenEnvelope"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "epoch"
+              },
+              {
+                "kind": "name",
+                "name": "senderEpoch"
+              }
+            ]
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "mayOpenEnvelope"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "none"
+              },
+              {
+                "kind": "name",
+                "name": "recipient"
+              }
+            ]
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "mayOpenEnvelope"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "ok"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "250"
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "mayOpenEnvelope"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "550"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "530"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "recipientLocal",
+      "nondet": {
+        "name": "took",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "name",
+            "name": "stage"
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "offers",
+          "rhs": {
+            "kind": "name",
+            "name": "offers"
+          }
+        },
+        {
+          "field": "strict",
+          "rhs": {
+            "kind": "name",
+            "name": "strict"
+          }
+        },
+        {
+          "field": "upgrades",
+          "rhs": {
+            "kind": "name",
+            "name": "upgrades"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "awaitingAuth",
+          "rhs": {
+            "kind": "name",
+            "name": "awaitingAuth"
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "name",
+            "name": "sender"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "envelope"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "name",
+                    "name": "took"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "served"
+              },
+              {
+                "kind": "name",
+                "name": "recipient"
+              }
+            ]
+          }
+        },
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "name",
+            "name": "epoch"
+          }
+        },
+        {
+          "field": "senderEpoch",
+          "rhs": {
+            "kind": "name",
+            "name": "senderEpoch"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "envelope"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "took"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "250"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "554"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "503"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "recipientRemote",
+      "nondet": {
+        "name": "took",
+        "kind": "bool",
+        "pool": [
+          true,
+          false
+        ]
+      },
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "name",
+            "name": "stage"
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "offers",
+          "rhs": {
+            "kind": "name",
+            "name": "offers"
+          }
+        },
+        {
+          "field": "strict",
+          "rhs": {
+            "kind": "name",
+            "name": "strict"
+          }
+        },
+        {
+          "field": "upgrades",
+          "rhs": {
+            "kind": "name",
+            "name": "upgrades"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "awaitingAuth",
+          "rhs": {
+            "kind": "name",
+            "name": "awaitingAuth"
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "name",
+            "name": "sender"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "stage"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "envelope"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "took"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "authed"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "remote"
+              },
+              {
+                "kind": "name",
+                "name": "recipient"
+              }
+            ]
+          }
+        },
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "name",
+            "name": "epoch"
+          }
+        },
+        {
+          "field": "senderEpoch",
+          "rhs": {
+            "kind": "name",
+            "name": "senderEpoch"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "stage"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "envelope"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "ite",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "and",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "took"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "authed"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "int",
+                    "value": "250"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "554"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "503"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "rset",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "greeted"
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "offers",
+          "rhs": {
+            "kind": "name",
+            "name": "offers"
+          }
+        },
+        {
+          "field": "strict",
+          "rhs": {
+            "kind": "name",
+            "name": "strict"
+          }
+        },
+        {
+          "field": "upgrades",
+          "rhs": {
+            "kind": "name",
+            "name": "upgrades"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "awaitingAuth",
+          "rhs": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "str",
+            "value": "none"
+          }
+        },
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "epoch"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "senderEpoch",
+          "rhs": {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "epoch"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "int",
+            "value": "250"
+          }
+        }
+      ]
+    },
+    {
+      "name": "quit",
+      "assignments": [
+        {
+          "field": "stage",
+          "rhs": {
+            "kind": "str",
+            "value": "closed"
+          }
+        },
+        {
+          "field": "tls",
+          "rhs": {
+            "kind": "name",
+            "name": "tls"
+          }
+        },
+        {
+          "field": "offers",
+          "rhs": {
+            "kind": "name",
+            "name": "offers"
+          }
+        },
+        {
+          "field": "strict",
+          "rhs": {
+            "kind": "name",
+            "name": "strict"
+          }
+        },
+        {
+          "field": "upgrades",
+          "rhs": {
+            "kind": "name",
+            "name": "upgrades"
+          }
+        },
+        {
+          "field": "authed",
+          "rhs": {
+            "kind": "name",
+            "name": "authed"
+          }
+        },
+        {
+          "field": "awaitingAuth",
+          "rhs": {
+            "kind": "name",
+            "name": "awaitingAuth"
+          }
+        },
+        {
+          "field": "sender",
+          "rhs": {
+            "kind": "name",
+            "name": "sender"
+          }
+        },
+        {
+          "field": "recipient",
+          "rhs": {
+            "kind": "name",
+            "name": "recipient"
+          }
+        },
+        {
+          "field": "epoch",
+          "rhs": {
+            "kind": "name",
+            "name": "epoch"
+          }
+        },
+        {
+          "field": "senderEpoch",
+          "rhs": {
+            "kind": "name",
+            "name": "senderEpoch"
+          }
+        },
+        {
+          "field": "lastCode",
+          "rhs": {
+            "kind": "int",
+            "value": "221"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "configure",
+    "ehlo",
+    "starttls",
+    "auth",
+    "authStart",
+    "authPayload",
+    "mailFrom",
+    "recipientLocal",
+    "recipientRemote",
+    "rset",
+    "quit"
+  ]
+}

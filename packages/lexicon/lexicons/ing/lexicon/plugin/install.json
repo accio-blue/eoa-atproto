@@ -1,0 +1,39 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.plugin.install",
+  "description": "A plugin installed into THIS account, and the capabilities the tenant granted it. The install names the release it came from (ing.lexicon.plugin.release, in the publisher's repo) so the host can verify it again on every wake; the grants are what the tenant allows, and the plugin's manifest is what it asked for — an install that requests more than its release declares is refused, and a grant the tenant did not give is denied at the bridge (89k9 Q3, bean 395u).",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "description": "One installed plugin. The rkey is the plugin's NSID, so an account has one install per plugin and reinstalling replaces it.",
+      "record": {
+        "type": "object",
+        "required": ["plugin", "version", "release", "grants", "createdAt"],
+        "properties": {
+          "plugin": {
+            "type": "string",
+            "format": "nsid",
+            "description": "The installed plugin's NSID; the same value as its rkey."
+          },
+          "version": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The release's version, copied here so a broken fetch still says what is supposed to run."
+          },
+          "release": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The ing.lexicon.plugin.release record this install was verified against, in the publisher's repo."
+          },
+          "grants": {
+            "type": "array",
+            "description": "The capabilities the tenant granted, by manifest name (data, network, jobs, …). Absent names are denied: the bridge is deny-by-default.",
+            "items": { "type": "string", "maxLength": 64 }
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

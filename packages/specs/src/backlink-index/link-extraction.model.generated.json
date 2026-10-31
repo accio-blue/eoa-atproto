@@ -1,0 +1,1357 @@
+{
+  "generatedFrom": "../../specs/backlink-index/link-extraction.qnt",
+  "specHash": "2ccdf5229d2aadb09437dbce590fd071f24b237cf1f063018348ba354446f574",
+  "module": "backlink_link_extraction",
+  "vars": [
+    {
+      "name": "mode",
+      "type": "str"
+    },
+    {
+      "name": "cursor",
+      "type": "int"
+    },
+    {
+      "name": "observed",
+      "type": "int"
+    },
+    {
+      "name": "extracted",
+      "type": "int"
+    },
+    {
+      "name": "indexed",
+      "type": "int"
+    },
+    {
+      "name": "lastTarget",
+      "type": "str"
+    },
+    {
+      "name": "lastSource",
+      "type": "str"
+    }
+  ],
+  "defs": {
+    "targetA": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "at://did:plc:genesis/app.bsky.feed.post/3jzsm4zqb2s2a"
+      }
+    },
+    "targetB": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "at://did:web:example.com/app.bsky.feed.post/3k2la9x8w1"
+      }
+    },
+    "sourceLike": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "at://did:plc:genesis/app.bsky.feed.like/3jzsm4zqb2s2b"
+      }
+    },
+    "sourceComment": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "at://did:plc:genesis/app.bsky.feed.post/3jzsm4zqb2s2c"
+      }
+    },
+    "isReference": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "targetA"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "or",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "value"
+                  },
+                  {
+                    "kind": "name",
+                    "name": "targetB"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "value"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "sourceLike"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "value"
+                      },
+                      {
+                        "kind": "name",
+                        "name": "sourceComment"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "refsFor": {
+      "kind": "function",
+      "params": [
+        "scenario"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "scenario"
+              },
+              {
+                "kind": "int",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "kind": "int",
+            "value": "2"
+          },
+          {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "scenario"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              },
+              {
+                "kind": "int",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "targetFor": {
+      "kind": "function",
+      "params": [
+        "scenario"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "scenario"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "none"
+          },
+          {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "scenario"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "targetA"
+              },
+              {
+                "kind": "name",
+                "name": "targetB"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "sourceFor": {
+      "kind": "function",
+      "params": [
+        "scenario"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "ite",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "scenario"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "name",
+            "name": "none"
+          },
+          {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "or",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "scenario"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "1"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "scenario"
+                      },
+                      {
+                        "kind": "int",
+                        "value": "2"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "sourceLike"
+              },
+              {
+                "kind": "name",
+                "name": "sourceComment"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ModeValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "mode"
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "mode"
+              },
+              {
+                "kind": "str",
+                "value": "live"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CursorNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "igte",
+        "args": [
+          {
+            "kind": "name",
+            "name": "cursor"
+          },
+          {
+            "kind": "int",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    "CountsNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "observed"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "extracted"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "indexed"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "IngestExact": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "cursor"
+          },
+          {
+            "kind": "name",
+            "name": "observed"
+          }
+        ]
+      }
+    },
+    "IndexExact": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "indexed"
+          },
+          {
+            "kind": "name",
+            "name": "extracted"
+          }
+        ]
+      }
+    },
+    "LastTargetIsReference": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "isNone",
+            "args": [
+              {
+                "kind": "name",
+                "name": "lastTarget"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isReference",
+            "args": [
+              {
+                "kind": "name",
+                "name": "lastTarget"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "LastSourceIsReference": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "isNone",
+            "args": [
+              {
+                "kind": "name",
+                "name": "lastSource"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isReference",
+            "args": [
+              {
+                "kind": "name",
+                "name": "lastSource"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "none": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "none"
+      }
+    },
+    "isNone": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "value"
+          },
+          {
+            "kind": "name",
+            "name": "none"
+          }
+        ]
+      }
+    },
+    "didPlcSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "did:plc:genesis"
+      }
+    },
+    "didWebSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "did:web:example.com"
+      }
+    },
+    "isDid": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "didPlcSample"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "didWebSample"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "handleSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "alice.example.com"
+      }
+    },
+    "isHandle": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "value"
+          },
+          {
+            "kind": "name",
+            "name": "handleSample"
+          }
+        ]
+      }
+    },
+    "nsidSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "app.bsky.feed.post"
+      }
+    },
+    "isNsid": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "nsidSample"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isNone",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "atUriSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "at://did:plc:genesis/app.bsky.feed.post/3jzsm4zqb2s2a"
+      }
+    },
+    "isAtUri": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "atUriSample"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isNone",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "cidSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "bafyreib2rxk3rybk3aobmv5cjuql3bm2twh4jo5uygzv5kkz2rq7v5test"
+      }
+    },
+    "isCid": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "cidSample"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isNone",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "tidSample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "3jzsm4zqb2s2a"
+      }
+    },
+    "isTid": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "value"
+          },
+          {
+            "kind": "name",
+            "name": "tidSample"
+          }
+        ]
+      }
+    },
+    "rkeySample": {
+      "kind": "function",
+      "params": [],
+      "body": {
+        "kind": "str",
+        "value": "3jzsm4zqb2s2a"
+      }
+    },
+    "isRkey": {
+      "kind": "function",
+      "params": [
+        "value"
+      ],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              },
+              {
+                "kind": "name",
+                "name": "rkeySample"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "isNone",
+            "args": [
+              {
+                "kind": "name",
+                "name": "value"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "mode",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "observed",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "extracted",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "indexed",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "lastTarget",
+          "rhs": {
+            "kind": "name",
+            "name": "none"
+          }
+        },
+        {
+          "field": "lastSource",
+          "rhs": {
+            "kind": "name",
+            "name": "none"
+          }
+        }
+      ]
+    },
+    {
+      "name": "start",
+      "assignments": [
+        {
+          "field": "mode",
+          "rhs": {
+            "kind": "str",
+            "value": "live"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "observed",
+          "rhs": {
+            "kind": "name",
+            "name": "observed"
+          }
+        },
+        {
+          "field": "extracted",
+          "rhs": {
+            "kind": "name",
+            "name": "extracted"
+          }
+        },
+        {
+          "field": "indexed",
+          "rhs": {
+            "kind": "name",
+            "name": "indexed"
+          }
+        },
+        {
+          "field": "lastTarget",
+          "rhs": {
+            "kind": "name",
+            "name": "lastTarget"
+          }
+        },
+        {
+          "field": "lastSource",
+          "rhs": {
+            "kind": "name",
+            "name": "lastSource"
+          }
+        }
+      ]
+    },
+    {
+      "name": "observe",
+      "nondet": {
+        "name": "scenario",
+        "kind": "int",
+        "pool": [
+          "0",
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "mode",
+          "rhs": {
+            "kind": "name",
+            "name": "mode"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "mode"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "live"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "cursor"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "cursor"
+              }
+            ]
+          }
+        },
+        {
+          "field": "observed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "mode"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "live"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "observed"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "observed"
+              }
+            ]
+          }
+        },
+        {
+          "field": "extracted",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "mode"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "live"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "extracted"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "refsFor",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "scenario"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "extracted"
+              }
+            ]
+          }
+        },
+        {
+          "field": "indexed",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "mode"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "live"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "indexed"
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "refsFor",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "scenario"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "indexed"
+              }
+            ]
+          }
+        },
+        {
+          "field": "lastTarget",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "mode"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "live"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "igt",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "refsFor",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "scenario"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "int",
+                        "value": "0"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "targetFor",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "scenario"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "lastTarget"
+              }
+            ]
+          }
+        },
+        {
+          "field": "lastSource",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "mode"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "live"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "igt",
+                    "args": [
+                      {
+                        "kind": "app",
+                        "opcode": "refsFor",
+                        "args": [
+                          {
+                            "kind": "name",
+                            "name": "scenario"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "int",
+                        "value": "0"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "sourceFor",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "scenario"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "lastSource"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "pause",
+      "assignments": [
+        {
+          "field": "mode",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "cursor",
+          "rhs": {
+            "kind": "name",
+            "name": "cursor"
+          }
+        },
+        {
+          "field": "observed",
+          "rhs": {
+            "kind": "name",
+            "name": "observed"
+          }
+        },
+        {
+          "field": "extracted",
+          "rhs": {
+            "kind": "name",
+            "name": "extracted"
+          }
+        },
+        {
+          "field": "indexed",
+          "rhs": {
+            "kind": "name",
+            "name": "indexed"
+          }
+        },
+        {
+          "field": "lastTarget",
+          "rhs": {
+            "kind": "name",
+            "name": "lastTarget"
+          }
+        },
+        {
+          "field": "lastSource",
+          "rhs": {
+            "kind": "name",
+            "name": "lastSource"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "start",
+    "observe",
+    "pause"
+  ]
+}

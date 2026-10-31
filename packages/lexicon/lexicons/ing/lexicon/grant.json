@@ -1,0 +1,106 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.grant",
+  "description": "A sharing grant: the space's authority says what one DID may do with part of a space. POSITIVE-ONLY -- there is no deny field, and an exception is made by a narrower space -- and stored IN the space, so the record is the truth and a token is only a cache.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "Readable by the issuer and the subject, and by nobody else: who is shared with is not the relay's business.",
+      "record": {
+        "type": "object",
+        "required": [
+          "space",
+          "subject",
+          "selectors",
+          "actions",
+          "issuedBy",
+          "createdAt"
+        ],
+        "properties": {
+          "space": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The space this grants something in."
+          },
+          "subject": {
+            "type": "string",
+            "format": "did",
+            "description": "Who it is for: a DID, never a handle. A role is a membership lookup at read time, not a property of the subject."
+          },
+          "selectors": {
+            "type": "array",
+            "minLength": 1,
+            "items": {
+              "type": "union",
+              "refs": ["#collectionSelector", "#recordSelector"]
+            },
+            "description": "Flat scope: a whole collection, or one exact record. Not a path, and not a subtree."
+          },
+          "actions": {
+            "type": "array",
+            "minLength": 1,
+            "items": { "type": "string", "knownValues": ["view", "write"] },
+            "description": "This primitive stays view/write. Domain verbs are app-level policy over membership."
+          },
+          "lens": {
+            "type": "ref",
+            "ref": "#lensRef",
+            "description": "For a view: the shape it returns. Fails closed when the lens is missing or incompatible."
+          },
+          "expiry": { "type": "string", "format": "datetime" },
+          "retention": {
+            "type": "ref",
+            "ref": "#retention",
+            "description": "The consumer's policy, carried by the grant. Never judged by checkAccess."
+          },
+          "purpose": { "type": "string" },
+          "consent": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "An ing.lexicon.grant.acceptance, when the subject's acceptance was demanded for this purpose."
+          },
+          "issuedBy": { "type": "string", "format": "did" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "collectionSelector": {
+      "type": "object",
+      "description": "Everything in one collection.",
+      "required": ["collection"],
+      "properties": { "collection": { "type": "string", "format": "nsid" } }
+    },
+    "recordSelector": {
+      "type": "object",
+      "description": "One exact record, as it was read.",
+      "required": ["record"],
+      "properties": {
+        "record": { "type": "ref", "ref": "ing.lexicon.cms.defs#strongRef" }
+      }
+    },
+    "lensRef": {
+      "type": "object",
+      "description": "The shape a view returns: an NSID pinned to the CID it was read at, so a reader knows what it was promised.",
+      "required": ["nsid", "cid"],
+      "properties": {
+        "nsid": { "type": "string", "format": "nsid" },
+        "cid": { "type": "string", "format": "cid" }
+      }
+    },
+    "retention": {
+      "type": "object",
+      "description": "What the consumer of a view may do with what it is given.",
+      "required": ["materialize"],
+      "properties": {
+        "materialize": {
+          "type": "string",
+          "knownValues": ["allowed", "forbidden"]
+        },
+        "maxAge": { "type": "integer", "minimum": 0 },
+        "revalidate": { "type": "boolean" },
+        "storeUntil": { "type": "string", "format": "datetime" }
+      }
+    }
+  }
+}

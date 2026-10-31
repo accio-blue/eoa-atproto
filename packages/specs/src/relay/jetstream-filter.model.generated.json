@@ -1,0 +1,565 @@
+{
+  "generatedFrom": "../../specs/relay/jetstream-filter.qnt",
+  "specHash": "ec2e399acdce553dcc10db7dc7280e4179d1ec8584afaef680950730a57e7284",
+  "module": "relay_jetstream_filter",
+  "vars": [
+    {
+      "name": "status",
+      "type": "str"
+    },
+    {
+      "name": "seen",
+      "type": "int"
+    },
+    {
+      "name": "matched",
+      "type": "int"
+    },
+    {
+      "name": "dropped",
+      "type": "int"
+    }
+  ],
+  "defs": {
+    "StatusValid": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "or",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "idle"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "streaming"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "eq",
+            "args": [
+              {
+                "kind": "name",
+                "name": "status"
+              },
+              {
+                "kind": "str",
+                "value": "paused"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "CountsNonNegative": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "and",
+        "args": [
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "seen"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "matched"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "kind": "app",
+            "opcode": "igte",
+            "args": [
+              {
+                "kind": "name",
+                "name": "dropped"
+              },
+              {
+                "kind": "int",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "AccountingExact": {
+      "kind": "invariant",
+      "params": [],
+      "body": {
+        "kind": "app",
+        "opcode": "eq",
+        "args": [
+          {
+            "kind": "name",
+            "name": "seen"
+          },
+          {
+            "kind": "app",
+            "opcode": "iadd",
+            "args": [
+              {
+                "kind": "name",
+                "name": "matched"
+              },
+              {
+                "kind": "name",
+                "name": "dropped"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "init",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "seen",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "matched",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        },
+        {
+          "field": "dropped",
+          "rhs": {
+            "kind": "int",
+            "value": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "start",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "streaming"
+          }
+        },
+        {
+          "field": "seen",
+          "rhs": {
+            "kind": "name",
+            "name": "seen"
+          }
+        },
+        {
+          "field": "matched",
+          "rhs": {
+            "kind": "name",
+            "name": "matched"
+          }
+        },
+        {
+          "field": "dropped",
+          "rhs": {
+            "kind": "name",
+            "name": "dropped"
+          }
+        }
+      ]
+    },
+    {
+      "name": "record",
+      "nondet": {
+        "name": "collection",
+        "kind": "str",
+        "pool": [
+          "app.bsky.feed.post",
+          "app.bsky.graph.follow",
+          "app.bsky.actor.profile",
+          "com.atproto.label"
+        ]
+      },
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "name",
+            "name": "status"
+          }
+        },
+        {
+          "field": "seen",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "streaming"
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "seen"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "seen"
+              }
+            ]
+          }
+        },
+        {
+          "field": "matched",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "status"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "streaming"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "collection"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "app.bsky.feed.post"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "matched"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "matched"
+              }
+            ]
+          }
+        },
+        {
+          "field": "dropped",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "and",
+                "args": [
+                  {
+                    "kind": "app",
+                    "opcode": "eq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "status"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "streaming"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "app",
+                    "opcode": "neq",
+                    "args": [
+                      {
+                        "kind": "name",
+                        "name": "collection"
+                      },
+                      {
+                        "kind": "str",
+                        "value": "app.bsky.feed.post"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "app",
+                "opcode": "iadd",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "dropped"
+                  },
+                  {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "kind": "name",
+                "name": "dropped"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "pause",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "streaming"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "paused"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "seen",
+          "rhs": {
+            "kind": "name",
+            "name": "seen"
+          }
+        },
+        {
+          "field": "matched",
+          "rhs": {
+            "kind": "name",
+            "name": "matched"
+          }
+        },
+        {
+          "field": "dropped",
+          "rhs": {
+            "kind": "name",
+            "name": "dropped"
+          }
+        }
+      ]
+    },
+    {
+      "name": "resume",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "app",
+            "opcode": "ite",
+            "args": [
+              {
+                "kind": "app",
+                "opcode": "eq",
+                "args": [
+                  {
+                    "kind": "name",
+                    "name": "status"
+                  },
+                  {
+                    "kind": "str",
+                    "value": "paused"
+                  }
+                ]
+              },
+              {
+                "kind": "str",
+                "value": "streaming"
+              },
+              {
+                "kind": "name",
+                "name": "status"
+              }
+            ]
+          }
+        },
+        {
+          "field": "seen",
+          "rhs": {
+            "kind": "name",
+            "name": "seen"
+          }
+        },
+        {
+          "field": "matched",
+          "rhs": {
+            "kind": "name",
+            "name": "matched"
+          }
+        },
+        {
+          "field": "dropped",
+          "rhs": {
+            "kind": "name",
+            "name": "dropped"
+          }
+        }
+      ]
+    },
+    {
+      "name": "stop",
+      "assignments": [
+        {
+          "field": "status",
+          "rhs": {
+            "kind": "str",
+            "value": "idle"
+          }
+        },
+        {
+          "field": "seen",
+          "rhs": {
+            "kind": "name",
+            "name": "seen"
+          }
+        },
+        {
+          "field": "matched",
+          "rhs": {
+            "kind": "name",
+            "name": "matched"
+          }
+        },
+        {
+          "field": "dropped",
+          "rhs": {
+            "kind": "name",
+            "name": "dropped"
+          }
+        }
+      ]
+    }
+  ],
+  "step": [
+    "init",
+    "start",
+    "record",
+    "pause",
+    "resume",
+    "stop"
+  ]
+}
