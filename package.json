@@ -22,6 +22,7 @@
     "typecheck": "vp run -r build && vp run -r --concurrency-limit=1 typecheck"
   },
   "devDependencies": {
+    "@eoa/spindle": "workspace:*",
     "@knip/mcp": "catalog:",
     "@opencode-ai/plugin": "catalog:",
     "@types/node": "catalog:",
@@ -29,8 +30,7 @@
     "knip": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
-    "vite-plus": "catalog:",
-    "@eoa/spindle": "workspace:*"
+    "vite-plus": "catalog:"
   },
   "engines": {
     "node": ">=18"
