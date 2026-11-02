@@ -22,6 +22,7 @@ export * from './operator.js';
 export * from './pds.js';
 export * from './posture.js';
 export * from './repo.js';
+export * from './plugin-method.js';
 export * from './server.js';
 export * from './space.js';
 export * from './space-hooks.js';

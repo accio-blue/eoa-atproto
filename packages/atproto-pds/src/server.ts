@@ -1,6 +1,7 @@
 import { Effect, Option } from 'effect';
 import { JETSTREAM_PATH, jetstreamResponse } from './jetstream.js';
 import { type PdsConfig, notFound } from './pds.js';
+import { type PluginMethod, registerPluginMethods } from './plugin-method.js';
 import { SUBSCRIBE_NSID, subscribeReposHandler } from './subscribe.js';
 import { type SpaceSurfaceDeps, type SpaceWrites } from './space.js';
 import { XrpcError, createXrpcServer } from '@eoa/xrpc-server';
@@ -86,6 +87,11 @@ export const createPdsServer = (params: {
   readonly webhooks?: WebhookNotifier | undefined;
   /** The installed plugins a write is offered to (bean `395u`); a deployment composes them. */
   readonly plugins?: PluginHooks | undefined;
+  /**
+   * Methods a plugin adds (`cms-workspace`): authenticated here, reading the caller's own repo.
+   * Absent means this host answers only the standard surface.
+   */
+  readonly methods?: ReadonlyArray<PluginMethod> | undefined;
 }) => {
   const server = createXrpcServer();
 
@@ -142,6 +148,20 @@ export const createPdsServer = (params: {
     ...(params.webhooks === undefined ? {} : { webhooks: params.webhooks }),
     ...(params.plugins === undefined ? {} : { plugins: params.plugins }),
   });
+
+  if (params.methods !== undefined && params.methods.length > 0) {
+    registerPluginMethods(
+      server,
+      {
+        config: params.config,
+        accounts: params.accounts,
+        repo: params.repo,
+        replay: params.replay,
+        firehose: params.firehose,
+      },
+      params.methods,
+    );
+  }
 
   registerAccountMethods(server, {
     config: params.config,

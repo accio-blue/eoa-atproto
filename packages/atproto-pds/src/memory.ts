@@ -6,6 +6,7 @@ import { Firehose, firehoseLayer } from './firehose.js';
 import { Mail, noMailLayer } from './mail.js';
 import { RepoStore, repoStoreLayer } from '@eoa/repo-store';
 import { SpaceStore, spaceStoreLayer } from './space-store.js';
+import { type PluginMethod } from './plugin-method.js';
 import type { SpaceSurfaceDeps } from './space.js';
 import { createPdsServer } from './server.js';
 import { generateES256KeyPair } from '@eoa/crypto';
@@ -26,6 +27,8 @@ export const startMemoryPds = (
     readonly appKeys?: SpaceSurfaceDeps['appKeys'];
     /** Who to tell when a space is deleted (`frxd`); absent means nobody. */
     readonly spaceHooks?: SpaceSurfaceDeps['spaceHooks'];
+    /** Methods a plugin adds (`cms-workspace`); absent means the standard surface only. */
+    readonly methods?: ReadonlyArray<PluginMethod>;
     /** How a managing app's `did#fragment` is resolved (`70cr`); a test passes one over a map. */
     readonly identity?: SpaceSurfaceDeps['identity'];
   } = {},
@@ -71,6 +74,7 @@ export const startMemoryPds = (
       ...(params.spaceHooks === undefined
         ? {}
         : { spaceHooks: params.spaceHooks }),
+      ...(params.methods === undefined ? {} : { methods: params.methods }),
     }).start({ port: params.port ?? 0, hostname: '127.0.0.1' });
     return { url: `http://127.0.0.1:${port}`, port, ...services };
   });

@@ -284,6 +284,50 @@ const cidOfRecord = (bytes: Uint8Array) =>
     return cidFromDigest({ codec: CODEC_DAG_CBOR, digest });
   });
 
+/** One record as a plugin sees it: its key, its CID, and its value. */
+export interface CollectionRecord {
+  readonly rkey: string;
+  readonly cid: string;
+  readonly value: Json;
+}
+
+/**
+ * One collection of one repo, whole — the read the plugin seam hands over (`cms-workspace`).
+ *
+ * It is `listRecords` without the paging: a caller that has to join several collections of the
+ * same account (a document list and the drafts beside it) is better served by one answer than by
+ * four walks of pages, and the account is the caller's own.
+ *
+ * `ponytail:` the whole collection, bodies and all, no projection and no cap; the editor loads
+ * what it loaded before, in one response instead of many. A projection is the fix when an
+ * account's documents get big enough to make this slow to open.
+ */
+export const collectionOf = (
+  deps: RepoSurfaceDeps,
+  did: string,
+  collection: string,
+) =>
+  Effect.gen(function* () {
+    const prefix = `${collection}/`;
+    const records = yield* deps.repo
+      .leaves(did, prefix, `${prefix}\uffff`)
+      .pipe(Effect.mapError(() => notFound('RepoNotFound', did)));
+    return yield* Effect.forEach(records, (one) =>
+      Effect.gen(function* () {
+        const cid = yield* cidOfRecord(one.value).pipe(
+          Effect.mapError(() =>
+            serverError('a record CID could not be computed'),
+          ),
+        );
+        return {
+          rkey: one.key.slice(prefix.length),
+          cid: formatCid(cid),
+          value: toJson(decodeCbor(one.value)),
+        };
+      }),
+    );
+  });
+
 /** The distinct collections a repo holds, in order. */
 const collectionsOf = (store: RepoStore['Service'], did: string) =>
   store

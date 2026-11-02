@@ -197,7 +197,9 @@ export class SpaceGrantStores extends Context.Service<
         Effect.gen(function* () {
           const parsed = spaceFromUri(space);
           if (parsed === undefined) {
-            return yield* Effect.fail(failed(`${space} is not a space address`));
+            return yield* Effect.fail(
+              failed(`${space} is not a space address`),
+            );
           }
           const state = yield* log
             .state({ space, did: parsed.authority })
