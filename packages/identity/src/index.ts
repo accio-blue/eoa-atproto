@@ -1,5 +1,6 @@
 // Effect-based decentralized identity resolution for AT Protocol
 export * from './resolver.js';
+export * from './service.js';
 export * from './did-resolution.js';
 export * from './cache.js';
 export * from './types.js';

@@ -14,12 +14,17 @@ import definitionJson from '../../src/pds/account-move.model.generated.json';
 
 const model = makeReferenceModel(decodeDefinition(definitionJson));
 
-interface MoveState {
+/**
+ * A type alias, not an interface: `QuintModelValue` is an index signature, and
+ * only an object-literal alias gets an implicit one. As an interface the state
+ * is a closed shape and `model.transition` refuses it.
+ */
+type MoveState = {
   readonly phase: string;
   readonly advanced: bigint;
   readonly spaces: boolean;
   readonly discovered: boolean;
-}
+};
 
 /** A state that has discovered its spaces: what every step below starts from. */
 const after = (
