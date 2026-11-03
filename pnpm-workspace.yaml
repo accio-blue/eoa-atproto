@@ -68,9 +68,11 @@ catalog:
   '@solidjs/router': 2.0.0-next.34
   '@solidjs/universal': 2.0.0-rc.13
   # next.51 peers on solid-js ^2.0.0-rc.16 and the catalog stays on rc.13 (one
-  # Solid runtime, both `solid-js` and `@solidjs/web`); next.44 is the last
-  # plugin that supports it. Move both together, not one.
-  '@solidjs/vite-plugin': 3.0.0-next.44
+  # Solid runtime, both `solid-js` and `@solidjs/web`); next.47 is the last
+  # plugin that peers on rc.13. Move both together, not one. 44 passed
+  # `componentNames` to the compiler, which dropped it after rc.9 (44's range
+  # floats to rc.18), so `vp dev` failed on every .tsx and only `vp build` ran.
+  '@solidjs/vite-plugin': 3.0.0-next.47
   '@solidjs/web': 2.0.0-rc.13
   '@standard-schema/spec': ^1.1.0
   '@typeonce/effect-machine': 0.46.0
