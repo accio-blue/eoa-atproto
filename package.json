@@ -22,7 +22,7 @@
     "typecheck": "vp run -r build && vp run -r --concurrency-limit=1 typecheck"
   },
   "devDependencies": {
-    "@eoa/spindle": "workspace:*",
+    "@eoa/workflow": "workspace:*",
     "@knip/mcp": "catalog:",
     "@opencode-ai/plugin": "catalog:",
     "@types/node": "catalog:",
