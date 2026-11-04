@@ -52,19 +52,23 @@ describe('the merge request lexicons', () => {
     for (const sample of [sampleMerged, sampleClosed]) {
       for (const key of Object.keys(sample)) {
         if (key !== '$type') {
-          expect(Object.keys(mainOf(docs[1])?.properties ?? {})).toContain(key);
+          expect(
+            Object.keys(mainOf(docs[1] ?? {})?.properties ?? {}),
+          ).toContain(key);
         }
       }
     }
     for (const key of Object.keys(sampleMergeRequest)) {
       if (key !== '$type') {
-        expect(Object.keys(mainOf(docs[0])?.properties ?? {})).toContain(key);
+        expect(Object.keys(mainOf(docs[0] ?? {})?.properties ?? {})).toContain(
+          key,
+        );
       }
     }
   });
 
   it('keeps the three states, and no fourth', () => {
-    expect(mainOf(docs[1])?.properties?.['state']?.knownValues).toEqual([
+    expect(mainOf(docs[1] ?? {})?.properties?.['state']?.knownValues).toEqual([
       ...MERGE_STATES,
     ]);
   });
