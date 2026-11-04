@@ -375,11 +375,29 @@ const decodeEntries = (params: {
   readonly count: number;
 }) => {
   const entries: { [key: string]: CborValue } = {};
+  // A map's keys must be unique and in canonical order: a document that says the
+  // same thing in two byte orders is two documents, and a duplicate key is a
+  // value that silently wins over another. Both are decode errors, not choices.
+  let previous:
+    | { readonly length: number; readonly encoded: Uint8Array }
+    | undefined;
   const next = Array.from({ length: params.count }).reduce<number>((offset) => {
     const key = decodeAt(params.bytes, offset);
     if (typeof key.value !== 'string') {
       throw new CborDecodeError({ message: 'map keys must be strings' });
     }
+    const encoded = params.bytes.slice(offset, key.next);
+    if (
+      previous !== undefined &&
+      (encoded.length < previous.length ||
+        (encoded.length === previous.length &&
+          compareBytes({ left: previous.encoded, right: encoded }) >= 0))
+    ) {
+      throw new CborDecodeError({
+        message: 'map keys are duplicated or not in canonical order',
+      });
+    }
+    previous = { length: encoded.length, encoded };
     const entry = decodeAt(params.bytes, key.next);
     entries[key.value] = entry.value;
     return entry.next;

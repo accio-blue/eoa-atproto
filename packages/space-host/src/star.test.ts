@@ -69,6 +69,8 @@ const varint = (value: number): Uint8Array => {
 const frame = (path: string, block: Uint8Array): Uint8Array => {
   const key = new TextEncoder().encode(path);
   return Uint8Array.from([
+    // 0x01 announces a pair; the archive itself is closed by 0x00.
+    0x01,
     ...varint(key.length),
     ...key,
     ...varint(block.length),
@@ -84,6 +86,7 @@ const archiveOf = async (pairs: ReadonlyArray<[string, Uint8Array]>) => {
     ...varint(header.length),
     ...header,
     ...pairs.flatMap(([path, block]) => [...frame(path, block)]),
+    0x00,
   ]);
 };
 
@@ -125,8 +128,9 @@ describe('the space repo STAR archive', () => {
     const archive = await run(build());
     const bytes = await run(encodeRepoStar(archive));
     const tampered = Uint8Array.from(bytes);
-    // A byte inside the last value: the framing still parses, the digest no longer matches.
-    tampered[tampered.length - 1] = (tampered[tampered.length - 1] ?? 0) ^ 0xff;
+    // A byte inside the last value: the framing still parses (the last byte is
+    // the terminator now), the digest no longer matches.
+    tampered[tampered.length - 2] = (tampered[tampered.length - 2] ?? 0) ^ 0xff;
 
     expect(await run(verifyRepoStar(tampered))).toEqual({
       valid: false,
@@ -264,6 +268,7 @@ const metaBytesOf = (pairs: ReadonlyArray<[string, Uint8Array]>) => {
     ...varint(header.length),
     ...header,
     ...pairs.flatMap(([path, block]) => [...frame(path, block)]),
+    0x00,
   ]);
 };
 

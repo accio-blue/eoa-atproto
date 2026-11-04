@@ -183,6 +183,10 @@ export type StarInvalidReason =
   | 'magic'
   | 'truncated'
   | 'varint'
+  /** A byte where the framing wants a control byte (0x00 ends, 0x01 starts a pair). */
+  | 'control'
+  /** Bytes after the terminator: the archive is not the whole file. */
+  | 'trailing'
   | 'meta'
   | 'order'
   /** A meta archive's sections are out of order, or it has no policy at all. */
@@ -250,8 +254,10 @@ const readVarint = (bytes: Uint8Array, offset: number) => {
       return { value, next: cursor };
     }
     shift += 7;
+    // Seven bytes keeps every length inside a JS number exactly; the spec allows
+    // nine, but a length that large cannot be a key or a value we would accept.
     if (shift > 42) {
-      throw invalid('varint', 'a length is longer than six bytes');
+      throw invalid('varint', 'a length is longer than seven bytes');
     }
   }
 };
@@ -374,6 +380,10 @@ const assertAscending = (pairs: ReadonlyArray<StarPair>): void => {
   }
 };
 
+/** The control byte that announces a data pair (`0x01`) and the one that ends an archive (`0x00`). */
+const PAIR = Uint8Array.of(0x01);
+const END = Uint8Array.of(0x00);
+
 /** The magic, the metadata, then the pairs — the framing every STAR profile shares. */
 const archiveBytes = (
   meta: CborValue,
@@ -384,6 +394,7 @@ const archiveBytes = (
   for (const pair of pairs) {
     frames.push(
       concatBytes([
+        PAIR,
         varintOf(pair.key.length),
         pair.key,
         varintOf(pair.value.length),
@@ -391,7 +402,13 @@ const archiveBytes = (
       ]),
     );
   }
-  return concatBytes([STAR_MAGIC, varintOf(header.length), header, ...frames]);
+  return concatBytes([
+    STAR_MAGIC,
+    varintOf(header.length),
+    header,
+    ...frames,
+    END,
+  ]);
 };
 
 /** The magic and the metadata: everything before the first pair, whatever the profile. */
@@ -400,7 +417,7 @@ interface StarHeader {
   readonly offset: number;
 }
 
-const starHeaderSync = (bytes: Uint8Array): StarHeader => {
+export const starHeaderSync = (bytes: Uint8Array): StarHeader => {
   for (const [at, expected] of STAR_MAGIC.entries()) {
     if (bytes.at(at) !== expected) {
       throw invalid('magic', 'the archive does not begin with the STAR magic');
@@ -421,6 +438,14 @@ const starHeaderSync = (bytes: Uint8Array): StarHeader => {
       throw invalid('meta', 'the metadata is not CBOR');
     }
   })();
+  if (!isPlainMap(meta)) {
+    throw invalid('meta', 'the metadata is not a map');
+  }
+  // `$type` is the format's one required key: it names the profile, and a
+  // reader that does not know it cannot validate what follows.
+  if (typeof meta['$type'] !== 'string') {
+    throw invalid('meta', 'the metadata has no $type string');
+  }
   return { meta, offset: header.next + header.value };
 };
 
@@ -432,14 +457,34 @@ const starHeaderSync = (bytes: Uint8Array): StarHeader => {
  * repo's keys are record paths in one global order, while a meta archive's `policy` key comes first
  * even though `com.atproto...` sorts before it, and only each of its three sections is ordered.
  */
-const starPairsSync = (
+export const starPairsSync = (
   bytes: Uint8Array,
   offset: number,
   maxValueBytes: number,
 ): ReadonlyArray<StarPair> => {
   const pairs: Array<StarPair> = [];
   let cursor = offset;
-  while (cursor < bytes.length) {
+  for (;;) {
+    // Every pair is announced by 0x01 and the archive is closed by 0x00; a file
+    // that just stops is not a smaller archive, it is a truncated one.
+    const control = bytes.at(cursor);
+    if (control === undefined) {
+      throw invalid('truncated', 'the archive ends without its terminator');
+    }
+    if (control === 0x00) {
+      if (cursor + 1 !== bytes.length) {
+        throw invalid('trailing', 'bytes follow the terminator');
+      }
+      return pairs;
+    }
+    if (control !== 0x01) {
+      throw invalid(
+        'control',
+        `a pair is announced by 0x01, not 0x${control.toString(16)}`,
+      );
+    }
+    cursor += 1;
+
     const keyLength = readVarint(bytes, cursor);
     if (keyLength.value > KEY_MAX_BYTES) {
       throw invalid('size', 'a key is over its ceiling');
@@ -464,7 +509,6 @@ const starPairsSync = (
     pairs.push({ key, value });
     cursor = valueEnd;
   }
-  return pairs;
 };
 
 /**
