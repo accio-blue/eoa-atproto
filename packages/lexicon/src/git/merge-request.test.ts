@@ -7,11 +7,7 @@ import {
 } from './merge-request.js';
 import { createLexicons, isLexiconDoc } from '../index.js';
 import { describe, expect, it } from 'vitest';
-import {
-  sampleClosed,
-  sampleMergeRequest,
-  sampleMerged,
-} from './fixtures.js';
+import { sampleClosed, sampleMergeRequest, sampleMerged } from './fixtures.js';
 import { Schema } from 'effect';
 import { decodeDefsDoc } from '../test-utils.js';
 import { fileURLToPath } from 'node:url';
