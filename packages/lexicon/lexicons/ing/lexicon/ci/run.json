@@ -1,0 +1,68 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.ci.run",
+  "description": "One run of the CI for a pushed commit: a snapshot, not a log. The queue writes it when the push arrives and replaces the same record when the run ends, because a run's transitions are the machine's own state, not a decision a person made and an audit trail has to keep. The record key is the run's id: it names one machine, not an order.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "description": "One run, as the Durable Object holds it.",
+      "required": ["repo", "repoId", "ref", "target", "status", "createdAt"],
+      "properties": {
+        "repo": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "The repo's name, which a person reads."
+        },
+        "repoId": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "The repo's identity: a name can be reused, this cannot."
+        },
+        "ref": {
+          "type": "string",
+          "maxLength": 1024,
+          "description": "The ref that moved, as `refs/heads/...`."
+        },
+        "target": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "The commit the run is about."
+        },
+        "before": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "What the ref was before the push, when the gateway said."
+        },
+        "status": {
+          "type": "string",
+          "knownValues": ["queued", "running", "done"],
+          "description": "Where the machine is: it waits, it runs, it is over."
+        },
+        "outcome": {
+          "type": "string",
+          "knownValues": ["passed", "failed", "error"],
+          "description": "How it ended, once `status` is `done`: the command's verdict, or the run never getting to run."
+        },
+        "exitCode": {
+          "type": "integer",
+          "description": "The command's exit code, when there was one."
+        },
+        "log": {
+          "type": "string",
+          "maxLength": 4000,
+          "description": "The tail of what the run said — a tail, because a record is not a log file."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "endedAt": {
+          "type": "string",
+          "format": "datetime",
+          "description": "When it stopped, when it did."
+        }
+      }
+    }
+  }
+}

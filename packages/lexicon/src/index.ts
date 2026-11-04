@@ -1,6 +1,8 @@
 // Effect Schema integration for AT Protocol lexicons
 export * from './lexicon.js';
 export * from './issue/model.js';
+export * from './ci/model.js';
+export * from './ci/fixtures.js';
 export * from './issue/fixtures.js';
 export * from './validation.js';
 export * from './schema.js';
