@@ -1,0 +1,37 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.git.mergeRequest.state",
+  "description": "A change to a merge request: a new record every time, appended, so a request's history is the sequence of these. `open` is the machine's start; `merged` names the commit that landed it; `closed` is the request going away without landing.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "One change, as it happened.",
+      "required": ["subject", "state", "createdAt"],
+      "properties": {
+        "subject": {
+          "type": "ref",
+          "ref": "ing.lexicon.cms.defs#strongRef"
+        },
+        "state": {
+          "type": "string",
+          "knownValues": ["open", "merged", "closed"]
+        },
+        "mergeCommit": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "The commit that landed it, when it landed."
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Why, chiefly for `closed`."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    }
+  }
+}

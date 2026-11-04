@@ -1,0 +1,42 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.git.mergeRequest",
+  "description": "A merge request: a source ref asking to land in a target ref, with what a person wrote about it. Its state is deliberately NOT here — a review is a new `ing.lexicon.git.mergeRequest.state` record, so the history of what happened to the request is the log rather than a field somebody overwrote, exactly as the tracker's issues work.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "One merge request.",
+      "required": ["repoId", "source", "target", "title", "createdAt"],
+      "properties": {
+        "repoId": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "The repo's identity: a name can be reused, this cannot."
+        },
+        "source": {
+          "type": "string",
+          "maxLength": 1024,
+          "description": "The ref that asks: `refs/heads/the-work`."
+        },
+        "target": {
+          "type": "string",
+          "maxLength": 1024,
+          "description": "The ref it asks to land in: `refs/heads/main`."
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "body": {
+          "type": "string",
+          "maxLength": 100000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    }
+  }
+}
