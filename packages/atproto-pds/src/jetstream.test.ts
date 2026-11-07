@@ -1,13 +1,17 @@
+import { type AccountEvent, type CommitEvent } from './firehose.js';
 import {
   CODEC_DAG_CBOR,
   cidFromDigest,
   encodeCbor,
   formatCid,
 } from '@eoa/core';
+import { Effect, Stream } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { jetstreamFrames, jetstreamQuery } from './jetstream.js';
-import type { CommitEvent } from './firehose.js';
-import { Effect } from 'effect';
+import {
+  jetstreamFrames,
+  jetstreamQuery,
+  jetstreamStream,
+} from './jetstream.js';
 import { encodeCar } from '@eoa/repo-store';
 import { sha256 } from '@eoa/crypto';
 
@@ -91,5 +95,59 @@ describe('a commit as Jetstream frames', () => {
     expect(query.spaces).toEqual(['at://a/b/c', 'at://d/e/f']);
     // No `?space=` is the public stream: no set, and nothing to gate.
     expect(jetstreamQuery(new URLSearchParams()).spaces).toBeUndefined();
+  });
+});
+
+describe('an account event as a Jetstream frame', () => {
+  const anAccount = (over: Partial<AccountEvent> = {}): AccountEvent => ({
+    kind: 'account',
+    seq: 2,
+    timeUs: 1_700_000_000_000_001,
+    time: '2026-11-07T00:00:00.000Z',
+    did: 'did:plc:test',
+    active: false,
+    status: 'suspended',
+    ...over,
+  });
+
+  const shapeOf = (events: ReadonlyArray<AccountEvent>) => ({
+    subscribe: () => Stream.fromIterable(events),
+    subscribeSpaces: () => Stream.empty,
+  });
+
+  it('is the frame a consumer hides a member with, not a skipped event', async () => {
+    const frames = await Effect.runPromise(
+      jetstreamStream({ firehose: shapeOf([anAccount()]), filter: {} }).pipe(
+        Stream.runCollect,
+      ),
+    );
+
+    expect([...frames]).toEqual([
+      {
+        did: 'did:plc:test',
+        time_us: 1_700_000_000_000_001,
+        kind: 'account',
+        account: { active: false, status: 'suspended' },
+      },
+    ]);
+  });
+
+  it('follows wantedDids, and a collection filter does not drop it', async () => {
+    const other = await Effect.runPromise(
+      jetstreamStream({
+        firehose: shapeOf([anAccount()]),
+        filter: { wantedDids: ['did:plc:other'] },
+      }).pipe(Stream.runCollect),
+    );
+    const byCollection = await Effect.runPromise(
+      jetstreamStream({
+        firehose: shapeOf([anAccount()]),
+        filter: { wantedCollections: ['app.test.other'] },
+      }).pipe(Stream.runCollect),
+    );
+
+    expect([...other]).toEqual([]);
+    // A status move is not a record, so the record filters cannot speak for it.
+    expect([...byCollection]).toHaveLength(1);
   });
 });

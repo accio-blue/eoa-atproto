@@ -8,6 +8,7 @@ import {
 } from './token.js';
 import {
   type Account,
+  type AccountStatus,
   type AccountStore,
   type AppPassword,
   type Session,
@@ -37,6 +38,7 @@ import {
   verifyPassword,
 } from './password.js';
 import type { DpopReplay } from './dpop-replay.js';
+import type { Firehose } from './firehose.js';
 import { type Mail } from './mail.js';
 import { documentHostOf } from './did-web.js';
 import { ensureKemKey } from './kem.js';
@@ -160,6 +162,33 @@ export const validHandle = (handle: string, domain: string) => {
 /** A moment, as atproto writes one. */
 const isoOf = (at: number) => new Date(at).toISOString();
 
+/**
+ * Tell the public firehose that an account's status moved — and only when it moved.
+ *
+ * The store's moves are the spec's: `suspend` on a suspended account writes nothing, and an
+ * event for a non-event would make every reader hide a member twice. So the event goes out
+ * after the write, when the row the write returned differs from the one it was asked about.
+ */
+const announceStatus = (
+  deps: AccountSurfaceDeps,
+  before: AccountStatus,
+  after: Account,
+) => {
+  if (after.status === before || deps.firehose === undefined) {
+    return Effect.void;
+  }
+  const now = Date.now();
+  return Effect.asVoid(
+    deps.firehose.emitAccount({
+      time: isoOf(now),
+      timeUs: now * 1000,
+      did: after.did,
+      active: after.status === 'active',
+      status: after.status,
+    }),
+  );
+};
+
 /** What the account surface needs: the store, the repo model, and who we are. */
 export interface AccountSurfaceDeps {
   readonly config: PdsConfig;
@@ -173,6 +202,11 @@ export interface AccountSurfaceDeps {
    * every name, or an operator who publishes by hand.
    */
   readonly handleDns?: HandleDns | undefined;
+  /**
+   * The public stream, when this deployment has one: an account's status move is the one
+   * thing a member's going away has to say out loud (`lfmr`). Absent means nobody is told.
+   */
+  readonly firehose?: Firehose['Service'] | undefined;
 }
 
 /** The account a login names, by handle or by DID. */
@@ -693,6 +727,9 @@ export const registerAccountMethods = (
           invalid(`an account that is ${account.status} cannot be activated`),
         );
       }
+      // After the write, and only when it moved: activating an active account is the
+      // spec's no-op, and it tells nobody anything.
+      yield* announceStatus(deps, account.status, moved.value);
       return {};
     }),
   );
@@ -715,6 +752,8 @@ export const registerAccountMethods = (
           ),
         );
       }
+      // A deactivated member is the event: every space that shows their records hears it here.
+      yield* announceStatus(deps, caller.account.status, moved.value);
       return {};
     }),
   );

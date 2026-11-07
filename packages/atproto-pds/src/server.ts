@@ -163,6 +163,8 @@ export const createPdsServer = (params: {
     repo: params.repo,
     replay: params.replay,
     mail: params.mail,
+    // A status move is a public event (`lfmr`): the same firehose every other surface writes to.
+    firehose: params.firehose,
     ...(params.handleDns === undefined ? {} : { handleDns: params.handleDns }),
   });
 

@@ -1,11 +1,12 @@
-import { type CarReadError, readCar } from '@eoa/repo-store';
 import {
+  type AccountEvent,
   type CommitEvent,
   type FirehoseShape,
   type FutureCursorError,
   type OutdatedCursorError,
   type SpaceCommitEvent,
 } from './firehose.js';
+import { type CarReadError, readCar } from '@eoa/repo-store';
 import { Effect, Result, Schema, Stream } from 'effect';
 import { type XrpcError } from '@eoa/xrpc-server';
 import { decodeCbor } from '@eoa/core';
@@ -45,12 +46,29 @@ export type JetstreamCommit = {
 };
 
 /** One frame: a record operation, and where in the stream it happened. */
-export type JetstreamFrame = {
+export type JetstreamCommitFrame = {
   readonly did: string;
   readonly time_us: number;
   readonly kind: 'commit';
   readonly commit: JetstreamCommit;
 };
+
+/**
+ * An account frame: the account's status moved. The shape the real Jetstream serves, because the
+ * consumer this exists for is the one that hides a deactivated member's records in every space
+ * (`lfmr`) — and no commit can tell it that.
+ */
+export type JetstreamAccountFrame = {
+  readonly did: string;
+  readonly time_us: number;
+  readonly kind: 'account';
+  readonly account: {
+    readonly active: boolean;
+    readonly status: string;
+  };
+};
+
+export type JetstreamFrame = JetstreamCommitFrame | JetstreamAccountFrame;
 
 /** What a subscriber asks for. Both empty means everything. */
 export type JetstreamFilter = {
@@ -113,7 +131,7 @@ export const jetstreamFrames = (params: {
     }
 
     const car = yield* readCar(event.blocks);
-    const frames: JetstreamFrame[] = [];
+    const frames: JetstreamCommitFrame[] = [];
 
     for (const op of event.ops) {
       const { collection, rkey } = recordParts(op.path);
@@ -169,6 +187,22 @@ const spaceWanted = (event: SpaceCommitEvent, filter: JetstreamFilter) =>
     filter.wantedCollections.includes(event.collection));
 
 /**
+ * An account event as the frame it becomes — or none when the subscription asked for other DIDs.
+ * A collection filter does not apply: a status move is not a record.
+ */
+const accountFrames = (event: AccountEvent, filter: JetstreamFilter) =>
+  filter.wantedDids !== undefined && !filter.wantedDids.includes(event.did)
+    ? []
+    : [
+        {
+          did: event.did,
+          time_us: event.timeUs,
+          kind: 'account',
+          account: { active: event.active, status: event.status },
+        } satisfies JetstreamAccountFrame,
+      ];
+
+/**
  * The Jetstream stream over a firehose: resume where the client left off, then follow. A cursor the
  * firehose refuses (`FutureCursor`, `OutdatedCursor`) is the stream's failure, and the endpoint
  * answers it with a status rather than by starting a response it cannot keep.
@@ -178,7 +212,8 @@ const spaceWanted = (event: SpaceCommitEvent, filter: JetstreamFilter) =>
  * a client reads (`SpaceCommitEvent` carries `space`).
  */
 export const jetstreamStream = (params: {
-  readonly firehose: FirehoseShape;
+  /** Only what a stream needs: a fake for a test, the firehose in a deployment. */
+  readonly firehose: Pick<FirehoseShape, 'subscribe' | 'subscribeSpaces'>;
   readonly filter: JetstreamFilter;
   readonly cursor?: number | undefined;
   readonly spaces?: readonly string[] | undefined;
@@ -195,12 +230,25 @@ export const jetstreamStream = (params: {
   }
 
   return firehose.subscribe({ cursor }).pipe(
-    Stream.flatMap((event) =>
-      // Jetstream addresses records: an identity event carries none, and a
-      // consumer that hears it re-resolves the DID through its own resolver.
-      event.kind === 'identity'
-        ? Stream.empty
-        : Stream.fromIterableEffect(jetstreamFrames({ event, filter })),
+    Stream.flatMap(
+      (
+        event,
+      ): Stream.Stream<JetstreamFrame, CarReadError | MissingBlockError> => {
+        switch (event.kind) {
+          // Jetstream addresses records: an identity event carries none, and a consumer that
+          // hears it re-resolves the DID through its own resolver.
+          case 'identity':
+            return Stream.empty;
+          // An account event carries no record either, but it is the only way to learn that a
+          // member is gone — so it is a frame of its own, not a skipped event.
+          case 'account':
+            return Stream.fromIterable(accountFrames(event, filter));
+          case 'commit':
+            return Stream.fromIterableEffect(
+              jetstreamFrames({ event, filter }),
+            );
+        }
+      },
     ),
   );
 };

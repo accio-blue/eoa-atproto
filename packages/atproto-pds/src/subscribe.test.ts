@@ -28,6 +28,16 @@ const aStreamThatNeverEnds = (onExit: () => void) =>
         time: '2026-10-22T00:00:00.000Z',
         did: 'did:plc:test',
       }),
+    emitAccount: () =>
+      Effect.succeed({
+        kind: 'account',
+        seq: 0,
+        timeUs: 0,
+        time: '2026-11-07T00:00:00.000Z',
+        did: 'did:plc:test',
+        active: false,
+        status: 'suspended',
+      }),
     emitSpace: () =>
       Effect.succeed({
         kind: 'space',
@@ -56,6 +66,35 @@ const aStreamThatNeverEnds = (onExit: () => void) =>
   }) satisfies Firehose['Service'];
 
 describe('the firehose socket', () => {
+  it('skips an account event, deliberately and without a frame', async () => {
+    // The socket is the repo syncer's: an account's status is not one of its frames, and the
+    // reader that needs it reads Jetstream (`lfmr`). So a live account event must produce no
+    // bytes at all — not a `#commit` built from a shape it does not have.
+    const firehose = {
+      ...aStreamThatNeverEnds(() => {}),
+      subscribe: () =>
+        Stream.make({
+          kind: 'account' as const,
+          seq: 1,
+          timeUs: 1_000,
+          time: '2026-11-07T00:00:00.000Z',
+          did: 'did:plc:test',
+          active: false,
+          status: 'suspended',
+        }),
+    } satisfies Firehose['Service'];
+
+    const frames = await Effect.runPromise(
+      subscribeReposHandler(firehose)({
+        params: {},
+        nsid: SUBSCRIBE_NSID,
+        headers: {},
+      }).pipe(Stream.runCollect),
+    );
+
+    expect([...frames]).toEqual([]);
+  });
+
   it('ends a subscription when its client goes away', async () => {
     const ended = { count: 0 };
     const xrpc = createXrpcServer();

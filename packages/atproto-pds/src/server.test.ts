@@ -1,7 +1,7 @@
 import { AccountStore, accountStoreLayer } from './account-store.js';
 import { BlobStore, blobStoreLayer } from './blob-store.js';
 import { DpopReplay, dpopReplayLayer } from './dpop-replay.js';
-import { Effect, Layer, Option, Schema } from 'effect';
+import { Effect, Layer, Option, Schema, Stream } from 'effect';
 import { Firehose, firehoseLayer } from './firehose.js';
 import { RepoStore, repoStoreLayer } from '@eoa/repo-store';
 import { SpaceStore, spaceStoreLayer } from './space-store.js';
@@ -576,6 +576,8 @@ const startPds = async (
     raw,
     oauthCall,
     createAccount,
+    // The stream a test watches, built in this PDS and not a second one.
+    firehose: services.firehose,
     admins,
     mails,
     issuer,
@@ -1034,6 +1036,79 @@ describe('the account surface', () => {
     expect(reclaimed.status).toBe(200);
     expect(reclaimed.body.handle).toBe(HANDLE);
     expect(reclaimed.body.did).not.toBe(alice);
+  });
+
+  it('says each status move once on the public stream, and a non-move not at all', async () => {
+    const pds = await startPds();
+    const created = await pds.createAccount(HANDLE);
+    const token = created.body.accessJwt;
+    const alice = created.body.did;
+    const empty = Schema.decodeUnknownOption(
+      Schema.fromJsonString(Schema.Struct({})),
+    );
+
+    // Only account events: a create writes a repo, and a commit is not what this test is about.
+    const accountEvents = (count: number) =>
+      Effect.runPromise(
+        pds.firehose.subscribe({ cursor: 0 }).pipe(
+          Stream.filter((event) => event.kind === 'account'),
+          Stream.take(count),
+          Stream.runCollect,
+        ),
+      );
+
+    const off = await pds.call(
+      'com.atproto.server.deactivateAccount',
+      {},
+      empty,
+      token,
+    );
+    expect(off.status).toBe(200);
+    const dark = [...(await accountEvents(1))];
+    expect(dark).toHaveLength(1);
+    expect(dark[0]).toMatchObject({
+      kind: 'account',
+      did: alice,
+      active: false,
+      status: 'suspended',
+    });
+    const afterDeactivate = await Effect.runPromise(pds.firehose.head);
+
+    // A second deactivation cannot even authenticate — the suspended account's token is dead —
+    // so the retry adds no event, and takes no position.
+    const again = await pds.call(
+      'com.atproto.server.deactivateAccount',
+      {},
+      errorOf,
+      token,
+    );
+    expect(again.status).toBe(401);
+    expect(await Effect.runPromise(pds.firehose.head)).toEqual(afterDeactivate);
+
+    // Reinstate is the other move, and it says so.
+    const back = await pds.call(
+      'com.atproto.server.activateAccount',
+      { identifier: HANDLE, password: PASSWORD },
+      empty,
+    );
+    expect(back.status).toBe(200);
+    const seen = [...(await accountEvents(2))];
+    expect(seen).toHaveLength(2);
+    expect(seen[1]).toMatchObject({
+      did: alice,
+      active: true,
+      status: 'active',
+    });
+
+    // Activating an already-active account is the spec's no-op: no write, no event, no position.
+    const before = await Effect.runPromise(pds.firehose.head);
+    const twice = await pds.call(
+      'com.atproto.server.activateAccount',
+      { identifier: HANDLE, password: PASSWORD },
+      empty,
+    );
+    expect(twice.status).toBe(200);
+    expect(await Effect.runPromise(pds.firehose.head)).toEqual(before);
   });
 
   it('takes a blob, gives it back, and lets a record hold its reference', async () => {
