@@ -2639,6 +2639,114 @@ describe('grants over a space', () => {
     });
   });
 
+  it('never lets a public view carry the full calendar event', async () => {
+    // Kimbia's discipline, on a shape where it matters: a recorded run leaks the
+    // address in its start and finish, an event leaks its attendees, and a
+    // `VEVENT` keeps both byte for byte in `raw`. The view is the lens, so the
+    // fields that never reach a reader are named once, by the authority.
+    const event = {
+      $type: 'ing.lexicon.calendar.event',
+      raw: [
+        'BEGIN:VCALENDAR',
+        'BEGIN:VEVENT',
+        'UID:planning@example.com',
+        'DTSTART:20261107T100000Z',
+        'SUMMARY:Planning',
+        'ATTENDEE:mailto:bob@example.com',
+        'LOCATION:56.9496,24.1052',
+        'END:VEVENT',
+        'END:VCALENDAR',
+      ].join('\r\n'),
+      href: '/calendars/alice/planning.ics',
+      uid: 'planning@example.com',
+      start: '2026-11-07T10:00:00.000Z',
+      end: '2026-11-07T11:00:00.000Z',
+      summary: 'Planning',
+      organizer: 'mailto:alice@example.com',
+      attendees: ['mailto:bob@example.com'],
+      recurrenceId: null,
+      recurrenceRule: null,
+      excluded: [],
+      sequence: 0,
+      updatedAt: '2026-11-06T00:00:00.000Z',
+    };
+
+    await withGrantedSpace(async ({ space, authority, reader, write, get }) => {
+      const written = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: 'ing.lexicon.calendar.event',
+          rkey: 'planning',
+          value: event,
+        }),
+        authority.accessJwt,
+      );
+      expect(written.status).toBe(200);
+
+      const lens = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: 'ing.lexicon.lens',
+          rkey: 'ing.lexicon.calendar.event',
+          value: {
+            $type: 'ing.lexicon.lens',
+            fields: ['/uid', '/summary', '/start', '/end'],
+            description: 'what a public calendar shows',
+            issuedBy: authority.did,
+            createdAt: new Date().toISOString(),
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(lens.status).toBe(200);
+
+      const granted = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: GRANT,
+          rkey: 'public-calendar',
+          value: {
+            ...grantFor({
+              space,
+              subject: reader.did,
+              issuedBy: authority.did,
+              selector: { collection: 'ing.lexicon.calendar.event' },
+            }),
+            lens: {
+              nsid: 'ing.lexicon.calendar.event',
+              cid: String(lens.body['cid']),
+            },
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(granted.status).toBe(200);
+
+      const listed = await get(
+        `com.atproto.space.listRecords?space=${encodeURIComponent(space)}&repo=${authority.did}&collection=ing.lexicon.calendar.event`,
+        reader.accessJwt,
+      );
+      expect(listed.status).toBe(200);
+      const records = listed.body['records'] as ReadonlyArray<{
+        value: Record<string, Schema.Json>;
+      }>;
+      // Exactly the four fields: no `raw` (the whole VEVENT), no `attendees`,
+      // no `organizer`, and no `href` (the resource path is the person's).
+      expect(records.map((one) => one.value)).toEqual([
+        {
+          $type: 'ing.lexicon.calendar.event',
+          uid: 'planning@example.com',
+          summary: 'Planning',
+          start: '2026-11-07T10:00:00.000Z',
+          end: '2026-11-07T11:00:00.000Z',
+        },
+      ]);
+    });
+  });
+
   it('answers a grant decision for a service fronting the space', async () => {
     await withGrantedSpace(async ({ space, authority, reader, write, get }) => {
       const ask = (action: 'view' | 'write', jwt: string) =>
