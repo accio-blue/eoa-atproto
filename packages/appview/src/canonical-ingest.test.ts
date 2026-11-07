@@ -141,6 +141,47 @@ describe('ingestCanonical', () => {
     expect(result.after).toBe(0);
     expect(result.gone).toBeUndefined();
   });
+
+  it('keeps a delete: a stale frame cannot bring the record back', async () => {
+    const result = await withStore((store) =>
+      Effect.gen(function* () {
+        const create = [createFrame({ time: 100, rkey: 'a' })];
+        yield* ingestCanonical({ store, frames: Stream.fromIterable(create) });
+        const deleted = yield* ingestCanonical({
+          store,
+          frames: Stream.fromIterable([
+            {
+              did: DID,
+              time_us: 200,
+              collection: POST,
+              rkey: 'a',
+              operation: 'delete',
+              record: undefined,
+            } satisfies IndexFrame,
+          ]),
+        });
+        // A reconnect replays the create, which is at or below the cursor: the
+        // rule ignores it, so the delete stands rather than the record returning.
+        const replayed = yield* ingestCanonical({
+          store,
+          frames: Stream.fromIterable(create),
+          cursor: 200n,
+        });
+
+        return {
+          deleted,
+          replayed,
+          size: yield* store.size,
+          gone: yield* store.get(recordPath('a')),
+        };
+      }),
+    );
+
+    expect(result.deleted).toEqual({ cursor: 200n, applied: 1 });
+    expect(result.replayed).toEqual({ cursor: 200n, applied: 0 });
+    expect(result.size).toBe(0);
+    expect(result.gone).toBeUndefined();
+  });
 });
 
 describe('applyFrame', () => {
