@@ -1,13 +1,11 @@
 {
   "name": "@eoa/sync",
   "version": "0.1.0",
-  "description": "Effect-based data synchronization and firehose subscriptions for AT Protocol",
+  "description": "Effect-based data synchronization for AT Protocol",
   "keywords": [
     "at-protocol",
     "atproto",
     "effect-ts",
-    "firehose",
-    "streaming",
     "sync"
   ],
   "license": "MIT",
@@ -41,7 +39,6 @@
   "dependencies": {
     "@eoa/core": "workspace:*",
     "@eoa/repo": "workspace:*",
-    "@eoa/xrpc": "workspace:*",
     "effect": "catalog:"
   },
   "devDependencies": {
