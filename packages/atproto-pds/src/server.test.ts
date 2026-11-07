@@ -302,6 +302,33 @@ const answer = async <A>(
 };
 
 /** A PDS of its own, with its own port and its own empty store. */
+/**
+ * A port the OS says is free right now.
+ *
+ * Two formulas in the same 40000–60000 range is one collision per overlapping
+ * run, and the loser's `runFork` dies without a word: the listener never exists
+ * and every request answers ECONNREFUSED. Asking the kernel is not a guarantee
+ * either — the port is released before the PDS takes it — so `startPds` retries
+ * the start as well.
+ */
+const freePort = async () => {
+  const probe = createServer();
+  await new Promise<void>((resolve) => {
+    probe.listen(0, '127.0.0.1', () => {
+      resolve();
+    });
+  });
+  const address = probe.address();
+  const port =
+    typeof address === 'object' && address !== null ? address.port : 0;
+  await new Promise<void>((resolve) => {
+    probe.close(() => {
+      resolve();
+    });
+  });
+  return port;
+};
+
 const startPds = async (
   options: {
     recoveryDidKey?: string;
@@ -310,8 +337,8 @@ const startPds = async (
     failingHandleDns?: boolean;
   } = {},
 ) => {
-  const port = 40000 + Math.floor(Math.random() * 20000);
-  const base = `http://127.0.0.1:${port}`;
+  let port = 0;
+  let base = '';
   const stack = Layer.mergeAll(
     repoStoreLayer,
     accountStoreLayer,
@@ -479,14 +506,27 @@ const startPds = async (
       },
     },
   };
-  Effect.runFork(
-    Effect.scoped(
-      server
-        .start({ port, hostname: '127.0.0.1' })
-        .pipe(Effect.andThen(Effect.never)),
-    ),
-  );
-  await waitFor(`${base}/xrpc/com.atproto.server.describeServer`, 40);
+  // Start until one listener answers: a bind that lost a race dies silently in
+  // the fork, and a silent loser is a whole file of ECONNREFUSED.
+  for (let attempt = 0; ; attempt += 1) {
+    port = await freePort();
+    base = `http://127.0.0.1:${port}`;
+    Effect.runFork(
+      Effect.scoped(
+        server
+          .start({ port, hostname: '127.0.0.1' })
+          .pipe(Effect.andThen(Effect.never)),
+      ),
+    );
+    try {
+      await waitFor(`${base}/xrpc/com.atproto.server.describeServer`, 40);
+      break;
+    } catch (error) {
+      if (attempt >= 4) {
+        throw error;
+      }
+    }
+  }
 
   const query = <A>(
     path: string,
