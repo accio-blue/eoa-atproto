@@ -2,7 +2,6 @@
 export * from './resolver.js';
 export * from './service.js';
 export * from './did-resolution.js';
-export * from './cache.js';
 export * from './types.js';
 export * from './plc-operation.js';
 export * from './plc-directory-api.js';

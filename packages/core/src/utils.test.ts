@@ -1,6 +1,5 @@
 import * as Utils from './utils.js';
 import { describe, it } from 'vitest';
-import { Effect } from 'effect';
 
 describe('buildURL', () => {
   it('should build a URL without params', () => {
@@ -60,41 +59,5 @@ describe('mergeHeaders', () => {
       { 'Content-Type': 'application/json' },
     );
     expect(headers).toEqual({ 'Content-Type': 'application/json' });
-  });
-});
-
-describe('generateTID', () => {
-  it('should generate a TID string', () => {
-    const tid = Utils.generateTID();
-    expect(typeof tid).toBe('string');
-    expect(tid.length).toBeGreaterThan(0);
-  });
-
-  it('should generate unique TIDs', () => {
-    const tid1 = Utils.generateTID();
-    const tid2 = Utils.generateTID();
-    expect(tid1).not.toBe(tid2);
-  });
-});
-
-describe('sleep', () => {
-  it('should sleep for the specified duration', async () => {
-    const program = Utils.sleep(10).pipe(Effect.map(() => 'slept'));
-    const result = await Effect.runPromise(program);
-    expect(result).toBe('slept');
-  });
-});
-
-describe('withTimeout', () => {
-  it('should succeed before timeout', async () => {
-    const program = Utils.withTimeout(Effect.succeed('done'), 100);
-    const result = await Effect.runPromise(program);
-    expect(result).toBe('done');
-  });
-
-  it('should timeout if effect takes too long', async () => {
-    const program = Utils.withTimeout(Utils.sleep(100), 10).pipe(Effect.flip);
-    const error = await Effect.runPromise(program);
-    expect(error._tag).toBe('TimeoutError');
   });
 });

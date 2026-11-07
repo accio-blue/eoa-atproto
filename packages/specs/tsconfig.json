@@ -21,6 +21,5 @@
     ]
   },
   "include": ["src", "test", "scripts"],
-  "exclude": ["node_modules", "dist"],
-  "$schema": "./node_modules/@effect/tsgo/schema.json"
+  "exclude": ["node_modules", "dist"]
 }

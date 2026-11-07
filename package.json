@@ -15,7 +15,6 @@
     "knip:mcp": "knip-mcp",
     "lint": "vp lint",
     "lint:fix": "vp lint --fix",
-    "postinstall": "node node_modules/@effect/tsgo/dist/effect-tsgo.cjs patch --typescript --no-oxlint",
     "test": "vp test",
     "test:coverage": "vp test --run --coverage",
     "test:run": "vp test --run",
