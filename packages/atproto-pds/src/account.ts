@@ -114,12 +114,17 @@ const ResetPasswordSchema = Schema.Struct({
 const CreateInviteCodeSchema = Schema.Struct({
   useCount: Schema.Number,
   forAccount: Schema.optional(Schema.String),
+  // Not in the spec, and deliberately optional: a ticket that names no end is a
+  // ticket the issuer can only take back by hand, and atproto's client already
+  // ignores what it does not know.
+  expiresAt: Schema.optional(Schema.String),
 });
 
 const CreateInviteCodesSchema = Schema.Struct({
   codeCount: Schema.Number,
   useCount: Schema.Number,
   forAccount: Schema.optional(Schema.String),
+  expiresAt: Schema.optional(Schema.String),
 });
 
 /**
@@ -161,6 +166,22 @@ export const validHandle = (handle: string, domain: string) => {
 
 /** A moment, as atproto writes one. */
 const isoOf = (at: number) => new Date(at).toISOString();
+
+/**
+ * When an invite stops being usable: `undefined` when the caller names no end,
+ * the instant when it names a real one, and `null` when the answer cannot be a
+ * ticket at all (unparseable, or already over).
+ */
+const inviteExpiryOf = (
+  asked: string | undefined,
+  now: number,
+): number | null | undefined => {
+  if (asked === undefined) {
+    return undefined;
+  }
+  const at = Date.parse(asked);
+  return Number.isFinite(at) && at > now ? at : null;
+};
 
 /**
  * Tell the public firehose that an account's status moved — and only when it moved.
@@ -1121,6 +1142,12 @@ export const registerAccountMethods = (
         );
       }
       const now = Date.now();
+      const expiresAt = inviteExpiryOf(input.expiresAt, now);
+      if (expiresAt === null) {
+        return yield* Effect.fail(
+          invalid('expiresAt must be a datetime in the future'),
+        );
+      }
       const code = newInviteCode();
       yield* deps.accounts
         .putInvite({
@@ -1128,6 +1155,7 @@ export const registerAccountMethods = (
           forAccount: input.forAccount ?? null,
           createdBy: caller.account.did,
           createdAt: now,
+          ...(expiresAt === undefined ? {} : { expiresAt }),
           usesAvailable: input.useCount,
           disabled: false,
         })
@@ -1161,6 +1189,12 @@ export const registerAccountMethods = (
         );
       }
       const now = Date.now();
+      const expiresAt = inviteExpiryOf(input.expiresAt, now);
+      if (expiresAt === null) {
+        return yield* Effect.fail(
+          invalid('expiresAt must be a datetime in the future'),
+        );
+      }
       const account = input.forAccount ?? caller.account.did;
       const codes = Array.from({ length: input.codeCount }, () =>
         newInviteCode(),
@@ -1172,6 +1206,7 @@ export const registerAccountMethods = (
             forAccount: input.forAccount ?? null,
             createdBy: caller.account.did,
             createdAt: now,
+            ...(expiresAt === undefined ? {} : { expiresAt }),
             usesAvailable: input.useCount,
             disabled: false,
           })
@@ -1204,6 +1239,9 @@ export const registerAccountMethods = (
           forAccount: one.forAccount,
           createdBy: one.createdBy,
           createdAt: isoOf(one.createdAt),
+          ...(one.expiresAt === undefined
+            ? {}
+            : { expiresAt: isoOf(one.expiresAt) }),
           uses: [],
         })),
       };

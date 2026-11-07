@@ -174,6 +174,62 @@ describe('the account store', () => {
     expect(Option.getOrThrow(report.invite).usesAvailable).toBe(0);
   });
 
+  it('admits one DID, until the instant the ticket names, and one revoke leaves the rest', async () => {
+    const bound = 'aaaaa-bbbbb-ccccc-ddddd-eeeee';
+    const revoked = 'fffff-ggggg-hhhhh-iiiii-jjjjj';
+    const report = await withStore((store) =>
+      Effect.gen(function* () {
+        yield* store.putInvite({
+          code: bound,
+          forAccount: 'did:web:two',
+          createdBy: 'did:web:one',
+          createdAt: 1000,
+          expiresAt: 2000,
+          usesAvailable: 1,
+          disabled: false,
+        });
+        yield* store.putInvite({
+          code: revoked,
+          forAccount: null,
+          createdBy: 'did:web:one',
+          createdAt: 1000,
+          usesAvailable: 1,
+          disabled: true,
+        });
+        // A ticket names one DID: another one presenting it is not admitted.
+        const other = yield* store.create({
+          ...createParams('did:web:three', 'carol.pds.example'),
+          inviteCode: bound,
+          now: 1500,
+        });
+        // At the instant it named, it is over — not after it.
+        const late = yield* store.create({
+          ...createParams('did:web:two', 'bob.pds.example'),
+          inviteCode: bound,
+          now: 2000,
+        });
+        // A revoked ticket is refused even with a use left.
+        const disabled = yield* store.create({
+          ...createParams('did:web:four', 'dan.pds.example'),
+          inviteCode: revoked,
+          now: 1500,
+        });
+        // And the DID it was for, before the end, gets in.
+        const inTime = yield* store.create({
+          ...createParams('did:web:two', 'bob.pds.example'),
+          inviteCode: bound,
+          now: 1500,
+        });
+        return { other, late, disabled, inTime };
+      }),
+    );
+
+    expect(report.other._tag).toBe('inviteInvalid');
+    expect(report.late._tag).toBe('inviteInvalid');
+    expect(report.disabled._tag).toBe('inviteInvalid');
+    expect(report.inTime._tag).toBe('created');
+  });
+
   it('keeps sessions and app passwords per account', async () => {
     const report = await withStore((store) =>
       Effect.gen(function* () {

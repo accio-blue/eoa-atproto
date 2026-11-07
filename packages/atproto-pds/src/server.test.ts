@@ -158,6 +158,19 @@ const appPasswordListOf = Schema.decodeUnknownOption(
 const inviteOf = Schema.decodeUnknownOption(
   Schema.fromJsonString(InviteSchema),
 );
+const inviteListOf = Schema.decodeUnknownOption(
+  Schema.fromJsonString(
+    Schema.Struct({
+      codes: Schema.Array(
+        Schema.Struct({
+          code: Schema.String,
+          available: Schema.Number,
+          expiresAt: Schema.optional(Schema.String),
+        }),
+      ),
+    }),
+  ),
+);
 const errorOf = Schema.decodeUnknownOption(Schema.fromJsonString(ErrorSchema));
 /** The same refusal with its reason: some guards are told apart only by the message. */
 const errorMessageOf = Schema.decodeUnknownOption(
@@ -987,6 +1000,41 @@ describe('the account surface', () => {
       token,
     );
     expect(short.status).toBe(400);
+  });
+
+  it('mints a ticket that ends, reports when, and refuses an end that is already past', async () => {
+    const pds = await startPds();
+    const created = await pds.createAccount(HANDLE);
+    const token = created.body.accessJwt;
+
+    const past = new Date(Date.now() - 60_000).toISOString();
+    const refused = await pds.call(
+      'com.atproto.server.createInviteCode',
+      { useCount: 1, expiresAt: past },
+      errorOf,
+      token,
+    );
+    expect(refused.status).toBe(400);
+
+    const until = new Date(Date.now() + 3_600_000).toISOString();
+    const minted = await pds.call(
+      'com.atproto.server.createInviteCode',
+      { useCount: 1, expiresAt: until },
+      inviteOf,
+      token,
+    );
+    expect(minted.status).toBe(200);
+
+    const listed = await pds.call(
+      'com.atproto.server.getAccountInviteCodes',
+      {},
+      inviteListOf,
+      token,
+    );
+    expect(listed.status).toBe(200);
+    expect(
+      listed.body.codes.find((one) => one.code === minted.body.code)?.expiresAt,
+    ).toBe(until);
   });
 
   it('follows the spec: suspend stops the tokens, reinstate brings them back, delete releases the handle', async () => {
