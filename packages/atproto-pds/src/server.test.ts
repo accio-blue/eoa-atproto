@@ -290,7 +290,9 @@ const within = (promise: Promise<unknown>, what: string) =>
 // oxlint-disable-next-line diff-check/no-explicit-function-return-type
 async function waitFor(url: string, left: number) {
   try {
-    await fetch(url);
+    // Read the body: a response nobody drains holds its socket, and a harness
+    // that holds sockets under load is where a flake of its own starts.
+    await (await fetch(url)).arrayBuffer();
   } catch (cause) {
     if (left <= 0) {
       throw cause;
@@ -306,9 +308,10 @@ const answer = async <A>(
   init: RequestInit,
 ) => {
   // A full run puts this file beside three hundred others on one machine, and an overloaded loopback
-  // request occasionally comes back with an **empty** body — a transport hiccup, not an answer. One
-  // retry for exactly that case (`shyy`); a decoded answer, a 4xx or a non-empty unexpected body is
-  // reported as it is, because those are the things this file is about.
+  // request occasionally came back with an **empty** body (`shyy`). The transport no longer has a
+  // path to that for a JSON answer — a buffered body carries its length and is written in one
+  // `end()` — so one retry stays only as the witness: if it ever fires again, the body came from a
+  // `Response` the transport did not build, and the error below says what its framing was.
   for (let attempt = 0; ; attempt += 1) {
     const response = await fetch(url, init);
     const text = await response.text();
@@ -317,7 +320,14 @@ const answer = async <A>(
       return { status: response.status, body: decoded.value };
     }
     if (attempt > 0 || text !== '') {
-      throw new Error(`unexpected body from ${url}: ${text}`);
+      const framing = [
+        response.status,
+        response.headers.get('content-type') ?? 'no type',
+        response.headers.get('content-length') ??
+          response.headers.get('transfer-encoding') ??
+          'no length',
+      ].join(' · ');
+      throw new Error(`unexpected body from ${url} (${framing}): ${text}`);
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
