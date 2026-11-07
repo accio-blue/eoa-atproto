@@ -48,6 +48,16 @@ export const SpaceCredentialSchema = Schema.Struct({
   space: Schema.String,
   /** The app the authority approved — the value `allowedApps` is checked against. */
   sub: Schema.String,
+  /**
+   * The DID whose access this token carries: the member whose read was lent, the authority, or —
+   * for a `publicRead` space, where the app asks on its own — the app itself. Every use re-decides
+   * this DID against the policy, so a member removed from a space is refused on their next read.
+   *
+   * Required, with no version field: a token minted before this claim existed fails `bad-payload`
+   * and the client re-mints. Its life was at most `SPACE_CREDENTIAL_TTL_SECONDS`, which is the
+   * honest cost of not carrying a migration.
+   */
+  member: Schema.String,
   cnf: Schema.Struct({ jkt: Schema.String }),
   iat: Schema.Finite,
   exp: Schema.Finite,
@@ -115,6 +125,8 @@ export const mintSpaceCredential = (params: {
   readonly key: PrivateKey;
   readonly space: string;
   readonly app: string;
+  /** The DID whose access this token carries; re-decided by the space host on every use. */
+  readonly member: string;
   /** The app's DPoP key thumbprint: what makes a stolen token useless without the key. */
   readonly jkt: string;
   readonly now: number;
@@ -130,6 +142,7 @@ export const mintSpaceCredential = (params: {
           aud: params.audience,
           space: params.space,
           sub: params.app,
+          member: params.member,
           cnf: { jkt: params.jkt },
           iat,
           exp,
@@ -287,6 +300,8 @@ export const credentialFor = (params: {
       key: params.key,
       space: params.space,
       app: params.app,
+      // `did` is the reader whose access was decided; the token carries it so the host can ask again.
+      member: params.did,
       jkt: params.jkt,
       now: params.now,
       ...(params.ttl === undefined ? {} : { ttl: params.ttl }),

@@ -735,7 +735,8 @@ export const registerSpaceMethods = (
    *
    * The token alone is not a password: `cnf.jkt` names the app's key, the proof has to verify
    * against that same key, and it names the space it is for — so a leaked token is useless without
-   * the key and a captured proof opens one space for a minute.
+   * the key and a captured proof opens one space for a minute. The token's `member` is re-decided
+   * against the policy here, so access it no longer carries is refused now.
    */
   const readerOf = (ctx: HandlerContext, space: string) =>
     Effect.gen(function* () {
@@ -805,6 +806,27 @@ export const registerSpaceMethods = (
       if (!verified.ok) {
         return yield* Effect.fail(unauthorized(verified.reason));
       }
+      const parsed = spaceOf(space);
+      if (parsed === undefined) {
+        return yield* Effect.fail(
+          invalid(`the space ${space} is not a space address`),
+        );
+      }
+      // The token named whose access it carries at mint time, and that is the difference from a
+      // stateless check: re-decide that DID now, with the same policy a session gets, so a member
+      // removed from the space is refused on its next read rather than at `exp`.
+      const policy = yield* policyReadOf({
+        space,
+        authority: parsed.authority,
+        did: credential.credential.member,
+      });
+      if (policy.kind !== 'allow') {
+        return yield* Effect.fail(
+          unauthorized(
+            `the credential's member ${credential.credential.member} may not read ${space}: ${policy.reason}`,
+          ),
+        );
+      }
       return { kind: 'app' as const, app };
     });
 
@@ -812,9 +834,9 @@ export const registerSpaceMethods = (
    * May this caller read this space? The one gate both `com.atproto.space.subscribeRepos` and
    * Jetstream's `?space=` mode pass, so the two cannot disagree about a reader.
    *
-   * A credential is scoped to one space by the authority that minted it, so it is its own answer
-   * (`listRepos` asks the same way). A session is a person, and the policy says whether that person
-   * may read.
+   * A credential is scoped to one space by the authority that minted it and names the reader it
+   * was minted for, which `readerOf` re-decides; a session is a person the policy answers for
+   * directly (`listRepos` asks the same way).
    */
   const gateRead = (ctx: HandlerContext, spaceUri: string) =>
     Effect.gen(function* () {
@@ -1422,8 +1444,8 @@ export const registerSpaceMethods = (
       );
 
       // The reader is whoever asks: a session's account, or the app itself. A member's session
-      // carries its state row, which is where the permission comes from — the token still names
-      // the app, never the member.
+      // carries its state row, which is where the permission comes from — the token keeps the app
+      // as `sub` and names the reader as `member`, which the host re-decides on every use.
       const reader = Option.isSome(session)
         ? yield* Schema.decodeUnknownEffect(DID)(
             session.value.account.did,

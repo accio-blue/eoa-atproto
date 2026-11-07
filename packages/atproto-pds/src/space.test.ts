@@ -1356,10 +1356,16 @@ describe('the authority, or a member, mints a space credential (frxd, myyq)', ()
         // The claims say who may use it, for what, and until when.
         const claims = JSON.parse(
           Buffer.from(token.split('.')[1] ?? '', 'base64url').toString('utf8'),
-        ) as { space: string; sub: string; cnf: { jkt: string } };
+        ) as {
+          space: string;
+          sub: string;
+          member: string;
+          cnf: { jkt: string };
+        };
         expect(claims).toMatchObject({
           space,
           sub: 'did:web:appview.example',
+          member: account.did,
           cnf: { jkt: JKT },
         });
       },
@@ -1490,11 +1496,12 @@ describe('the authority, or a member, mints a space credential (frxd, myyq)', ()
         );
         expect(minted.status).toBe(200);
         const token = String(minted.body['token'] ?? '');
-        // The token names the app, never the member that lent the read.
+        // The token names the app as `sub`, and the member that lent its read as `member`.
         const claims = JSON.parse(
           Buffer.from(token.split('.')[1] ?? '', 'base64url').toString('utf8'),
-        ) as { sub: string; cnf: { jkt: string } };
+        ) as { sub: string; member: string; cnf: { jkt: string } };
         expect(claims.sub).toBe(APP);
+        expect(claims.member).toBe(member.did);
         expect(claims.cnf.jkt).toBe(JKT);
       },
       [APP],
@@ -1709,13 +1716,29 @@ describe('an approved app reads a space with its credential (frxd)', () => {
         readonly status: number;
         readonly body: Record<string, unknown>;
       }>;
+      /** The same, with a session's token: the authority, or a member lending its read. */
+      readonly mintWith: (
+        space: string,
+        jkt: string,
+        jwt: string,
+      ) => Promise<{
+        readonly status: number;
+        readonly body: Record<string, unknown>;
+      }>;
       readonly space: string;
       readonly repo: string;
       /** A read proof for one space, signed by the app's key. */
       readonly readProofFor: (space: string) => Promise<string>;
       readonly jkt: string;
       readonly proof: string;
+      /** The second account: a member, never the authority. */
+      readonly member: Account;
+      /** The space's authority. */
+      readonly authority: Account;
+      /** Remove the member from the space, as the authority. */
+      readonly removeMember: (did: string) => Promise<void>;
     }) => Promise<void>,
+    options?: { readonly publicRead?: boolean },
   ) => {
     const keys = await Effect.runPromise(generateES256KeyPair());
     const jkt = await Effect.runPromise(jktOfKey(keys.publicKey));
@@ -1742,6 +1765,9 @@ describe('an approved app reads a space with its credential (frxd)', () => {
           const alice = yield* Effect.promise(() =>
             createAccount(pds.url, 'alice.pds.test'),
           );
+          const member = yield* Effect.promise(() =>
+            createAccount(pds.url, 'bob.pds.test'),
+          );
           const created = yield* Effect.promise(() =>
             postJson(
               `${pds.url}/xrpc/com.atproto.space.createSpace`,
@@ -1753,13 +1779,21 @@ describe('an approved app reads a space with its credential (frxd)', () => {
                   $type: 'com.atproto.memberspace.policy',
                   // The AppView's case: a space anyone may read, which still needs *something*
                   // that proves it — a session before, a credential for an app now.
-                  publicRead: true,
+                  publicRead: options?.publicRead ?? true,
                   allowedApps: [APP],
                 },
               },
             ),
           );
           const space = String(created.body['uri']);
+          const added = yield* Effect.promise(() =>
+            postJson(
+              `${pds.url}/xrpc/com.atproto.memberspace.putMember`,
+              alice.accessJwt,
+              { space, did: member.did, read: true, write: false },
+            ),
+          );
+          expect(added.status).toBe(200);
           const written = yield* Effect.promise(() =>
             postJson(
               `${pds.url}/xrpc/com.atproto.space.createRecord`,
@@ -1814,10 +1848,29 @@ describe('an approved app reads a space with its credential (frxd)', () => {
                 ),
               jkt,
               proof,
+              member,
+              authority: alice,
+              removeMember: async (did) => {
+                const removed = await call(
+                  '/xrpc/com.atproto.memberspace.removeMember',
+                  {
+                    method: 'POST',
+                    headers: { authorization: `Bearer ${alice.accessJwt}` },
+                    body: JSON.stringify({ space, did }),
+                  },
+                );
+                expect(removed.status).toBe(200);
+              },
               mint: (space, jkt, proof) =>
                 call('/xrpc/com.atproto.space.getCredential', {
                   method: 'POST',
                   headers: { authorization: `Bearer ${proof}` },
+                  body: JSON.stringify({ space, app: APP, jkt }),
+                }),
+              mintWith: (space, jkt, jwt) =>
+                call('/xrpc/com.atproto.space.getCredential', {
+                  method: 'POST',
+                  headers: { authorization: `Bearer ${jwt}` },
                   body: JSON.stringify({ space, app: APP, jkt }),
                 }),
               read: (space, repo, headers) =>
@@ -1894,6 +1947,80 @@ describe('an approved app reads a space with its credential (frxd)', () => {
           dpop: await readProofFor(space),
         });
         expect(answer.status).toBe(401);
+      },
+    );
+  });
+
+  it('stops opening the space when the member that lent it is removed', async () => {
+    await withSpace(
+      async ({
+        space,
+        repo,
+        jkt,
+        member,
+        mintWith,
+        read,
+        readProofFor,
+        removeMember,
+      }) => {
+        const minted = await mintWith(space, jkt, member.accessJwt);
+        expect(minted.status).toBe(200);
+        const credential = String(minted.body['token'] ?? '');
+        const headers = async () => ({
+          authorization: `Bearer ${credential}`,
+          dpop: await readProofFor(space),
+        });
+        // The read the membership bought, while it stands.
+        expect((await read(space, repo, await headers())).status).toBe(200);
+        await removeMember(member.did);
+        // The same token, well before `exp`, no longer opens anything.
+        const refused = await read(space, repo, await headers());
+        expect(refused.status).toBe(401);
+        expect(String(refused.body['message'])).toContain('not-a-member');
+      },
+      { publicRead: false },
+    );
+  });
+
+  it("still reads with the authority's own credential in a closed space", async () => {
+    await withSpace(
+      async ({ space, repo, jkt, authority, mintWith, read, readProofFor }) => {
+        const minted = await mintWith(space, jkt, authority.accessJwt);
+        expect(minted.status).toBe(200);
+        const answer = await read(space, repo, {
+          authorization: `Bearer ${String(minted.body['token'] ?? '')}`,
+          dpop: await readProofFor(space),
+        });
+        expect(answer.status).toBe(200);
+      },
+      { publicRead: false },
+    );
+  });
+
+  it('keeps a publicRead credential reading after a member is removed', async () => {
+    await withSpace(
+      async ({
+        space,
+        repo,
+        jkt,
+        proof,
+        member,
+        mint,
+        read,
+        readProofFor,
+        removeMember,
+      }) => {
+        // The app asks on its own here, so the token's `member` is the app: `publicRead` is what
+        // the re-check answers with, and a membership it never had cannot take that away.
+        const minted = await mint(space, jkt, proof);
+        expect(minted.status).toBe(200);
+        const credential = String(minted.body['token'] ?? '');
+        await removeMember(member.did);
+        const answer = await read(space, repo, {
+          authorization: `Bearer ${credential}`,
+          dpop: await readProofFor(space),
+        });
+        expect(answer.status).toBe(200);
       },
     );
   });

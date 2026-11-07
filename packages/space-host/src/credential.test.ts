@@ -7,12 +7,13 @@ import {
   verifySpaceCredential,
 } from './credential.js';
 import { describe, expect, it } from 'vitest';
+import { generateES256KeyPair, sign } from '@eoa/crypto';
 import { DID } from '@eoa/core';
-import { generateES256KeyPair } from '@eoa/crypto';
 
 const SPACE = 'atproto:did:plc:authority:com.atproto.memberspace:studio';
 const AUTHORITY = 'did:plc:authority';
 const APP = 'did:web:appview.example';
+const MEMBER = 'did:plc:reader';
 const reader = Schema.decodeUnknownSync(DID)('did:plc:reader');
 const authorityDid = Schema.decodeUnknownSync(DID)(AUTHORITY);
 const NOW = 1_760_000_000_000;
@@ -35,6 +36,7 @@ const world = async () => {
       key: authority.privateKey,
       space: SPACE,
       app: APP,
+      member: MEMBER,
       jkt,
       now: NOW,
     }),
@@ -69,10 +71,33 @@ describe('the space credential', () => {
     expect(verdict.ok).toBe(true);
     if (verdict.ok) {
       expect(verdict.credential.sub).toBe(APP);
+      expect(verdict.credential.member).toBe(MEMBER);
       expect(verdict.credential.exp - verdict.credential.iat).toBe(
         SPACE_CREDENTIAL_TTL_SECONDS,
       );
     }
+  });
+
+  it('refuses a token minted before the member claim existed', async () => {
+    const { authority, jkt, token } = await world();
+    const [header, body] = token.split('.');
+    const claims = JSON.parse(
+      Buffer.from(body ?? '', 'base64url').toString('utf8'),
+    ) as Record<string, unknown>;
+    delete claims['member'];
+    const stripped = Buffer.from(JSON.stringify(claims)).toString('base64url');
+    // Re-signed by the authority, so the refusal is the missing claim and not the signature.
+    const signature = await Effect.runPromise(
+      sign(
+        authority.privateKey,
+        new TextEncoder().encode(`${header}.${stripped}`),
+      ),
+    );
+    const legacy = `${header}.${stripped}.${Buffer.from(signature).toString('base64url')}`;
+    expect(await check({ token: legacy, authority, jkt })).toEqual({
+      ok: false,
+      reason: 'bad-payload',
+    });
   });
 
   it('is useless without the key it is bound to', async () => {
