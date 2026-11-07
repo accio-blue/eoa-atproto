@@ -6,6 +6,7 @@ import { Firehose, firehoseLayer } from './firehose.js';
 import { Mail, noMailLayer } from './mail.js';
 import { RepoStore, repoStoreLayer } from '@eoa/repo-store';
 import { SpaceStore, spaceStoreLayer } from './space-store.js';
+import type { PluginHooks } from './repo.js';
 import { type PluginMethod } from './plugin-method.js';
 import type { SpaceSurfaceDeps } from './space.js';
 import { createPdsServer } from './server.js';
@@ -29,6 +30,8 @@ export const startMemoryPds = (
     readonly spaceHooks?: SpaceSurfaceDeps['spaceHooks'];
     /** Methods a plugin adds (`cms-workspace`); absent means the standard surface only. */
     readonly methods?: ReadonlyArray<PluginMethod>;
+    /** The plugins a write is offered to (`395u`); absent means the record is written as sent. */
+    readonly plugins?: PluginHooks;
     /** How a managing app's `did#fragment` is resolved (`70cr`); a test passes one over a map. */
     readonly identity?: SpaceSurfaceDeps['identity'];
   } = {},
@@ -75,6 +78,7 @@ export const startMemoryPds = (
         ? {}
         : { spaceHooks: params.spaceHooks }),
       ...(params.methods === undefined ? {} : { methods: params.methods }),
+      ...(params.plugins === undefined ? {} : { plugins: params.plugins }),
     });
     const port = yield* server.start({
       port: params.port ?? 0,
