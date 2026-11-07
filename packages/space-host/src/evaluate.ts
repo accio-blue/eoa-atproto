@@ -182,15 +182,19 @@ export interface AccessRequest {
 /**
  * Whether a selector covers what the request asks for.
  *
- * A selector that names fields covers only a request that names some — all of them inside what was
- * promised. A request for the whole record therefore does not match it: a narrower grant must not be
- * readable as a wider one.
+ * For a **view** the promise is the server's to keep: a selector that names fields is fulfilled by
+ * projecting the record, so a read needs to name nothing. For a **write** the caller states the
+ * fields it changes, and every one of them has to be inside the promise — a write that names none
+ * is a write of the whole record, which a projection cannot accept.
+ *
+ * That asymmetry is the point: reading less is what the grant asked for, writing more is not.
  */
 const coversFields = (
   declared: ReadonlyArray<string> | undefined,
   requested: ReadonlyArray<string> | undefined,
+  action: Action,
 ): boolean => {
-  if (declared === undefined) {
+  if (declared === undefined || action === 'view') {
     return true;
   }
   if (requested === undefined || requested.length === 0) {
@@ -203,7 +207,7 @@ const selectorMatches = (selector: Selector, request: AccessRequest): boolean =>
   (Schema.is(CollectionSelector)(selector)
     ? request.collection === selector.collection
     : request.record === selector.record.uri) &&
-  coversFields(selector.fields, request.fields);
+  coversFields(selector.fields, request.fields, request.action);
 
 /**
  * Static scope: space, subject, action and selector all match. Returns the winning selector, which

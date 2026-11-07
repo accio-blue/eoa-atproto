@@ -233,12 +233,10 @@ describe('checkAccess: a selector that names fields promises a projection', () =
   const withFields = (fields: readonly [string, ...Array<string>]) =>
     stored({ selectors: [{ collection: RUNS, fields }] });
 
-  it('allows a request for exactly those fields, and carries them', async () => {
-    const decision = await check(
-      [withFields(['/startedAt', '/note'])],
-      request({ fields: ['/startedAt'] }),
-    );
-    expect(decision).toEqual(
+  it('covers a read and carries the projection the server has to apply', async () => {
+    expect(
+      await check([withFields(['/startedAt', '/note'])], request()),
+    ).toEqual(
       Decision.Allow({
         grant: grantRef(1),
         fields: ['/startedAt', '/note'],
@@ -246,20 +244,43 @@ describe('checkAccess: a selector that names fields promises a projection', () =
     );
   });
 
-  it('denies a field the grant did not promise', async () => {
+  it('covers a write that names only promised fields', async () => {
+    const writer = stored({
+      selectors: [{ collection: RUNS, fields: ['/startedAt'] }],
+      actions: ['write'],
+    });
     expect(
-      await check([withFields(['/startedAt'])], request({ fields: ['/note'] })),
+      isAllow(
+        await check(
+          [writer],
+          request({ action: 'write', fields: ['/startedAt'] }),
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it('denies a write of a field the grant did not promise', async () => {
+    const writer = stored({
+      selectors: [{ collection: RUNS, fields: ['/startedAt'] }],
+      actions: ['write'],
+    });
+    expect(
+      await check([writer], request({ action: 'write', fields: ['/note'] })),
     ).toEqual(denied('no-grant'));
   });
 
-  it('denies a request for the whole record, so a projection cannot be widened', async () => {
-    expect(await check([withFields(['/startedAt'])], request())).toEqual(
+  it('denies a write that names no fields, so a projection cannot be widened', async () => {
+    const writer = stored({
+      selectors: [{ collection: RUNS, fields: ['/startedAt'] }],
+      actions: ['write'],
+    });
+    expect(await check([writer], request({ action: 'write' }))).toEqual(
       denied('no-grant'),
     );
     expect(
       await check(
-        [withFields(['/startedAt'])],
-        request({ fields: ['/startedAt', '/note'] }),
+        [writer],
+        request({ action: 'write', fields: ['/startedAt', '/note'] }),
       ),
     ).toEqual(denied('no-grant'));
   });

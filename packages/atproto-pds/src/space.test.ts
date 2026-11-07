@@ -2094,6 +2094,72 @@ describe('grants over a space', () => {
     });
   });
 
+  it('returns only the fields a grant promises, and no others', async () => {
+    await withGrantedSpace(async ({ space, authority, reader, write, get }) => {
+      const written = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: 'com.example.note',
+          rkey: 'one',
+          value: {
+            $type: 'com.example.note',
+            text: 'what the coach must not see',
+            startedAt: '2026-11-07T00:00:00.000Z',
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(written.status).toBe(200);
+
+      const granted = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: GRANT,
+          rkey: 'fields-to-bob',
+          value: grantFor({
+            space,
+            subject: reader.did,
+            issuedBy: authority.did,
+            selector: {
+              collection: 'com.example.note',
+              fields: ['/startedAt'],
+            },
+          }),
+        }),
+        authority.accessJwt,
+      );
+      expect(granted.status).toBe(200);
+
+      const listed = await get(
+        `com.atproto.space.listRecords?space=${encodeURIComponent(space)}&repo=${authority.did}&collection=com.example.note`,
+        reader.accessJwt,
+      );
+      expect(listed.status).toBe(200);
+      const records = listed.body['records'] as ReadonlyArray<{
+        rkey: string;
+        value: Record<string, Schema.Json>;
+      }>;
+      expect(records.map((one) => one.rkey)).toEqual(['one']);
+      // The promised field, the type every reader needs to interpret it, and nothing else.
+      expect(records[0]?.value).toEqual({
+        $type: 'com.example.note',
+        startedAt: '2026-11-07T00:00:00.000Z',
+      });
+
+      const one = await get(
+        `com.atproto.space.getRecord?space=${encodeURIComponent(space)}&repo=${authority.did}&collection=com.example.note&rkey=one`,
+        reader.accessJwt,
+      );
+      expect(one.status).toBe(200);
+      expect(one.body['value']).toEqual({
+        $type: 'com.example.note',
+        startedAt: '2026-11-07T00:00:00.000Z',
+      });
+    });
+  });
+
   it('answers a grant decision for a service fronting the space', async () => {
     await withGrantedSpace(async ({ space, authority, reader, write, get }) => {
       const ask = (action: 'view' | 'write', jwt: string) =>

@@ -53,6 +53,7 @@ import {
   parseSpaceMetaStar,
   policyRecordOf,
   policyStateSurvives,
+  projectRecord,
   spaceFromUri,
   verifyAppProof,
   verifyRepoStar,
@@ -614,8 +615,8 @@ export const registerSpaceMethods = (
   }) =>
     Effect.gen(function* () {
       const reader = params.reader;
-      if (reader.kind === 'app') return;
-      if (reader.did === params.repo) return;
+      if (reader.kind === 'app') return undefined;
+      if (reader.did === params.repo) return undefined;
       const space = spaceOf(params.space);
       if (space === undefined) {
         return yield* Effect.fail(
@@ -629,7 +630,7 @@ export const registerSpaceMethods = (
         authority: space.authority,
         did: reader.did,
       });
-      if (policy.kind === 'allow') return;
+      if (policy.kind === 'allow') return undefined;
       const record =
         params.collection === undefined || params.rkey === undefined
           ? undefined
@@ -645,8 +646,10 @@ export const registerSpaceMethods = (
           ? {}
           : { record: Schema.decodeSync(ATURI)(record) }),
       }).pipe(Effect.provide(grantLayers));
-      yield* Match.value(decision).pipe(
-        Match.tag('Allow', () => Effect.void),
+      return yield* Match.value(decision).pipe(
+        // The fields the winning selector promised, when it promised a projection: the caller
+        // returns those and no others. `undefined` means the whole record.
+        Match.tag('Allow', (allowed) => Effect.succeed(allowed.fields)),
         Match.tag('Deny', (denied) =>
           Effect.fail(
             forbidden(
@@ -657,6 +660,18 @@ export const registerSpaceMethods = (
         Match.exhaustive,
       );
     });
+
+  /**
+   * The record a reader is allowed to see: the whole of it, or the fields the grant promised.
+   *
+   * A record that is not an object cannot carry a projection, so it is returned as it is; the
+   * decoder refuses such a record before it is ever stored.
+   */
+  const projected = (
+    value: Schema.Json,
+    fields: ReadonlyArray<string> | undefined,
+  ): Schema.Json =>
+    fields === undefined ? value : projectRecord(value, fields);
 
   /**
    * The same gate as `mayRead`, as a yes/no.
@@ -2522,7 +2537,7 @@ export const registerSpaceMethods = (
       }
       const input = decoded.value;
       const reader = yield* readerOf(ctx, input.space);
-      yield* mayRead({
+      const fields = yield* mayRead({
         reader,
         space: input.space,
         repo: input.repo,
@@ -2568,7 +2583,12 @@ export const registerSpaceMethods = (
             cid: formatCid(cidFromDigest({ codec: CODEC_DAG_CBOR, digest })),
             ...(input.excludeValues === 'true'
               ? {}
-              : { value: toJson(yield* recordOf(record.value)) }),
+              : {
+                  value: projected(
+                    toJson(yield* recordOf(record.value)),
+                    fields,
+                  ),
+                }),
           };
         }),
       );
@@ -2590,7 +2610,7 @@ export const registerSpaceMethods = (
       }
       const input = decoded.value;
       const reader = yield* readerOf(ctx, input.space);
-      yield* mayRead({
+      const fields = yield* mayRead({
         reader,
         space: input.space,
         repo: input.repo,
@@ -2610,7 +2630,7 @@ export const registerSpaceMethods = (
       return {
         uri: `at://${input.repo}/${input.collection}/${input.rkey}`,
         cid: formatCid(cidFromDigest({ codec: CODEC_DAG_CBOR, digest })),
-        value: toJson(yield* recordOf(found.value)),
+        value: projected(toJson(yield* recordOf(found.value)), fields),
       };
     }),
   );
