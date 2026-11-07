@@ -285,6 +285,40 @@ describe('checkAccess: a selector that names fields promises a projection', () =
     ).toEqual(denied('no-grant'));
   });
 
+  it('carries the condition the winning selector put on the record', async () => {
+    const conditioned = stored({
+      selectors: [
+        {
+          collection: RUNS,
+          condition: { field: '/createdAt', maxAgeSeconds: 3600 },
+        },
+      ],
+    });
+    expect(await check([conditioned], request())).toEqual(
+      Decision.Allow({
+        grant: grantRef(1),
+        condition: { field: '/createdAt', maxAgeSeconds: 3600 },
+      }),
+    );
+  });
+
+  it('does not cover a write when the selector carries a condition', async () => {
+    const conditioned = stored({
+      selectors: [
+        {
+          collection: RUNS,
+          condition: { field: '/createdAt', maxAgeSeconds: 3600 },
+        },
+      ],
+      actions: ['write'],
+    });
+    // The evaluator holds no record, so it cannot say the condition passed: silence there would
+    // mean "yes", which is the one answer it must never guess.
+    expect(await check([conditioned], request({ action: 'write' }))).toEqual(
+      denied('no-grant'),
+    );
+  });
+
   it('leaves a selector without fields covering the whole record', async () => {
     expect(await check([stored()], request())).toEqual(
       Decision.Allow({ grant: grantRef(1) }),

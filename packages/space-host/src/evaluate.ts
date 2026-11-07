@@ -3,6 +3,7 @@ import {
   type Action,
   type CidString,
   CollectionSelector,
+  type Condition,
   type Grant,
   type LensRef,
   type LookupError,
@@ -56,6 +57,11 @@ export type Decision = Data.TaggedEnum<{
      * which is what an absent value means.
      */
     readonly fields?: ReadonlyArray<string>;
+    /**
+     * The condition the winning selector put on the record, when it put one. A read that does not
+     * satisfy it is not covered by the grant; the caller checks it where the record is in hand.
+     */
+    readonly condition?: Condition;
   };
   Deny: { readonly reason: DenyReason };
 }>;
@@ -207,6 +213,10 @@ const selectorMatches = (selector: Selector, request: AccessRequest): boolean =>
   (Schema.is(CollectionSelector)(selector)
     ? request.collection === selector.collection
     : request.record === selector.record.uri) &&
+  // A condition is judged against the record, which the evaluator does not hold. A write that
+  // matches a conditioned selector is refused rather than allowed unchecked: silence would mean
+  // "the condition passed", and nothing here can say that.
+  (selector.condition === undefined || request.action === 'view') &&
   coversFields(selector.fields, request.fields, request.action);
 
 /**
@@ -290,6 +300,9 @@ export const decide = (input: {
       return Decision.Allow({
         grant: candidate.ref,
         ...(selector.fields === undefined ? {} : { fields: selector.fields }),
+        ...(selector.condition === undefined
+          ? {}
+          : { condition: selector.condition }),
       });
     }
     failures.push(failure);

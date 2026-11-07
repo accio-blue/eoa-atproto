@@ -120,3 +120,52 @@ export const projectRecord = (
   }
   return type === undefined ? projected : { $type: type, ...projected };
 };
+
+/** The value at a JSON Pointer, or `undefined` when any step of it is absent. */
+const valueAt = (
+  record: JsonObject,
+  tokens: ReadonlyArray<string>,
+): Schema.Json | undefined => {
+  let current: Schema.Json | undefined = record;
+  for (const token of tokens) {
+    if (!isJsonObject(current)) {
+      return undefined;
+    }
+    if (!Object.hasOwn(current, token)) {
+      return undefined;
+    }
+    current = current[token];
+  }
+  return current;
+};
+
+/**
+ * Whether a record satisfies a grant's condition (`d27l`): the datetime at `condition.field` must be
+ * no older than `maxAgeSeconds` at `now`.
+ *
+ * A missing field, a value that is not a string, and a string that is not a date all fail — a
+ * condition that cannot be checked is not satisfied. `now` is passed in rather than read from the
+ * clock so a test can place a record on either side of the window.
+ */
+export const withinWindow = (
+  record: Schema.Json,
+  condition: { readonly field: string; readonly maxAgeSeconds: number },
+  now: number,
+): boolean => {
+  if (!isJsonObject(record)) {
+    return false;
+  }
+  const tokens = tokensOf(condition.field);
+  if (tokens === undefined) {
+    return false;
+  }
+  const value = valueAt(record, tokens);
+  if (typeof value !== 'string') {
+    return false;
+  }
+  const at = Date.parse(value);
+  if (Number.isNaN(at)) {
+    return false;
+  }
+  return now - at <= condition.maxAgeSeconds * 1000;
+};

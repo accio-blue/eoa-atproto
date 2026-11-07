@@ -13,6 +13,7 @@ import {
 import {
   BadRecordSwapError,
   CidString,
+  type Condition,
   MANAGED_POLICY_TYPE,
   MEMBER_POLICY_TYPE,
   MEMBER_RECORD_COLLECTION,
@@ -58,6 +59,7 @@ import {
   verifyAppProof,
   verifyRepoStar,
   verifySpaceCredential,
+  withinWindow,
 } from '@eoa/space-host';
 import {
   Effect,
@@ -649,9 +651,22 @@ export const registerSpaceMethods = (
           : { record: Schema.decodeSync(ATURI)(record) }),
       }).pipe(Effect.provide(grantLayers));
       return yield* Match.value(decision).pipe(
-        // The fields the winning selector promised, when it promised a projection: the caller
-        // returns those and no others. `undefined` means the whole record.
-        Match.tag('Allow', (allowed) => Effect.succeed(allowed.fields)),
+        // What the winning selector promised: the fields to return and the condition the record
+        // must satisfy. `undefined` means the whole record, unconditionally.
+        Match.tag('Allow', (allowed) =>
+          Effect.succeed(
+            allowed.fields === undefined && allowed.condition === undefined
+              ? undefined
+              : {
+                  ...(allowed.fields === undefined
+                    ? {}
+                    : { fields: allowed.fields }),
+                  ...(allowed.condition === undefined
+                    ? {}
+                    : { condition: allowed.condition }),
+                },
+          ),
+        ),
         Match.tag('Deny', (denied) =>
           Effect.fail(
             forbidden(
@@ -664,16 +679,34 @@ export const registerSpaceMethods = (
     });
 
   /**
-   * The record a reader is allowed to see: the whole of it, or the fields the grant promised.
-   *
-   * A record that is not an object cannot carry a projection, so it is returned as it is; the
-   * decoder refuses such a record before it is ever stored.
+   * The record a reader is allowed to see: the whole of it, or the fields and condition the grant
+   * promised. `undefined` means the record is not covered at all — a condition it fails makes it
+   * absent rather than an error, which is what "this key is good for two hours" means once the two
+   * hours are up.
    */
-  const projected = (
+  const visible = (
     value: Schema.Json,
-    fields: ReadonlyArray<string> | undefined,
-  ): Schema.Json =>
-    fields === undefined ? value : projectRecord(value, fields);
+    projection:
+      | {
+          readonly fields?: ReadonlyArray<string>;
+          readonly condition?: Condition;
+        }
+      | undefined,
+    now: number = Date.now(),
+  ): Schema.Json | undefined => {
+    if (projection === undefined) {
+      return value;
+    }
+    if (
+      projection.condition !== undefined &&
+      !withinWindow(value, projection.condition, now)
+    ) {
+      return undefined;
+    }
+    return projection.fields === undefined
+      ? value
+      : projectRecord(value, projection.fields);
+  };
 
   /**
    * The same gate as `mayRead`, as a yes/no.
@@ -2546,7 +2579,7 @@ export const registerSpaceMethods = (
       }
       const input = decoded.value;
       const reader = yield* readerOf(ctx, input.space);
-      const fields = yield* mayRead({
+      const projection = yield* mayRead({
         reader,
         space: input.space,
         repo: input.repo,
@@ -2575,6 +2608,7 @@ export const registerSpaceMethods = (
                 : record.key > after,
             );
       const page = from.slice(0, limit);
+      const now = Date.now();
       const records = yield* Effect.forEach(page, (record) =>
         Effect.gen(function* () {
           if (record.value === undefined) {
@@ -2586,24 +2620,29 @@ export const registerSpaceMethods = (
           const collection = record.key.slice(0, at);
           const rkey = record.key.slice(at + 1);
           const digest = yield* sha256(record.value);
-          return {
+          const value = toJson(yield* recordOf(record.value));
+          const seen =
+            input.excludeValues === 'true'
+              ? value
+              : visible(value, projection, now);
+          // A record a condition excludes is not named at all: leaving its rkey in the page would
+          // say "there is something here" to a reader the grant does not cover. The page can come
+          // back shorter than the limit for that reason.
+          if (seen === undefined) {
+            return Option.none();
+          }
+          return Option.some({
             collection,
             rkey,
             cid: formatCid(cidFromDigest({ codec: CODEC_DAG_CBOR, digest })),
-            ...(input.excludeValues === 'true'
-              ? {}
-              : {
-                  value: projected(
-                    toJson(yield* recordOf(record.value)),
-                    fields,
-                  ),
-                }),
-          };
+            value: seen,
+          });
         }),
       );
+      const listed = records.filter(Option.isSome).map((one) => one.value);
       const cursor = page.at(-1)?.key;
       return {
-        records,
+        records: listed,
         ...(from.length > limit && cursor !== undefined ? { cursor } : {}),
       };
     }),
@@ -2619,7 +2658,7 @@ export const registerSpaceMethods = (
       }
       const input = decoded.value;
       const reader = yield* readerOf(ctx, input.space);
-      const fields = yield* mayRead({
+      const projection = yield* mayRead({
         reader,
         space: input.space,
         repo: input.repo,
@@ -2635,11 +2674,19 @@ export const registerSpaceMethods = (
           notFound('RecordNotFound', `no record ${path} in ${input.space}`),
         );
       }
+      const value = visible(toJson(yield* recordOf(found.value)), projection);
+      // A condition the record fails makes it absent, exactly as if it were not there: the grant
+      // does not cover it any more, and a 403 would confirm that something is.
+      if (value === undefined) {
+        return yield* Effect.fail(
+          notFound('RecordNotFound', `no record ${path} in ${input.space}`),
+        );
+      }
       const digest = yield* sha256(found.value);
       return {
         uri: `at://${input.repo}/${input.collection}/${input.rkey}`,
         cid: formatCid(cidFromDigest({ codec: CODEC_DAG_CBOR, digest })),
-        value: projected(toJson(yield* recordOf(found.value)), fields),
+        value,
       };
     }),
   );

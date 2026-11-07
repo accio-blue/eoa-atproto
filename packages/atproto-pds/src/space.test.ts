@@ -2440,6 +2440,69 @@ describe('grants over a space', () => {
     });
   });
 
+  it('hides a record that no longer satisfies the grant condition', async () => {
+    await withGrantedSpace(async ({ space, authority, reader, write, get }) => {
+      const fresh = new Date().toISOString();
+      const stale = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+      for (const [rkey, createdAt] of [
+        ['fresh', fresh],
+        ['stale', stale],
+      ] as const) {
+        const written = await write(
+          record({
+            space,
+            repo: authority.did,
+            collection: 'com.example.note',
+            rkey,
+            value: { $type: 'com.example.note', text: rkey, createdAt },
+          }),
+          authority.accessJwt,
+        );
+        expect(written.status).toBe(200);
+      }
+
+      const granted = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: GRANT,
+          rkey: 'recent-only',
+          value: grantFor({
+            space,
+            subject: reader.did,
+            issuedBy: authority.did,
+            selector: {
+              collection: 'com.example.note',
+              condition: { field: '/createdAt', maxAgeSeconds: 3600 },
+            },
+          }),
+        }),
+        authority.accessJwt,
+      );
+      expect(granted.status).toBe(200);
+
+      const listed = await get(
+        `com.atproto.space.listRecords?space=${encodeURIComponent(space)}&repo=${authority.did}&collection=com.example.note`,
+        reader.accessJwt,
+      );
+      expect(listed.status).toBe(200);
+      // The stale record is not named at all — an rkey would say "something is here".
+      expect(
+        (listed.body['records'] as ReadonlyArray<{ rkey: string }>).map(
+          (one) => one.rkey,
+        ),
+      ).toEqual(['fresh']);
+
+      const one = await get(
+        `com.atproto.space.getRecord?space=${encodeURIComponent(space)}&repo=${authority.did}&collection=com.example.note&rkey=stale`,
+        reader.accessJwt,
+      );
+      // `notFound` answers 400 with atproto's own name for it, the way every other missing record
+      // in this host does; the point is that it is absent, not that it is forbidden.
+      expect(one.body['error']).toBe('RecordNotFound');
+    });
+  });
+
   it('answers a grant decision for a service fronting the space', async () => {
     await withGrantedSpace(async ({ space, authority, reader, write, get }) => {
       const ask = (action: 'view' | 'write', jwt: string) =>
