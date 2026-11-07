@@ -521,6 +521,16 @@ export const registerSpaceMethods = (
   /** A member's state key: the one shape `decideWrite` looks up. */
   const memberKey = (did: string) => `${MEMBER_STATE_PREFIX}${did}`;
 
+  /** The access this archive grants `did`, or `undefined` when it has no row. */
+  const memberOf = (archive: SpaceMetaArchive, did: string) => {
+    const entry = archive.policyState.find((one) => one.key === memberKey(did));
+    return entry === undefined
+      ? undefined
+      : Option.getOrUndefined(
+          Schema.decodeUnknownOption(MemberAccess)(entry.value),
+        );
+  };
+
   /** A DID out of a request, refused rather than decoded blindly. */
   const memberDidOf = (value: string) =>
     Effect.gen(function* () {
@@ -567,15 +577,7 @@ export const registerSpaceMethods = (
           serverError('the stored space policy does not parse'),
         ),
       );
-      const entry = archive.policyState.find(
-        (one) => one.key === memberKey(params.did),
-      );
-      const member =
-        entry === undefined
-          ? undefined
-          : Option.getOrUndefined(
-              Schema.decodeUnknownOption(MemberAccess)(entry.value),
-            );
+      const member = memberOf(archive, params.did);
       return Match.value(
         decideSessionRead({
           policy,
@@ -927,15 +929,7 @@ export const registerSpaceMethods = (
         ),
       );
       const did = didOf(callerDid);
-      const entry = archive.policyState.find(
-        (one) => one.key === `${MEMBER_STATE_PREFIX}${callerDid}`,
-      );
-      const member: MemberAccess | undefined =
-        entry === undefined
-          ? undefined
-          : Option.getOrUndefined(
-              Schema.decodeUnknownOption(MemberAccess)(entry.value),
-            );
+      const member = memberOf(archive, callerDid);
       const verdict = decideWrite({
         policy,
         did,
@@ -1330,12 +1324,15 @@ export const registerSpaceMethods = (
   );
 
   /**
-   * The authority hands an approved app a credential for one space (`frxd`, spaces `0016`).
+   * The authority, or a member, hands an approved app a credential for one space (`frxd`, spaces
+   * `0016`, `myyq`).
    *
-   * Only the authority mints: a space's policy is its own decision, and a member asking on an
-   * app's behalf is a different flow (the app calls, the member consents) that this host does not
-   * speak yet. `allowedApps` is asked **explicitly** — `decideRead` short-circuits for the
-   * authority, which is right for a read and wrong for handing a token to somebody else.
+   * The authority may always mint. A member may lend **its own read**: `decideRead` is asked with
+   * the member's state row, so a member without `read` is refused and one with it mints for the app
+   * — the member is where the permission came from, while the token's `sub` stays the app. No
+   * session is the app's own path: it proves the key its DID publishes and asks for itself.
+   * `allowedApps` is asked **explicitly** — `decideRead` short-circuits for the authority, which is
+   * right for a read and wrong for handing a token to somebody else.
    *
    * The token is bound to the app's DPoP key (`jkt`), so a minted credential is useless to anyone
    * who does not hold that key: the caller may name any `jkt`, and only its owner can use it.
@@ -1373,19 +1370,13 @@ export const registerSpaceMethods = (
       );
       const now = Date.now();
 
-      // Two ways in: the authority's own session, or the app proving it holds the key its DID
-      // publishes. The second is how an app with no account on this host asks for its own
-      // credential; a forged claim only sends the signature check to the wrong key.
+      // Two ways in: a session (the authority, or a member lending its read), or the app proving it
+      // holds the key its DID publishes. The second is how an app with no account on this host asks
+      // for its own credential; a forged claim only sends the signature check to the wrong key.
       const session = yield* authenticateAccess(deps, ctx).pipe(Effect.option);
       const token = bearer(ctx);
 
-      if (Option.isSome(session)) {
-        if (space.authority !== session.value.account.did) {
-          return yield* Effect.fail(
-            notFound('SpaceNotFound', `no space ${input.space} for you`),
-          );
-        }
-      } else {
+      if (Option.isNone(session)) {
         if (token === undefined || deps.appKeys === undefined) {
           return yield* Effect.fail(
             unauthorized('a session, or a proof signed by an approved app'),
@@ -1430,7 +1421,9 @@ export const registerSpaceMethods = (
         Effect.mapError(() => serverError('the space names no authority')),
       );
 
-      // The reader is whoever asks: the authority's session, or the app itself.
+      // The reader is whoever asks: a session's account, or the app itself. A member's session
+      // carries its state row, which is where the permission comes from — the token still names
+      // the app, never the member.
       const reader = Option.isSome(session)
         ? yield* Schema.decodeUnknownEffect(DID)(
             session.value.account.did,
@@ -1445,7 +1438,9 @@ export const registerSpaceMethods = (
         authority,
         // The token is for this host, which is what verifies it; the authority is the issuer.
         audience: deps.config.did,
-        member: undefined,
+        member: Option.isSome(session)
+          ? memberOf(archive, session.value.account.did)
+          : undefined,
         app: input.app,
         space: input.space,
         jkt: input.jkt,
@@ -1908,15 +1903,7 @@ export const registerSpaceMethods = (
       }).pipe(
         Effect.mapError(() => serverError('the grants could not be read')),
       );
-      const entry = archive.policyState.find(
-        (one) => one.key === memberKey(caller.account.did),
-      );
-      const access =
-        entry === undefined
-          ? undefined
-          : Option.getOrUndefined(
-              Schema.decodeUnknownOption(MemberAccess)(entry.value),
-            );
+      const access = memberOf(archive, caller.account.did);
       return {
         space: input.space,
         did: caller.account.did,

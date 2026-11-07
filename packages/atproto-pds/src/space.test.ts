@@ -135,11 +135,11 @@ const repoArchive = async (params: {
   return { bytes, data };
 };
 
-const memberState = (did: string): [string, SpaceMetaValue] => [
+const memberState = (did: string, read = true): [string, SpaceMetaValue] => [
   `com.atproto.memberspace.member/${did}`,
   {
     $type: 'com.atproto.memberspace.member',
-    read: true,
+    read,
     write: false,
   },
 ];
@@ -1271,7 +1271,7 @@ describe('a space repo outlives the server', () => {
   });
 });
 
-describe('the authority mints a space credential (frxd)', () => {
+describe('the authority, or a member, mints a space credential (frxd, myyq)', () => {
   const JKT = 'the-app-dpop-thumbprint';
 
   const withSpace = async (
@@ -1384,15 +1384,168 @@ describe('the authority mints a space credential (frxd)', () => {
     );
   });
 
-  it('lets nobody but the authority mint', async () => {
-    await withSpace(async ({ space, other, post }) => {
-      const refused = await post(
-        '/xrpc/com.atproto.space.getCredential',
-        { space, app: 'did:web:appview.example', jkt: JKT },
-        other.accessJwt,
-      );
-      expect(refused.body['error']).toBe('SpaceNotFound');
-    });
+  /**
+   * A memberspace with `publicRead: false` and a member row for one account (not the authority),
+   * which is the only place `decideRead` has a membership to lend.
+   */
+  const withClosed = async (
+    run: (params: {
+      readonly space: string;
+      readonly authority: Account;
+      readonly member: Account;
+      readonly carol: Account;
+      readonly post: (
+        path: string,
+        body: unknown,
+        jwt: string,
+      ) => Promise<{
+        readonly status: number;
+        readonly body: Record<string, Schema.Json>;
+      }>;
+    }) => Promise<void>,
+    allowedApps?: ReadonlyArray<string>,
+    read = true,
+  ) =>
+    Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const pds = yield* startMemoryPds();
+          const authority = yield* Effect.promise(() =>
+            createAccount(pds.url, 'alice.pds.test'),
+          );
+          const member = yield* Effect.promise(() =>
+            createAccount(pds.url, 'bob.pds.test'),
+          );
+          const carol = yield* Effect.promise(() =>
+            createAccount(pds.url, 'carol.pds.test'),
+          );
+          const space = `at://${authority.did}/${SPACE_TYPE}/club`;
+          const meta = yield* Effect.promise(() =>
+            metaArchive({
+              space,
+              policy: {
+                $type: 'com.atproto.memberspace.policy',
+                publicRead: false,
+                ...(allowedApps === undefined
+                  ? {}
+                  : { allowedApps: [...allowedApps] }),
+              },
+              state: [
+                memberState(authority.did),
+                memberState(member.did, read),
+              ],
+              writers: [],
+            }),
+          );
+          const imported = yield* Effect.promise(() =>
+            postRaw(
+              `${pds.url}/xrpc/com.atproto.space.importSpaceMeta`,
+              meta,
+              authority.accessJwt,
+            ),
+          );
+          expect(imported.status).toBe(200);
+          yield* Effect.promise(() =>
+            run({
+              space,
+              authority,
+              member,
+              carol,
+              post: (path, body, jwt) =>
+                postJson(
+                  `${pds.url}${path}`,
+                  jwt,
+                  body as Record<string, Schema.Json>,
+                ),
+            }),
+          );
+        }),
+      ),
+    );
+
+  const APP = 'did:web:appview.example';
+
+  it('refuses a session with no member row in a closed space', async () => {
+    await withClosed(
+      async ({ space, carol, post }) => {
+        const refused = await post(
+          '/xrpc/com.atproto.space.getCredential',
+          { space, app: APP, jkt: JKT },
+          carol.accessJwt,
+        );
+        expect(refused.status).toBe(403);
+        expect(String(refused.body['message'])).toContain('not-a-member');
+      },
+      [APP],
+    );
+  });
+
+  it('mints for an app when a member with read lends its read', async () => {
+    await withClosed(
+      async ({ space, member, post }) => {
+        const minted = await post(
+          '/xrpc/com.atproto.space.getCredential',
+          { space, app: APP, jkt: JKT },
+          member.accessJwt,
+        );
+        expect(minted.status).toBe(200);
+        const token = String(minted.body['token'] ?? '');
+        // The token names the app, never the member that lent the read.
+        const claims = JSON.parse(
+          Buffer.from(token.split('.')[1] ?? '', 'base64url').toString('utf8'),
+        ) as { sub: string; cnf: { jkt: string } };
+        expect(claims.sub).toBe(APP);
+        expect(claims.cnf.jkt).toBe(JKT);
+      },
+      [APP],
+    );
+  });
+
+  it('refuses a member with no read', async () => {
+    await withClosed(
+      async ({ space, member, post }) => {
+        const refused = await post(
+          '/xrpc/com.atproto.space.getCredential',
+          { space, app: APP, jkt: JKT },
+          member.accessJwt,
+        );
+        expect(refused.status).toBe(403);
+        expect(String(refused.body['message'])).toContain('member-has-no-read');
+      },
+      [APP],
+      false,
+    );
+  });
+
+  it('refuses an app the policy does not name, even for a member', async () => {
+    await withClosed(
+      async ({ space, member, post }) => {
+        const refused = await post(
+          '/xrpc/com.atproto.space.getCredential',
+          { space, app: APP, jkt: JKT },
+          member.accessJwt,
+        );
+        expect(refused.status).toBe(403);
+        expect(String(refused.body['message'])).toContain(
+          'not an app this space allows',
+        );
+      },
+      ['did:web:other.example'],
+    );
+  });
+
+  it('still lets the authority mint in a closed space', async () => {
+    await withClosed(
+      async ({ space, authority, post }) => {
+        const minted = await post(
+          '/xrpc/com.atproto.space.getCredential',
+          { space, app: APP, jkt: JKT },
+          authority.accessJwt,
+        );
+        expect(minted.status).toBe(200);
+      },
+      [APP],
+    );
   });
 });
 
