@@ -26,9 +26,34 @@ export const StrongRef = Schema.Struct({ uri: ATURI, cid: CidString });
 export const Action = Schema.Literals(['view', 'write']);
 export type Action = typeof Action.Type;
 
-/** Scope is flat: a whole collection, or one exact record. */
-export const CollectionSelector = Schema.Struct({ collection: NSID });
-export const RecordSelector = Schema.Struct({ record: StrongRef });
+/**
+ * One field of a record, as a JSON Pointer (RFC 6901): `/startedAt`, `/data/name`.
+ *
+ * A selector that names fields promises a **projection**: a reader gets those fields and no others.
+ * That is narrower than a lens, which says what shape a whole record is returned in; a grant may
+ * carry both, and then both bind.
+ */
+export type FieldPath = typeof FieldPath.Type;
+export const FieldPath = Schema.String.check(
+  Schema.isNonEmpty(),
+  Schema.isPattern(/^\//u),
+);
+
+/**
+ * Scope is flat: a whole collection, or one exact record — and, optionally, which fields of it.
+ *
+ * `fields` is additive: a selector without it promises the whole record, exactly as before, and a
+ * request that names no fields never matches a selector that names some (fail-closed: a projection
+ * cannot be silently widened to a record).
+ */
+export const CollectionSelector = Schema.Struct({
+  collection: NSID,
+  fields: Schema.optionalKey(Schema.NonEmptyArray(FieldPath)),
+});
+export const RecordSelector = Schema.Struct({
+  record: StrongRef,
+  fields: Schema.optionalKey(Schema.NonEmptyArray(FieldPath)),
+});
 export const Selector = Schema.Union([CollectionSelector, RecordSelector]);
 export type Selector = typeof Selector.Type;
 

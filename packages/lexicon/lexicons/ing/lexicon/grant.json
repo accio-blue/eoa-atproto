@@ -67,16 +67,30 @@
     },
     "collectionSelector": {
       "type": "object",
-      "description": "Everything in one collection.",
+      "description": "Everything in one collection -- or, when `fields` is given, only those fields of every record in it.",
       "required": ["collection"],
-      "properties": { "collection": { "type": "string", "format": "nsid" } }
+      "properties": {
+        "collection": { "type": "string", "format": "nsid" },
+        "fields": {
+          "type": "array",
+          "minLength": 1,
+          "items": { "type": "string", "format": "json-pointer" },
+          "description": "A projection: the reader gets these fields and no others. A request that names no fields does not match this selector -- a narrower grant is never readable as a wider one."
+        }
+      }
     },
     "recordSelector": {
       "type": "object",
-      "description": "One exact record, as it was read.",
+      "description": "One exact record, as it was read -- or, when `fields` is given, only those fields of it.",
       "required": ["record"],
       "properties": {
-        "record": { "type": "ref", "ref": "ing.lexicon.cms.defs#strongRef" }
+        "record": { "type": "ref", "ref": "ing.lexicon.cms.defs#strongRef" },
+        "fields": {
+          "type": "array",
+          "minLength": 1,
+          "items": { "type": "string", "format": "json-pointer" },
+          "description": "A projection: the reader gets these fields and no others. A request that names no fields does not match this selector."
+        }
       }
     },
     "lensRef": {

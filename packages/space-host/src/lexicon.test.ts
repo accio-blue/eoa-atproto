@@ -61,7 +61,10 @@ const REF = {
 const sampleGrant = {
   space: `at://${DID}/ing.lexicon.space/org`,
   subject: OTHER,
-  selectors: [{ collection: 'ing.lexicon.space.note' }, { record: REF }],
+  selectors: [
+    { collection: 'ing.lexicon.space.note' },
+    { record: REF, fields: ['/startedAt', '/note'] },
+  ],
   actions: ['view', 'write'],
   lens: { nsid: 'ing.lexicon.space.view', cid: REF.cid },
   expiry: AT,

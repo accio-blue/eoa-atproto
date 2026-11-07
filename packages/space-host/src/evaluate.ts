@@ -48,7 +48,15 @@ export type DenyReason =
   | 'timeout';
 
 export type Decision = Data.TaggedEnum<{
-  Allow: { readonly grant: StrongRef };
+  Allow: {
+    readonly grant: StrongRef;
+    /**
+     * The fields the winning selector promised, when it promised a projection. A caller that gets
+     * this returns those fields and no others; a grant without `fields` returns the whole record,
+     * which is what an absent value means.
+     */
+    readonly fields?: ReadonlyArray<string>;
+  };
   Deny: { readonly reason: DenyReason };
 }>;
 export const Decision = Data.taggedEnum<Decision>();
@@ -160,28 +168,57 @@ export interface AccessRequest {
   readonly record?: ATURI;
   /** The lens the caller wants to read through, if any. */
   readonly lens?: LensRef;
+  /**
+   * The fields the caller wants to touch (JSON Pointers), when it asks for less than the record.
+   *
+   * A request that names none asks for the whole record, which is why it never matches a selector
+   * that promises a projection — the alternative would let a caller read around the grant.
+   */
+  readonly fields?: ReadonlyArray<string>;
   /** Evaluation time; defaults to the Clock. A request with `now` bypasses the cache. */
   readonly now?: DateTime.Utc;
 }
 
-const selectorMatches = (
-  selector: Selector,
-  request: AccessRequest,
-): boolean =>
-  Schema.is(CollectionSelector)(selector)
-    ? request.collection === selector.collection
-    : request.record === selector.record.uri;
+/**
+ * Whether a selector covers what the request asks for.
+ *
+ * A selector that names fields covers only a request that names some — all of them inside what was
+ * promised. A request for the whole record therefore does not match it: a narrower grant must not be
+ * readable as a wider one.
+ */
+const coversFields = (
+  declared: ReadonlyArray<string> | undefined,
+  requested: ReadonlyArray<string> | undefined,
+): boolean => {
+  if (declared === undefined) {
+    return true;
+  }
+  if (requested === undefined || requested.length === 0) {
+    return false;
+  }
+  return requested.every((field) => declared.includes(field));
+};
 
-/** Static scope: space, subject, action and selector all match. */
+const selectorMatches = (selector: Selector, request: AccessRequest): boolean =>
+  (Schema.is(CollectionSelector)(selector)
+    ? request.collection === selector.collection
+    : request.record === selector.record.uri) &&
+  coversFields(selector.fields, request.fields);
+
+/**
+ * Static scope: space, subject, action and selector all match. Returns the winning selector, which
+ * carries the projection a caller has to honour.
+ */
 export const grantInScope = (
   grant: Grant,
   request: AccessRequest,
   subjects: ReadonlyArray<DID>,
-): boolean =>
+): Selector | undefined =>
   grant.space === request.space &&
   subjects.includes(grant.subject) &&
-  grant.actions.includes(request.action) &&
-  grant.selectors.some((selector) => selectorMatches(selector, request));
+  grant.actions.includes(request.action)
+    ? grant.selectors.find((selector) => selectorMatches(selector, request))
+    : undefined;
 
 export interface Candidate extends StoredGrant {
   readonly revocation: RevocationState;
@@ -236,12 +273,20 @@ export const decide = (input: {
 }): Decision => {
   const failures: Array<DenyReason> = [];
   for (const candidate of input.candidates) {
-    if (!grantInScope(candidate.grant, input.request, input.subjects)) {
+    const selector = grantInScope(
+      candidate.grant,
+      input.request,
+      input.subjects,
+    );
+    if (selector === undefined) {
       continue;
     }
     const failure = failureOf(candidate, input.request, input.now);
     if (failure === undefined) {
-      return Decision.Allow({ grant: candidate.ref });
+      return Decision.Allow({
+        grant: candidate.ref,
+        ...(selector.fields === undefined ? {} : { fields: selector.fields }),
+      });
     }
     failures.push(failure);
   }
@@ -297,6 +342,7 @@ const cacheKeyOf = (request: AccessRequest): string =>
     request.action,
     request.collection ?? '',
     request.record ?? '',
+    [...(request.fields ?? [])].sort().join(','),
     request.lens?.nsid ?? '',
     request.lens?.cid ?? '',
   ].join('\n');
@@ -312,7 +358,9 @@ const resolve = (request: AccessRequest, now: DateTime.Utc) =>
     const subjects = [...new Set([request.did, ...expanded])];
     const stored = yield* grants.grantsFor(request.space, subjects);
     const candidates = yield* Effect.forEach(
-      stored.filter((entry) => grantInScope(entry.grant, request, subjects)),
+      stored.filter(
+        (entry) => grantInScope(entry.grant, request, subjects) !== undefined,
+      ),
       Effect.fnUntraced(function* (entry) {
         const revocation = yield* revocations.state(entry.ref.uri);
         const lensStatus =

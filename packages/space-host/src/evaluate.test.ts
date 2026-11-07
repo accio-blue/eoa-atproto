@@ -229,6 +229,48 @@ describe('checkAccess: scope', () => {
   });
 });
 
+describe('checkAccess: a selector that names fields promises a projection', () => {
+  const withFields = (fields: readonly [string, ...Array<string>]) =>
+    stored({ selectors: [{ collection: RUNS, fields }] });
+
+  it('allows a request for exactly those fields, and carries them', async () => {
+    const decision = await check(
+      [withFields(['/startedAt', '/note'])],
+      request({ fields: ['/startedAt'] }),
+    );
+    expect(decision).toEqual(
+      Decision.Allow({
+        grant: grantRef(1),
+        fields: ['/startedAt', '/note'],
+      }),
+    );
+  });
+
+  it('denies a field the grant did not promise', async () => {
+    expect(
+      await check([withFields(['/startedAt'])], request({ fields: ['/note'] })),
+    ).toEqual(denied('no-grant'));
+  });
+
+  it('denies a request for the whole record, so a projection cannot be widened', async () => {
+    expect(await check([withFields(['/startedAt'])], request())).toEqual(
+      denied('no-grant'),
+    );
+    expect(
+      await check(
+        [withFields(['/startedAt'])],
+        request({ fields: ['/startedAt', '/note'] }),
+      ),
+    ).toEqual(denied('no-grant'));
+  });
+
+  it('leaves a selector without fields covering the whole record', async () => {
+    expect(await check([stored()], request())).toEqual(
+      Decision.Allow({ grant: grantRef(1) }),
+    );
+  });
+});
+
 describe('checkAccess: expiry', () => {
   const grant = stored({ expiry: utc('2026-10-04T13:00:00Z') });
 
