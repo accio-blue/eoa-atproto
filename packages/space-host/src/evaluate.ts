@@ -77,6 +77,24 @@ export interface StoredGrant {
 
 export type LensStatus = 'compatible' | 'missing' | 'incompatible';
 
+/** What a lens promises a reader: the fields, and optionally a window over the record. */
+export interface LensProjection {
+  readonly fields: ReadonlyArray<string>;
+  readonly condition?: Condition;
+}
+
+/**
+ * What a registry says about a pinned lens.
+ *
+ * `projection` is present when the registry could read the shape the cid names: its fields (and
+ * condition) are the authority's shared view, applied when the grant's selector does not speak for
+ * itself. A registry that only compares cids answers the status alone.
+ */
+export interface ResolvedLens {
+  readonly status: LensStatus;
+  readonly projection?: LensProjection;
+}
+
 /** Where grants live (host storage). Returns grants for the given subject DIDs. */
 export class GrantStore extends Context.Service<
   GrantStore,
@@ -138,7 +156,10 @@ export class Membership extends Context.Service<
 export class LensRegistry extends Context.Service<
   LensRegistry,
   {
-    readonly check: (lens: LensRef) => Effect.Effect<LensStatus, LookupError>;
+    readonly check: (
+      space: ATURI,
+      lens: LensRef,
+    ) => Effect.Effect<ResolvedLens, LookupError>;
   }
 >()('@eoa/space-host/LensRegistry') {
   /**
@@ -146,18 +167,26 @@ export class LensRegistry extends Context.Service<
    * an absent nsid is "missing". Swap in a smarter registry when lens
    * evolution rules exist.
    */
-  static readonly layerFromCurrent = (current: ReadonlyMap<NSID, CidString>) =>
+  static readonly layerFromCurrent = (
+    current: ReadonlyMap<NSID, CidString>,
+    /** What a compatible lens projects, for a test that wants the shared shape to matter. */
+    projection?: LensProjection,
+  ) =>
     Layer.succeed(
       LensRegistry,
       LensRegistry.of({
-        check: (lens) => {
+        check: (_space, lens) => {
           const cid = current.get(lens.nsid);
-          return Effect.succeed(
+          const status =
             cid === undefined
-              ? 'missing'
+              ? ('missing' as const)
               : cid === lens.cid
-                ? 'compatible'
-                : 'incompatible',
+                ? ('compatible' as const)
+                : ('incompatible' as const);
+          return Effect.succeed(
+            status === 'compatible' && projection !== undefined
+              ? { status, projection }
+              : { status },
           );
         },
       }),
@@ -238,6 +267,8 @@ export interface Candidate extends StoredGrant {
   readonly revocation: RevocationState;
   /** `undefined` when the grant pins no lens. */
   readonly lensStatus: LensStatus | undefined;
+  /** The projection the pinned lens promises, when the registry could read it. */
+  readonly projection?: LensProjection;
 }
 
 const failureOf = (
@@ -275,6 +306,40 @@ const failureOf = (
 };
 
 /**
+ * The projection a reader gets: the selector where it speaks, the lens where it does not.
+ *
+ * A selector may narrow a lens (its `fields` must be inside the lens's) but never widen it — the
+ * whole point of a shared shape is that every grant through it promises the same view. `undefined`
+ * means the grant asked for more than the lens allows.
+ *
+ * ponytail: two conditions (a selector's and a lens's) cannot both be carried by `Allow` today, so
+ * the selector's wins when it names one. Combining two windows needs `conditions: Condition[]` in
+ * the decision; add it when a real grant needs both.
+ */
+const projectionOf = (
+  selector: Selector,
+  lens: LensProjection | undefined,
+):
+  | { readonly fields?: ReadonlyArray<string>; readonly condition?: Condition }
+  | undefined => {
+  const lensFields = lens?.fields;
+  const selectorFields = selector.fields;
+  if (
+    lensFields !== undefined &&
+    selectorFields !== undefined &&
+    !selectorFields.every((field) => lensFields.includes(field))
+  ) {
+    return undefined;
+  }
+  const fields = selectorFields ?? lensFields;
+  const condition = selector.condition ?? lens?.condition;
+  return {
+    ...(fields === undefined ? {} : { fields }),
+    ...(condition === undefined ? {} : { condition }),
+  };
+};
+
+/**
  * The pure core: allow iff some in-scope candidate survives revocation, expiry
  * and lens checks. Otherwise deny with the first in-scope failure, or
  * `no-grant` when nothing was in scope.
@@ -297,12 +362,21 @@ export const decide = (input: {
     }
     const failure = failureOf(candidate, input.request, input.now);
     if (failure === undefined) {
+      const projection = projectionOf(selector, candidate.projection);
+      // A grant that tries to project *more* than the lens it pins is refused, not narrowed
+      // silently: the lens is the authority's promise about what a reader sees.
+      if (projection === undefined) {
+        failures.push('lens-mismatch');
+        continue;
+      }
       return Decision.Allow({
         grant: candidate.ref,
-        ...(selector.fields === undefined ? {} : { fields: selector.fields }),
-        ...(selector.condition === undefined
+        ...(projection.fields === undefined
           ? {}
-          : { condition: selector.condition }),
+          : { fields: projection.fields }),
+        ...(projection.condition === undefined
+          ? {}
+          : { condition: projection.condition }),
       });
     }
     failures.push(failure);
@@ -380,11 +454,18 @@ const resolve = (request: AccessRequest, now: DateTime.Utc) =>
       ),
       Effect.fnUntraced(function* (entry) {
         const revocation = yield* revocations.state(entry.ref.uri);
-        const lensStatus =
+        const resolved =
           entry.grant.lens === undefined
             ? undefined
-            : yield* lenses.check(entry.grant.lens);
-        return { ...entry, revocation, lensStatus };
+            : yield* lenses.check(request.space, entry.grant.lens);
+        return {
+          ...entry,
+          revocation,
+          lensStatus: resolved?.status,
+          ...(resolved?.projection === undefined
+            ? {}
+            : { projection: resolved.projection }),
+        };
       }),
     );
     return decide({ request, now, subjects, candidates });

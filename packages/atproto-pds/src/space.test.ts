@@ -2503,6 +2503,142 @@ describe('grants over a space', () => {
     });
   });
 
+  it('projects a read through the lens the authority publishes', async () => {
+    await withGrantedSpace(async ({ space, authority, reader, write, get }) => {
+      const written = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: 'com.example.note',
+          rkey: 'one',
+          value: {
+            $type: 'com.example.note',
+            text: 'what the coach must not see',
+            startedAt: '2026-11-07T00:00:00.000Z',
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(written.status).toBe(200);
+
+      // The lens is a record in the authority's repo, keyed by the nsid of the shape it projects.
+      const lens = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: 'ing.lexicon.lens',
+          rkey: 'com.example.note',
+          value: {
+            $type: 'ing.lexicon.lens',
+            fields: ['/startedAt'],
+            issuedBy: authority.did,
+            createdAt: new Date().toISOString(),
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(lens.status).toBe(200);
+      const lensCid = String(lens.body['cid']);
+      expect(lensCid).not.toBe('');
+
+      // The grant names no fields of its own: the shape is the lens's, and the cid pins it.
+      const granted = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: GRANT,
+          rkey: 'lens-to-bob',
+          value: {
+            ...grantFor({
+              space,
+              subject: reader.did,
+              issuedBy: authority.did,
+              selector: { collection: 'com.example.note' },
+            }),
+            lens: { nsid: 'com.example.note', cid: lensCid },
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(granted.status).toBe(200);
+
+      const listed = await get(
+        `com.atproto.space.listRecords?space=${encodeURIComponent(space)}&repo=${authority.did}&collection=com.example.note`,
+        reader.accessJwt,
+      );
+      expect(listed.status).toBe(200);
+      const records = listed.body['records'] as ReadonlyArray<{
+        rkey: string;
+        value: Record<string, Schema.Json>;
+      }>;
+      expect(records.map((one) => one.rkey)).toEqual(['one']);
+      expect(records[0]?.value).toEqual({
+        $type: 'com.example.note',
+        startedAt: '2026-11-07T00:00:00.000Z',
+      });
+    });
+  });
+
+  it('refuses a grant that pins a lens version that is not current', async () => {
+    await withGrantedSpace(async ({ space, authority, reader, write, get }) => {
+      const written = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: 'com.example.note',
+          rkey: 'one',
+          value: { $type: 'com.example.note', text: 'hello' },
+        }),
+        authority.accessJwt,
+      );
+      expect(written.status).toBe(200);
+
+      const lens = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: 'ing.lexicon.lens',
+          rkey: 'com.example.note',
+          value: {
+            $type: 'ing.lexicon.lens',
+            fields: ['/text'],
+            issuedBy: authority.did,
+            createdAt: new Date().toISOString(),
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(lens.status).toBe(200);
+
+      const granted = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: GRANT,
+          rkey: 'stale-lens',
+          value: {
+            ...grantFor({
+              space,
+              subject: reader.did,
+              issuedBy: authority.did,
+              selector: { collection: 'com.example.note' },
+            }),
+            lens: { nsid: 'com.example.note', cid: A_CID },
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(granted.status).toBe(200);
+
+      const listed = await get(
+        `com.atproto.space.listRecords?space=${encodeURIComponent(space)}&repo=${authority.did}&collection=com.example.note`,
+        reader.accessJwt,
+      );
+      expect(listed.status).toBe(403);
+      expect(String(listed.body['message'])).toContain('lens-incompatible');
+    });
+  });
+
   it('answers a grant decision for a service fronting the space', async () => {
     await withGrantedSpace(async ({ space, authority, reader, write, get }) => {
       const ask = (action: 'view' | 'write', jwt: string) =>

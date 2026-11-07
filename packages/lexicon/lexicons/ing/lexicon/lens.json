@@ -1,0 +1,41 @@
+{
+  "lexicon": 1,
+  "id": "ing.lexicon.lens",
+  "description": "A shared projection: what a view of one record shape returns. The record's key is the NSID of the shape it applies to, so a grant that pins {nsid, cid} names THIS record at that version -- the nsid picks the record, the cid pins which version of the projection was promised.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "description": "Readable by anyone who can read the authority's repo in the space: a projection is policy, and policy is public while the key that applies it is not.",
+      "record": {
+        "type": "object",
+        "required": ["fields", "issuedBy", "createdAt"],
+        "properties": {
+          "fields": {
+            "type": "array",
+            "minLength": 1,
+            "items": { "type": "string", "format": "json-pointer" },
+            "description": "The fields a view returns, as RFC 6901 pointers. Everything outside them is dropped; `$type` is always kept by the reader."
+          },
+          "condition": {
+            "type": "ref",
+            "ref": "#condition",
+            "description": "Only covers a record that satisfies it, the same closed comparison a grant can carry."
+          },
+          "description": { "type": "string" },
+          "issuedBy": { "type": "string", "format": "did" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "description": "The datetime at `field` must be no older than `maxAgeSeconds` when the grant is checked.",
+      "required": ["field", "maxAgeSeconds"],
+      "properties": {
+        "field": { "type": "string", "format": "json-pointer" },
+        "maxAgeSeconds": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

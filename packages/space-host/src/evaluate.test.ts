@@ -47,6 +47,8 @@ interface Setup {
     ReturnType<typeof nsid>,
     ReturnType<typeof cid>
   >;
+  /** What a compatible lens projects, when a test wants the shared shape to matter. */
+  readonly projection?: { readonly fields: ReadonlyArray<string> };
   readonly membership?: Layer.Layer<Membership>;
   /** Runs after every grant opened its epoch, before the check. */
   readonly beforeCheck?: Effect.Effect<void, LookupError, RevocationLog>;
@@ -76,7 +78,10 @@ const check = (
         GrantStore.layerInMemory(grants),
         setup.membership ?? Membership.layerNone,
         RevocationLog.layerInMemory,
-        LensRegistry.layerFromCurrent(setup.lenses ?? new Map()),
+        LensRegistry.layerFromCurrent(
+          setup.lenses ?? new Map(),
+          setup.projection,
+        ),
       ),
     ),
     Effect.runPromise,
@@ -450,6 +455,44 @@ describe('checkAccess: lens binding fails closed', () => {
 
   it('a grant without a lens does not depend on the registry', async () => {
     expect(isAllow(await check([stored()], request({ lens })))).toBe(true);
+  });
+
+  it('carries the shared projection of a compatible lens', async () => {
+    const lenses = new Map([[lens.nsid, lens.cid]]);
+    expect(
+      await check([pinned], request(), {
+        lenses,
+        projection: { fields: ['/startedAt'] },
+      }),
+    ).toEqual(Decision.Allow({ grant: grantRef(1), fields: ['/startedAt'] }));
+  });
+
+  it('refuses a grant that would project more than its lens', async () => {
+    const lenses = new Map([[lens.nsid, lens.cid]]);
+    const wider = stored({
+      lens,
+      selectors: [{ collection: RUNS, fields: ['/startedAt', '/secret'] }],
+    });
+    expect(
+      await check([wider], request(), {
+        lenses,
+        projection: { fields: ['/startedAt'] },
+      }),
+    ).toEqual(denied('lens-mismatch'));
+  });
+
+  it('lets a grant narrow its lens', async () => {
+    const lenses = new Map([[lens.nsid, lens.cid]]);
+    const narrower = stored({
+      lens,
+      selectors: [{ collection: RUNS, fields: ['/startedAt'] }],
+    });
+    expect(
+      await check([narrower], request(), {
+        lenses,
+        projection: { fields: ['/startedAt', '/note'] },
+      }),
+    ).toEqual(Decision.Allow({ grant: grantRef(1), fields: ['/startedAt'] }));
   });
 });
 

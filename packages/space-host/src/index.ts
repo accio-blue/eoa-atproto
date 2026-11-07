@@ -3,6 +3,7 @@
 // modules; storage and the celld fencing adapter plug in behind services.
 export * from './grant.js';
 export * from './project.js';
+export * from './lens.js';
 export * from './evaluate.js';
 export * from './revocation.js';
 export * from './write-log.js';
