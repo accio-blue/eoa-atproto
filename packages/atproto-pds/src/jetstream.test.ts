@@ -83,4 +83,13 @@ describe('a commit as Jetstream frames', () => {
     expect(query.filter.wantedDids).toBeUndefined();
     expect(jetstreamQuery(new URLSearchParams()).cursor).toBeUndefined();
   });
+
+  it('reads repeated ?space= as the set it follows', () => {
+    const query = jetstreamQuery(
+      new URLSearchParams('space=at://a/b/c&space=at://d/e/f'),
+    );
+    expect(query.spaces).toEqual(['at://a/b/c', 'at://d/e/f']);
+    // No `?space=` is the public stream: no set, and nothing to gate.
+    expect(jetstreamQuery(new URLSearchParams()).spaces).toBeUndefined();
+  });
 });

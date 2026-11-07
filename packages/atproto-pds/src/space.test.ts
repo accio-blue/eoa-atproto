@@ -2316,7 +2316,11 @@ describe('grants over a space', () => {
 describe('membership and the space policy', () => {
   /** A PDS with an authority and somebody who is not a member of anything yet. */
   const withMemberspace = async (
-    options: { readonly policy?: Record<string, Schema.Json> },
+    options: {
+      readonly policy?: Record<string, Schema.Json>;
+      /** Serve Jetstream too, so the HTTP space mode can be read the way a client reads it. */
+      readonly jetstream?: boolean;
+    },
     run: (params: {
       readonly url: string;
       readonly space: string;
@@ -2340,7 +2344,9 @@ describe('membership and the space policy', () => {
     Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
-          const pds = yield* startMemoryPds();
+          const pds = yield* startMemoryPds({
+            jetstream: options.jetstream ?? false,
+          });
           const authority = yield* Effect.promise(() =>
             createAccount(pds.url, 'alice.pds.test'),
           );
@@ -2390,6 +2396,53 @@ describe('membership and the space policy', () => {
     $type: 'com.example.note',
     text: rkey,
   });
+
+  /**
+   * Read NDJSON frames from a Jetstream stream until `enough` is satisfied, then hang up. A refusal is
+   * returned as it arrived — status and text — because that is the whole claim: no frame follows it.
+   */
+  const readFrames = async (
+    url: string,
+    jwt: string | undefined,
+    enough: (frames: ReadonlyArray<Record<string, Schema.Json>>) => boolean,
+  ) => {
+    const controller = new AbortController();
+    try {
+      const response = await fetch(url, {
+        signal: controller.signal,
+        ...(jwt === undefined
+          ? {}
+          : { headers: { authorization: `Bearer ${jwt}` } }),
+      });
+      if (response.status !== 200) {
+        return {
+          status: response.status,
+          frames: [] as Array<Record<string, Schema.Json>>,
+          text: await response.text(),
+        };
+      }
+      const frames: Array<Record<string, Schema.Json>> = [];
+      const reader = response.body?.getReader();
+      let held = '';
+      while (reader !== undefined && !enough(frames)) {
+        const chunk = await reader.read();
+        if (chunk.done) {
+          break;
+        }
+        held += new TextDecoder().decode(chunk.value);
+        const lines = held.split('\n');
+        held = lines.pop() ?? '';
+        for (const line of lines) {
+          if (line !== '') {
+            frames.push(JSON.parse(line) as Record<string, Schema.Json>);
+          }
+        }
+      }
+      return { status: response.status, frames, text: '' };
+    } finally {
+      controller.abort();
+    }
+  };
 
   const writeAs = (
     call: (
@@ -2983,7 +3036,7 @@ describe('membership and the space policy', () => {
       const frames = [
         ...(await Effect.runPromise(
           firehose
-            .subscribeSpace({ space, cursor: from.timeUs })
+            .subscribeSpaces({ spaces: [space], cursor: from.timeUs })
             .pipe(Stream.take(3), Stream.runCollect),
         )),
       ];
@@ -3063,6 +3116,145 @@ describe('membership and the space policy', () => {
         const refused = await framesOf(member.accessJwt);
         expect(String(refused[0]?.['error'])).toBe('NotAuthorized');
         expect(String(refused[0]?.['message'])).toContain('not-a-member');
+      },
+    );
+  });
+
+  it('serves a space over Jetstream, replays it from a cursor, and keeps it off the public stream', async () => {
+    await withMemberspace(
+      { jetstream: true },
+      async ({ url, space, authority, call, firehose }) => {
+        const from = await Effect.runPromise(firehose.head);
+        expect(
+          (
+            await writeAs(call, {
+              space,
+              did: authority.did,
+              rkey: 'one',
+              jwt: authority.accessJwt,
+            })
+          ).status,
+        ).toBe(200);
+        // A public write after the space's, so the public stream has a frame to stop at: if the
+        // space's write leaked, it would arrive first.
+        const published = await call(
+          'com.atproto.repo.createRecord',
+          {
+            repo: authority.did,
+            collection: 'app.example.note',
+            record: { $type: 'app.example.note', text: 'public' },
+          },
+          authority.accessJwt,
+        );
+        expect(published.status).toBe(200);
+
+        const spaceStream = await readFrames(
+          `${url}/jetstream/subscribe?space=${encodeURIComponent(space)}&cursor=${from.timeUs}`,
+          authority.accessJwt,
+          (frames) => frames.length >= 1,
+        );
+        expect(spaceStream.status).toBe(200);
+        expect(spaceStream.frames[0]).toMatchObject({
+          kind: 'space',
+          space,
+          did: authority.did,
+          action: 'create',
+          rkey: 'one',
+          value: { text: 'one' },
+        });
+        // Replayed from the cursor it was given: the write happened before the stream was opened.
+        expect(Number(spaceStream.frames[0]?.['timeUs'])).toBeGreaterThan(
+          from.timeUs,
+        );
+
+        const publicStream = await readFrames(
+          `${url}/jetstream/subscribe?cursor=${from.timeUs}`,
+          undefined,
+          (frames) => frames.some((frame) => frame['kind'] === 'commit'),
+        );
+        expect(publicStream.frames.map((frame) => frame['kind'])).not.toContain(
+          'space',
+        );
+      },
+    );
+  });
+
+  it('refuses Jetstream space mode before the body when the caller is missing or unwelcome', async () => {
+    await withMemberspace(
+      { jetstream: true },
+      async ({ url, space, member }) => {
+        const unauthenticated = await readFrames(
+          `${url}/jetstream/subscribe?space=${encodeURIComponent(space)}`,
+          undefined,
+          () => false,
+        );
+        // A status and a sentence, no frame: the same rule as a refused cursor.
+        expect(unauthenticated.status).toBe(401);
+        expect(unauthenticated.frames).toEqual([]);
+        expect(unauthenticated.text).toContain('credential');
+
+        const unwelcome = await readFrames(
+          `${url}/jetstream/subscribe?space=${encodeURIComponent(space)}`,
+          member.accessJwt,
+          () => false,
+        );
+        expect(unwelcome.status).toBe(403);
+        expect(unwelcome.frames).toEqual([]);
+        // A refusal names the space it is about, so a client can drop the right one.
+        expect(unwelcome.text).toContain(space);
+      },
+    );
+  });
+
+  it('follows several spaces in one Jetstream stream, in the window order', async () => {
+    await withMemberspace(
+      { jetstream: true },
+      async ({ url, space, authority, call, firehose }) => {
+        const annex = `at://${authority.did}/${SPACE_TYPE}/annex`;
+        expect(
+          (
+            await call(
+              'com.atproto.space.createSpace',
+              {
+                spaceType: SPACE_TYPE,
+                skey: 'annex',
+                policy: { $type: 'com.atproto.memberspace.policy' },
+              },
+              authority.accessJwt,
+            )
+          ).status,
+        ).toBe(200);
+
+        const from = await Effect.runPromise(firehose.head);
+        for (const [one, rkey] of [
+          [space, 'club'],
+          [annex, 'annex'],
+        ] as const) {
+          expect(
+            (
+              await writeAs(call, {
+                space: one,
+                did: authority.did,
+                rkey,
+                jwt: authority.accessJwt,
+              })
+            ).status,
+          ).toBe(200);
+        }
+
+        const heard = await readFrames(
+          `${url}/jetstream/subscribe?space=${encodeURIComponent(space)}&space=${encodeURIComponent(annex)}&cursor=${from.timeUs}`,
+          authority.accessJwt,
+          (frames) => frames.length >= 2,
+        );
+        expect(heard.status).toBe(200);
+        expect(heard.frames.map((frame) => frame['space'])).toEqual([
+          space,
+          annex,
+        ]);
+        // One window, one order: the two spaces' frames do not interleave by stream.
+        const times = heard.frames.map((frame) => Number(frame['timeUs']));
+        expect(times).toEqual([...times].sort((left, right) => left - right));
       },
     );
   });

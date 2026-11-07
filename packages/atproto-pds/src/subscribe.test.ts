@@ -42,7 +42,7 @@ const aStreamThatNeverEnds = (onExit: () => void) =>
         rkey: 'one',
         cid: 'bafy',
       }),
-    subscribeSpace: () => Stream.never,
+    subscribeSpaces: () => Stream.never,
     cursorOf: () => Effect.succeed(0),
     head: Effect.succeed({ seq: 0, timeUs: 0 }),
     subscribe: () =>

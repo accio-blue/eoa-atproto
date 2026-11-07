@@ -184,10 +184,10 @@ describe('a space on the same stream', () => {
         const open$ = yield* firehose.emit(open);
         // From the beginning of the window: what each subscription *replays* is what it carries.
         const own = yield* firehose
-          .subscribeSpace({ space: club, cursor: 0 })
+          .subscribeSpaces({ spaces: [club], cursor: 0 })
           .pipe(Stream.take(1), Stream.runCollect);
         const other = yield* firehose
-          .subscribeSpace({ space: garden, cursor: 0 })
+          .subscribeSpaces({ spaces: [garden], cursor: 0 })
           .pipe(Stream.take(1), Stream.runCollect);
         const seen = yield* firehose
           .subscribe({ cursor: 0 })
@@ -227,7 +227,7 @@ describe('a space on the same stream', () => {
         );
         yield* firehose.emitSpace(spaceWrite({ space: club, rkey: 'two' }));
         const resumed = yield* firehose
-          .subscribeSpace({ space: club, cursor: first.timeUs })
+          .subscribeSpaces({ spaces: [club], cursor: first.timeUs })
           .pipe(Stream.take(1), Stream.runCollect);
         return [...resumed];
       }),

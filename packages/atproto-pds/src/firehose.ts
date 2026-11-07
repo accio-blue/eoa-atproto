@@ -30,7 +30,7 @@ import {
  * **A repo that is not public does not go on the public stream.** A permissioned
  * space's writes are its members' business, and a firehose is not a member of anything
  * — so `subscribe` keeps public events only, and a space's writes go out on that
- * space's own subscription (`subscribeSpace`), where the caller has already said who
+ * space's own subscription (`subscribeSpaces`), where the caller has already said who
  * it is. The withholding is `subscribe`'s predicate, not each caller's, so no
  * route can forget it.
  */
@@ -89,7 +89,7 @@ export interface IdentityEvent {
  * JSON-shaped, one per operation — which is the shape a reader of a space actually consumes.
  *
  * **It never appears on the public stream.** `subscribe` keeps public events only; a space's writes
- * are delivered by `subscribeSpace`, where the caller has already said who it is.
+ * are delivered by `subscribeSpaces`, where the caller has already said who it is.
  */
 export interface SpaceCommitEvent {
   readonly kind: 'space';
@@ -218,9 +218,16 @@ export interface FirehoseShape {
     CommitEvent | IdentityEvent,
     FutureCursorError | OutdatedCursorError
   >;
-  /** One space's writes, and nothing else. */
-  readonly subscribeSpace: (params: {
-    readonly space: string;
+  /**
+   * The writes of a **set** of spaces, and nothing else.
+   *
+   * A set rather than one space because Jetstream serves one subscription for every space a caller
+   * follows, and the post's contract is one ordered stream: taking them through this one window
+   * keeps a single `timeUs` order, where merging per-space streams would interleave arbitrarily. The
+   * socket that serves one space passes a one-element set.
+   */
+  readonly subscribeSpaces: (params: {
+    readonly spaces: readonly string[];
     readonly cursor?: number | undefined;
   }) => Stream.Stream<
     SpaceCommitEvent,
@@ -384,10 +391,10 @@ export const firehoseLayer = (config?: FirehoseOptions) =>
         event: FirehoseEvent,
       ): event is CommitEvent | IdentityEvent => event.kind !== 'space';
 
-      const isSpaceOf =
-        (space: string) =>
+      const isSpaceIn =
+        (spaces: ReadonlySet<string>) =>
         (event: FirehoseEvent): event is SpaceCommitEvent =>
-          event.kind === 'space' && event.space === space;
+          event.kind === 'space' && spaces.has(event.space);
 
       return {
         head: Ref.get(head),
@@ -448,8 +455,8 @@ export const firehoseLayer = (config?: FirehoseOptions) =>
           }),
 
         subscribe: (params) => tail(isPublicEvent, params.cursor),
-        subscribeSpace: (params) =>
-          tail(isSpaceOf(params.space), params.cursor),
+        subscribeSpaces: (params) =>
+          tail(isSpaceIn(new Set(params.spaces)), params.cursor),
       } satisfies FirehoseShape;
     }),
   );

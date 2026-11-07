@@ -1,5 +1,4 @@
 import { Effect, Option } from 'effect';
-import { JETSTREAM_PATH, jetstreamResponse } from './jetstream.js';
 import { type PdsConfig, notFound } from './pds.js';
 import { type PluginMethod, registerPluginMethods } from './plugin-method.js';
 import { SUBSCRIBE_NSID, subscribeReposHandler } from './subscribe.js';
@@ -98,11 +97,6 @@ export const createPdsServer = (params: {
   // The firehose is a stream rather than a method: it registers the same way,
   // and the transport routes the upgrade to it by path.
   server.stream(SUBSCRIBE_NSID, {}, subscribeReposHandler(params.firehose));
-  if (params.config.jetstream === true) {
-    server.route(JETSTREAM_PATH, (url) =>
-      jetstreamResponse(params.firehose, url),
-    );
-  }
 
   server.method('com.atproto.server.describeServer', {}, () =>
     Effect.succeed({

@@ -256,6 +256,20 @@ describe('xrpc server HTTP routing', () => {
     controller.abort();
   });
 
+  it('gives a plain route the request headers', async () => {
+    // A one-argument handler is still a `(url, call) => …` handler, so the route type can carry the
+    // call without every existing registration changing.
+    activeServer().route('/plain/who', (_url, call) =>
+      Effect.succeed(new Response(call.headers['x-test'] ?? 'none')),
+    );
+
+    const response = await fetch(`${baseUrl}/plain/who`, {
+      headers: { 'x-test': 'here' },
+    });
+
+    await expect(response.text()).resolves.toBe('here');
+  });
+
   it('serves a registered stream over a socket, and closes when it ends', async () => {
     const encoder = new TextEncoder();
     activeServer().stream('com.example.ticks', {}, () =>

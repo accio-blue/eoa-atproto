@@ -31,6 +31,20 @@ export interface AuthInfo {
 }
 
 /**
+ * A call as it arrived, whatever delivered it.
+ *
+ * A plain route gets this too: a credential arrives in a header, and an endpoint that serves a
+ * permissioned stream (Jetstream's space mode) has to see the same ones a socket handler does.
+ */
+export interface ServerCall {
+  readonly url: string;
+  readonly method: string;
+  readonly headers: Readonly<Record<string, string>>;
+  /** The body as it arrived — `undefined` when there was none. */
+  readonly body: Uint8Array | undefined;
+}
+
+/**
  * A handler answers with JSON — or with a `Response` of its own, which is how a
  * method that returns bytes (a blob) answers at all.
  */
@@ -114,10 +128,13 @@ export interface XrpcServer {
   /**
    * A plain `GET` path outside `/xrpc`, answered with a `Response` of the handler's own. For what the
    * ecosystem serves beside the protocol (Jetstream's NDJSON); a `ReadableStream` body streams.
+   *
+   * The handler gets the call as well as the URL. A handler that names only the URL stays assignable,
+   * so this is additive: existing routes did not have to change to start reading headers.
    */
   readonly route: (
     path: string,
-    handler: (url: URL) => Effect.Effect<Response>,
+    handler: (url: URL, call: ServerCall) => Effect.Effect<Response>,
   ) => void;
 
   /**

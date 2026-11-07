@@ -4,6 +4,7 @@ import {
   MethodConfig,
   MethodHandler,
   type Middleware,
+  type ServerCall,
   type ServerConfig,
   StreamHandler,
   XrpcServer,
@@ -110,15 +111,6 @@ const streamSocketHandler = (params: {
   );
 };
 
-/** A call as it arrived, whatever delivered it. */
-export interface ServerCall {
-  readonly url: string;
-  readonly method: string;
-  readonly headers: Readonly<Record<string, string>>;
-  /** The body as it arrived — `undefined` when there was none. */
-  readonly body: Uint8Array | undefined;
-}
-
 /** The configured middleware, wrapped around a method's handler. First is outermost. */
 const applyMiddleware = (
   middleware: readonly Middleware[],
@@ -140,14 +132,17 @@ const serveCall = async (params: {
     string,
     { readonly config: MethodConfig; readonly handler: MethodHandler }
   >;
-  readonly routes: ReadonlyMap<string, (url: URL) => Effect.Effect<Response>>;
+  readonly routes: ReadonlyMap<
+    string,
+    (url: URL, call: ServerCall) => Effect.Effect<Response>
+  >;
   readonly config: ServerConfig;
   readonly call: ServerCall;
 }): Promise<Response> => {
   const url = new URL(params.call.url);
   const route = params.routes.get(url.pathname);
   if (route !== undefined && params.call.method === 'GET') {
-    return Effect.runPromise(route(url));
+    return Effect.runPromise(route(url, params.call));
   }
   const pathParts = url.pathname.split('/').filter(Boolean);
 
@@ -209,7 +204,10 @@ export const createXrpcServer = (_lexicons?: Lexicons): XrpcServer => {
     string,
     { config: MethodConfig; handler: StreamHandler }
   >();
-  const routes = new Map<string, (url: URL) => Effect.Effect<Response>>();
+  const routes = new Map<
+    string,
+    (url: URL, call: ServerCall) => Effect.Effect<Response>
+  >();
 
   const server: XrpcServer = {
     method: (nsid, config, handler) => {

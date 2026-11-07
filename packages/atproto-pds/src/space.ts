@@ -71,9 +71,11 @@ import {
 import { type Firehose, type SpaceCommitEvent } from './firehose.js';
 import {
   type HandlerContext,
+  type ServerCall,
   type XrpcError,
   type XrpcServer,
 } from '@eoa/xrpc-server';
+import { JETSTREAM_PATH, jetstreamResponse } from './jetstream.js';
 import {
   type PdsConfig,
   authenticateAccess,
@@ -787,6 +789,39 @@ export const registerSpaceMethods = (
         return yield* Effect.fail(unauthorized(verified.reason));
       }
       return { kind: 'app' as const, app };
+    });
+
+  /**
+   * May this caller read this space? The one gate both `com.atproto.space.subscribeRepos` and
+   * Jetstream's `?space=` mode pass, so the two cannot disagree about a reader.
+   *
+   * A credential is scoped to one space by the authority that minted it, so it is its own answer
+   * (`listRepos` asks the same way). A session is a person, and the policy says whether that person
+   * may read.
+   */
+  const gateRead = (ctx: HandlerContext, spaceUri: string) =>
+    Effect.gen(function* () {
+      const parsed = spaceOf(spaceUri);
+      if (parsed === undefined) {
+        return yield* Effect.fail(
+          invalid(`the space ${spaceUri} is not a space address`),
+        );
+      }
+      const reader = yield* readerOf(ctx, spaceUri);
+      if (reader.kind === 'session') {
+        const policy = yield* policyReadOf({
+          space: spaceUri,
+          authority: parsed.authority,
+          did: reader.did,
+        });
+        if (policy.kind !== 'allow') {
+          return yield* Effect.fail(
+            forbidden(
+              `the policy does not let ${reader.did} read ${spaceUri}: ${policy.reason}`,
+            ),
+          );
+        }
+      }
     });
 
   /** The entries of a repo, or `RepoNotFound` when the log never held it. */
@@ -2730,9 +2765,9 @@ export const registerSpaceMethods = (
    * `com.atproto.space.subscribeRepos`: one space's writes, as JSON frames on a socket.
    *
    * The public firehose is public and a space's writes are not, so they are served here: the gate is
-   * the one the record surface uses — a session or a credential, and then the policy's own answer —
-   * and the frames are the records themselves, one per operation, because a space repo is a log and
-   * not an MST and there is no CAR to hand out.
+   * `gateRead`, the same one Jetstream's space mode passes, and the frames are the records
+   * themselves, one per operation, because a space repo is a log and not an MST and there is no CAR
+   * to hand out.
    *
    * The transport is a socket (`server.stream`), so a caller that may not read the space cannot be
    * answered with a status: it gets one `{"error": …}` frame and the socket closes. A cursor that
@@ -2750,33 +2785,9 @@ export const registerSpaceMethods = (
       Stream.unwrap(
         Effect.gen(function* () {
           const space = ctx.params['space'] ?? '';
-          const parsed = spaceOf(space);
-          if (parsed === undefined) {
-            return refused(`the space ${space} is not a space address`);
-          }
-          const reader = yield* Effect.result(readerOf(ctx, space));
-          if (Result.isFailure(reader)) {
-            return refused(reader.failure.message);
-          }
-          // A credential is scoped to one space by the authority that minted it, so it is its own
-          // answer (`listRepos` asks the same way). A session is a person, and the policy says
-          // whether that person may read.
-          if (reader.success.kind === 'session') {
-            const policy = yield* Effect.result(
-              policyReadOf({
-                space,
-                authority: parsed.authority,
-                did: reader.success.did,
-              }),
-            );
-            if (Result.isFailure(policy)) {
-              return refused(policy.failure.message);
-            }
-            if (policy.success.kind !== 'allow') {
-              return refused(
-                `the policy does not let ${reader.success.did} read ${space}: ${policy.success.reason}`,
-              );
-            }
+          const admitted = yield* Effect.result(gateRead(ctx, space));
+          if (Result.isFailure(admitted)) {
+            return refused(admitted.failure.message);
           }
           const asked = ctx.params['cursor'];
           const cursor =
@@ -2786,10 +2797,36 @@ export const registerSpaceMethods = (
             return refused(String(position.failure));
           }
           return firehose
-            .subscribeSpace({ space, cursor: position.success })
+            .subscribeSpaces({ spaces: [space], cursor: position.success })
             .pipe(Stream.map(frame));
         }),
       ),
     );
+  }
+
+  /**
+   * `GET /jetstream/subscribe` in space mode (`?space=…`) — the same stream the post promises, with
+   * the same gate as the socket above.
+   *
+   * Registered here rather than in `server.ts` because the gate is this surface's decision: a second
+   * registration of the same logic is how the two would come to disagree.
+   */
+  if (deps.config.jetstream === true && deps.firehose !== undefined) {
+    const firehose = deps.firehose;
+    server.route(JETSTREAM_PATH, (url, call: ServerCall) => {
+      const parsed = new URL(call.url);
+      const ctx: HandlerContext = {
+        params: {},
+        nsid: JETSTREAM_PATH,
+        method: call.method,
+        url: `${parsed.origin}${parsed.pathname}`,
+        headers: call.headers,
+      };
+      return jetstreamResponse({
+        firehose,
+        url,
+        gate: (space) => gateRead(ctx, space),
+      });
+    });
   }
 };
