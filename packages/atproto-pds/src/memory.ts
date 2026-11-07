@@ -57,7 +57,7 @@ export const startMemoryPds = (
       ),
     );
     const keys = yield* generateES256KeyPair();
-    const port = yield* createPdsServer({
+    const server = createPdsServer({
       config: {
         did: `did:web:${domain}`,
         domain,
@@ -75,6 +75,12 @@ export const startMemoryPds = (
         ? {}
         : { spaceHooks: params.spaceHooks }),
       ...(params.methods === undefined ? {} : { methods: params.methods }),
-    }).start({ port: params.port ?? 0, hostname: '127.0.0.1' });
-    return { url: `http://127.0.0.1:${port}`, port, ...services };
+    });
+    const port = yield* server.start({
+      port: params.port ?? 0,
+      hostname: '127.0.0.1',
+    });
+    // The server comes back too: a stream is reached through its registry (`streamOf`), and a test
+    // that wants a socket's handler has no other way to ask.
+    return { url: `http://127.0.0.1:${port}`, port, server, ...services };
   });

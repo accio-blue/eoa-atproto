@@ -1,5 +1,5 @@
 import { type CborValue, TID, encodeCbor } from '@eoa/core';
-import { Effect, Schema } from 'effect';
+import { Effect, Schema, Stream } from 'effect';
 import {
   SPACE_COMMIT_VER,
   SPACE_META_STAR,
@@ -21,6 +21,7 @@ import { SpaceStore, spaceStoreLayer } from './space-store.js';
 import { describe, expect, it } from 'vitest';
 import { type AddressInfo } from 'node:net';
 import { DefaultIdentityResolver } from '@eoa/identity';
+import { type Firehose } from './firehose.js';
 import { Kv } from '@eoa/kv';
 import { createPdsServer } from './server.js';
 import { createServer } from 'node:http';
@@ -2321,6 +2322,10 @@ describe('membership and the space policy', () => {
       readonly space: string;
       readonly authority: Account;
       readonly member: Account;
+      /** The space's own stream, so a test can hear what a write announced. */
+      readonly firehose: Firehose['Service'];
+      /** The server, whose `streamOf` is how a socket's handler is reached. */
+      readonly server: ReturnType<typeof createPdsServer>;
       readonly call: (
         path: string,
         body: Record<string, Schema.Json>,
@@ -2363,6 +2368,8 @@ describe('membership and the space policy', () => {
               space,
               authority,
               member,
+              firehose: pds.firehose,
+              server: pds.server,
               call: (path, body, jwt) =>
                 postJson(`${pds.url}/xrpc/${path}`, jwt, body),
               exportMeta: async (jwt) => {
@@ -2925,6 +2932,137 @@ describe('membership and the space policy', () => {
         );
         expect(archive.policyState).toEqual([]);
         expect(archive.writers).toEqual([]);
+      },
+    );
+  });
+
+  it('puts exactly one frame on the space stream for each write action', async () => {
+    await withMemberspace({}, async ({ space, authority, call, firehose }) => {
+      // The position before the first write: what replays after it is these three ops and nothing
+      // else, so the count is the claim.
+      const from = await Effect.runPromise(firehose.head);
+      expect(
+        (
+          await writeAs(call, {
+            space,
+            did: authority.did,
+            rkey: 'one',
+            jwt: authority.accessJwt,
+          })
+        ).status,
+      ).toBe(200);
+      const updated = await call(
+        'com.atproto.space.applyWrites',
+        {
+          space,
+          repo: authority.did,
+          writes: [
+            {
+              $type: 'com.atproto.space.applyWrites#update',
+              collection: 'com.example.note',
+              rkey: 'one',
+              value: note('one, revised') as Schema.Json,
+            },
+          ],
+        },
+        authority.accessJwt,
+      );
+      expect(updated.status).toBe(200);
+      const removed = await call(
+        'com.atproto.space.deleteRecord',
+        {
+          space,
+          repo: authority.did,
+          collection: 'com.example.note',
+          rkey: 'one',
+        },
+        authority.accessJwt,
+      );
+      expect(removed.status).toBe(200);
+
+      const frames = [
+        ...(await Effect.runPromise(
+          firehose
+            .subscribeSpace({ space, cursor: from.timeUs })
+            .pipe(Stream.take(3), Stream.runCollect),
+        )),
+      ];
+      expect(frames.map((frame) => frame.action)).toEqual([
+        'create',
+        'update',
+        'delete',
+      ]);
+      expect(frames.map((frame) => frame.rkey)).toEqual(['one', 'one', 'one']);
+      // The record rides the frame as JSON; a delete leaves nothing to carry.
+      expect(frames[0]?.value).toEqual({
+        $type: 'com.example.note',
+        text: 'one',
+      });
+      expect(frames[1]?.value).toEqual({
+        $type: 'com.example.note',
+        text: 'one, revised',
+      });
+      expect(frames[2]?.value).toBeUndefined();
+    });
+  });
+
+  it('serves the space stream to a reader of the space, and refuses one with a frame', async () => {
+    await withMemberspace(
+      {},
+      async ({ space, authority, member, call, server }) => {
+        expect(
+          (
+            await writeAs(call, {
+              space,
+              did: authority.did,
+              rkey: 'one',
+              jwt: authority.accessJwt,
+            })
+          ).status,
+        ).toBe(200);
+
+        const stream = server.streamOf('com.atproto.space.subscribeRepos');
+        if (stream === undefined) {
+          throw new Error('the space stream is not registered');
+        }
+        const framesOf = async (jwt: string | undefined) => {
+          const frames = await Effect.runPromise(
+            stream({
+              params: { space, cursor: '0' },
+              nsid: 'com.atproto.space.subscribeRepos',
+              method: 'GET',
+              url: `/xrpc/com.atproto.space.subscribeRepos?space=${encodeURIComponent(space)}&cursor=0`,
+              headers:
+                jwt === undefined ? {} : { authorization: `Bearer ${jwt}` },
+            }).pipe(Stream.take(1), Stream.runCollect),
+          );
+          return [...frames].map(
+            (frame) =>
+              JSON.parse(new TextDecoder().decode(frame)) as Record<
+                string,
+                Schema.Json
+              >,
+          );
+        };
+
+        // The authority reads the space, so its subscription replays the write that just landed —
+        // the record as JSON, which is the whole frame: no CAR to unpack.
+        const heard = await framesOf(authority.accessJwt);
+        expect(heard).toHaveLength(1);
+        expect(heard[0]).toMatchObject({
+          kind: 'space',
+          space,
+          did: authority.did,
+          action: 'create',
+          rkey: 'one',
+          value: { text: 'one' },
+        });
+
+        // And somebody who is not in the space is told why in one frame, because a socket has no
+        // status to carry it.
+        const refused = await framesOf(member.accessJwt);
+        expect(String(refused[0]?.['error'])).toBe('NotAuthorized');
+        expect(String(refused[0]?.['message'])).toContain('not-a-member');
       },
     );
   });

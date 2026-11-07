@@ -66,7 +66,9 @@ import {
   Predicate,
   Result,
   Schema,
+  Stream,
 } from 'effect';
+import { type Firehose, type SpaceCommitEvent } from './firehose.js';
 import {
   type HandlerContext,
   type XrpcError,
@@ -440,6 +442,11 @@ export interface SpaceSurfaceDeps {
    * copies now instead of at their next pull. Absent means this host tells nobody.
    */
   readonly spaceHooks?: SpaceHooks | undefined;
+  /**
+   * Where a space's writes are told (`subscribeRepos` for a space). Absent means this host serves no
+   * space stream — a pull-only deployment, and every test that does not ask for one.
+   */
+  readonly firehose?: Firehose['Service'] | undefined;
   /**
    * How the authority finds its managing app (`70cr`): a `did#fragment` resolved to the endpoint the
    * app advertises. Absent means a `managedspace` cannot be asked, and every write into it is
@@ -941,7 +948,6 @@ export const registerSpaceMethods = (
       return { ref, policy };
     });
 
-  /** Commit a batch under a fresh epoch, on the head read just before it. */
   /**
    * Write the policy's **publication records** into the authority's repo in the space.
    *
@@ -1060,14 +1066,68 @@ export const registerSpaceMethods = (
       }
     });
 
-  const commitOps = (ref: SpaceRepoRef, ops: ReadonlyArray<SpaceRecordOp>) =>
+  /**
+   * Tell the space's own stream what just landed, one frame per operation.
+   *
+   * A permissioned space's writes never go on the public firehose, so a reader of the space hears them
+   * here instead of polling. Best effort: with no firehose there are no subscribers, and a frame that
+   * was not delivered — or could not be built — is one `listRecords` away.
+   */
+  const notifySpace = (
+    ref: SpaceRepoRef,
+    ops: ReadonlyArray<SpaceRecordOp>,
+  ): Effect.Effect<void> => {
+    const firehose = deps.firehose;
+    if (firehose === undefined) {
+      return Effect.void;
+    }
+    const now = new Date();
+    return Effect.forEach(
+      ops,
+      (op, index) =>
+        firehose.emitSpace({
+          time: now.toISOString(),
+          // One microsecond apart, so two operations in one commit keep their order.
+          timeUs: now.getTime() * 1000 + index,
+          space: String(ref.space),
+          did: String(ref.did),
+          rev: String(op.rev),
+          action: op.action,
+          collection: String(op.collection),
+          rkey: String(op.rkey),
+          cid: String(op.cid),
+          ...(op.value === undefined
+            ? {}
+            : { value: toJson(decodeCbor(op.value)) }),
+        }),
+      { discard: true },
+    ).pipe(Effect.catchCause(() => Effect.void));
+  };
+
+  /**
+   * Commit a batch under a fresh epoch, on the head read just before it.
+   *
+   * The one place a write lands, so it is also the one place the stream is told: a caller cannot
+   * forget to announce, and the announce happens after the log's CAS accepted the batch, never before.
+   * `announce: false` is for a whole-repo import (`importRepo`): it is a replay of a repo a reader
+   * gets from `getRepo`, not a new write to tail.
+   */
+  const commitOps = (
+    ref: SpaceRepoRef,
+    ops: ReadonlyArray<SpaceRecordOp>,
+    options?: { readonly announce?: boolean },
+  ) =>
     Effect.gen(function* () {
       const { log, lock } = deps.writes;
       const epoch = yield* lock.acquire(ref.space);
       const base = yield* log.head(ref);
-      return yield* log
+      const appended = yield* log
         .appendBatch(ref, ops, { base, epoch })
         .pipe(Effect.mapError(logFailure));
+      if (options?.announce !== false) {
+        yield* notifySpace(ref, ops);
+      }
+      return appended;
     });
 
   /**
@@ -2096,7 +2156,9 @@ export const registerSpaceMethods = (
         });
       }
       if (ops.length > 0) {
-        yield* commitOps(ref, ops);
+        // An import is a replay of a repo, not a write to tail: silent, like `clearRecords`. A reader
+        // that wants the repo asks `getRepo`, which is the whole archive rather than a stream of ops.
+        yield* commitOps(ref, ops, { announce: false });
       } else {
         // An empty archive is an empty repo: a `clear` entry is how the log
         // says "this repo exists and holds nothing", at a fresh revision.
@@ -2663,4 +2725,71 @@ export const registerSpaceMethods = (
       });
     }),
   );
+
+  /**
+   * `com.atproto.space.subscribeRepos`: one space's writes, as JSON frames on a socket.
+   *
+   * The public firehose is public and a space's writes are not, so they are served here: the gate is
+   * the one the record surface uses — a session or a credential, and then the policy's own answer —
+   * and the frames are the records themselves, one per operation, because a space repo is a log and
+   * not an MST and there is no CAR to hand out.
+   *
+   * The transport is a socket (`server.stream`), so a caller that may not read the space cannot be
+   * answered with a status: it gets one `{"error": …}` frame and the socket closes. A cursor that
+   * this host cannot resume from is the same shape, for the same reason.
+   */
+  if (deps.firehose !== undefined) {
+    const firehose = deps.firehose;
+    const frame = (
+      value: SpaceCommitEvent | { error: string; message: string },
+    ) => new TextEncoder().encode(`${JSON.stringify(value)}\n`);
+    const refused = (message: string) =>
+      Stream.make(frame({ error: 'NotAuthorized', message }));
+
+    server.stream('com.atproto.space.subscribeRepos', {}, (ctx) =>
+      Stream.unwrap(
+        Effect.gen(function* () {
+          const space = ctx.params['space'] ?? '';
+          const parsed = spaceOf(space);
+          if (parsed === undefined) {
+            return refused(`the space ${space} is not a space address`);
+          }
+          const reader = yield* Effect.result(readerOf(ctx, space));
+          if (Result.isFailure(reader)) {
+            return refused(reader.failure.message);
+          }
+          // A credential is scoped to one space by the authority that minted it, so it is its own
+          // answer (`listRepos` asks the same way). A session is a person, and the policy says
+          // whether that person may read.
+          if (reader.success.kind === 'session') {
+            const policy = yield* Effect.result(
+              policyReadOf({
+                space,
+                authority: parsed.authority,
+                did: reader.success.did,
+              }),
+            );
+            if (Result.isFailure(policy)) {
+              return refused(policy.failure.message);
+            }
+            if (policy.success.kind !== 'allow') {
+              return refused(
+                `the policy does not let ${reader.success.did} read ${space}: ${policy.success.reason}`,
+              );
+            }
+          }
+          const asked = ctx.params['cursor'];
+          const cursor =
+            asked === undefined || asked === '' ? undefined : Number(asked);
+          const position = yield* Effect.result(firehose.cursorOf(cursor));
+          if (Result.isFailure(position)) {
+            return refused(String(position.failure));
+          }
+          return firehose
+            .subscribeSpace({ space, cursor: position.success })
+            .pipe(Stream.map(frame));
+        }),
+      ),
+    );
+  }
 };

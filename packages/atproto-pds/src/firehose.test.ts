@@ -155,3 +155,84 @@ describe('the firehose', () => {
     ).toBe(true);
   });
 });
+
+describe('a space on the same stream', () => {
+  const spaceWrite = (params: {
+    readonly space: string;
+    readonly rkey: string;
+  }) => ({
+    time: '2026-01-01T00:00:00.000Z',
+    timeUs: 2_000_000,
+    space: params.space,
+    did: 'did:web:pds.example:alice',
+    rev: '3abc',
+    action: 'create' as const,
+    collection: 'ing.lexicon.note',
+    rkey: params.rkey,
+    cid: 'bafyreiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    value: { $type: 'ing.lexicon.note', text: params.rkey },
+  });
+
+  it('reaches its own space and never the public stream', async () => {
+    const club = 'at://did:web:pds.example:alice/ing.lexicon.space/club';
+    const garden = 'at://did:web:pds.example:alice/ing.lexicon.space/garden';
+    const open = await writeOf({ text: 'a public post' });
+    const report = await withFirehose((firehose) =>
+      Effect.gen(function* () {
+        yield* firehose.emitSpace(spaceWrite({ space: club, rkey: 'one' }));
+        yield* firehose.emitSpace(spaceWrite({ space: garden, rkey: 'two' }));
+        const open$ = yield* firehose.emit(open);
+        // From the beginning of the window: what each subscription *replays* is what it carries.
+        const own = yield* firehose
+          .subscribeSpace({ space: club, cursor: 0 })
+          .pipe(Stream.take(1), Stream.runCollect);
+        const other = yield* firehose
+          .subscribeSpace({ space: garden, cursor: 0 })
+          .pipe(Stream.take(1), Stream.runCollect);
+        const seen = yield* firehose
+          .subscribe({ cursor: 0 })
+          .pipe(Stream.take(1), Stream.runCollect);
+        return {
+          own: [...own],
+          other: [...other],
+          seen: [...seen],
+          openSeq: Option.isSome(open$) ? open$.value.seq : 0,
+        };
+      }),
+    );
+
+    // Each space's stream carries its own write, with the record as JSON — no CAR to unpack.
+    expect(report.own).toHaveLength(1);
+    expect(report.own[0]).toMatchObject({
+      kind: 'space',
+      space: 'at://did:web:pds.example:alice/ing.lexicon.space/club',
+      rkey: 'one',
+      value: { text: 'one' },
+    });
+    expect(report.other[0]).toMatchObject({ rkey: 'two' });
+    // …and the public stream replays only the public write, so a space's event cannot leak there.
+    expect(report.seen).toHaveLength(1);
+    expect(report.seen[0]).toMatchObject({
+      kind: 'commit',
+      seq: report.openSeq,
+    });
+  });
+
+  it('resumes a space stream from the position it left', async () => {
+    const club = 'at://did:web:pds.example:alice/ing.lexicon.space/club';
+    const report = await withFirehose((firehose) =>
+      Effect.gen(function* () {
+        const first = yield* firehose.emitSpace(
+          spaceWrite({ space: club, rkey: 'one' }),
+        );
+        yield* firehose.emitSpace(spaceWrite({ space: club, rkey: 'two' }));
+        const resumed = yield* firehose
+          .subscribeSpace({ space: club, cursor: first.timeUs })
+          .pipe(Stream.take(1), Stream.runCollect);
+        return [...resumed];
+      }),
+    );
+    expect(report).toHaveLength(1);
+    expect(report[0]).toMatchObject({ rkey: 'two' });
+  });
+});

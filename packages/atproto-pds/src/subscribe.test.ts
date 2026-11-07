@@ -28,6 +28,21 @@ const aStreamThatNeverEnds = (onExit: () => void) =>
         time: '2026-10-22T00:00:00.000Z',
         did: 'did:plc:test',
       }),
+    emitSpace: () =>
+      Effect.succeed({
+        kind: 'space',
+        seq: 0,
+        timeUs: 0,
+        time: '2026-10-22T00:00:00.000Z',
+        space: 'at://did:plc:test/ing.lexicon.space/club',
+        did: 'did:plc:test',
+        rev: '3m',
+        action: 'create',
+        collection: 'ing.lexicon.note',
+        rkey: 'one',
+        cid: 'bafy',
+      }),
+    subscribeSpace: () => Stream.never,
     cursorOf: () => Effect.succeed(0),
     head: Effect.succeed({ seq: 0, timeUs: 0 }),
     subscribe: () =>

@@ -217,6 +217,8 @@ export const createPdsServer = (params: {
     replay: params.replay,
     writes: params.spaceWrites ?? defaultSpaceWritesFor(params.spaces),
     ...(params.appKeys === undefined ? {} : { appKeys: params.appKeys }),
+    // The space's own stream: a space's writes are not public, so they are not on the firehose.
+    firehose: params.firehose,
     ...(params.identity === undefined ? {} : { identity: params.identity }),
     ...(params.spaceHooks === undefined
       ? {}

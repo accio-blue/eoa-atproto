@@ -27,11 +27,12 @@ import {
  * *by name* rather than silently skipped, because a skipped record is worse than
  * an error.
  *
- * **A repo that is not public does not go on the stream.** A permissioned space's
- * writes are its members' business, and a firehose is not a member of anything —
- * so the check is here, at the one place an event is created, rather than in
- * every caller that might forget it. Nothing is a permissioned space yet, so the
- * default says yes to everything; the seam is what spaces plug into.
+ * **A repo that is not public does not go on the public stream.** A permissioned
+ * space's writes are its members' business, and a firehose is not a member of anything
+ * — so `subscribe` keeps public events only, and a space's writes go out on that
+ * space's own subscription (`subscribeSpace`), where the caller has already said who
+ * it is. The withholding is `subscribe`'s predicate, not each caller's, so no
+ * route can forget it.
  */
 
 /** One operation of a commit, as the stream carries it. */
@@ -81,8 +82,48 @@ export interface IdentityEvent {
   readonly handle?: string;
 }
 
+/**
+ * One record a space took, as a space's own stream carries it.
+ *
+ * A space repo is not an MST repo, so there is no CAR to hand out: the frame is the record itself,
+ * JSON-shaped, one per operation — which is the shape a reader of a space actually consumes.
+ *
+ * **It never appears on the public stream.** `subscribe` keeps public events only; a space's writes
+ * are delivered by `subscribeSpace`, where the caller has already said who it is.
+ */
+export interface SpaceCommitEvent {
+  readonly kind: 'space';
+  readonly seq: number;
+  readonly timeUs: number;
+  readonly time: string;
+  /** The space this write is in, as `at://…`. */
+  readonly space: string;
+  readonly did: string;
+  readonly rev: string;
+  readonly action: 'create' | 'update' | 'delete';
+  readonly collection: string;
+  readonly rkey: string;
+  readonly cid: string;
+  /** The record as JSON, on a create or update; a delete has none. */
+  readonly value?: Schema.Json | undefined;
+}
+
+/** What the emitter supplies for a space event; the stream assigns `seq` and `timeUs`. */
+export interface SpaceCommitWrite {
+  readonly time: string;
+  readonly timeUs: number;
+  readonly space: string;
+  readonly did: string;
+  readonly rev: string;
+  readonly action: 'create' | 'update' | 'delete';
+  readonly collection: string;
+  readonly rkey: string;
+  readonly cid: string;
+  readonly value?: Schema.Json | undefined;
+}
+
 /** Anything the stream carries. */
-export type FirehoseEvent = CommitEvent | IdentityEvent;
+export type FirehoseEvent = CommitEvent | IdentityEvent | SpaceCommitEvent;
 
 /** What the emitter supplies for an identity event. */
 export interface IdentityWrite {
@@ -156,6 +197,13 @@ export interface FirehoseShape {
    */
   readonly emitIdentity: (write: IdentityWrite) => Effect.Effect<IdentityEvent>;
   /**
+   * Put a space's write on the stream. Never withheld: a space stream is only served to a caller
+   * that may read the space, so the filter is at the subscription, not here.
+   */
+  readonly emitSpace: (
+    write: SpaceCommitWrite,
+  ) => Effect.Effect<SpaceCommitEvent>;
+  /**
    * The position a subscription would resume from, or the reason it cannot:
    * checked before a response starts, so a cursor is refused with a status
    * rather than by dying halfway through a stream.
@@ -163,9 +211,21 @@ export interface FirehoseShape {
   readonly cursorOf: (
     cursor?: number | undefined,
   ) => Effect.Effect<number, FutureCursorError | OutdatedCursorError>;
+  /** The public stream: commits and identity events, never a space's writes. */
   readonly subscribe: (params: {
     readonly cursor?: number | undefined;
-  }) => Stream.Stream<FirehoseEvent, FutureCursorError | OutdatedCursorError>;
+  }) => Stream.Stream<
+    CommitEvent | IdentityEvent,
+    FutureCursorError | OutdatedCursorError
+  >;
+  /** One space's writes, and nothing else. */
+  readonly subscribeSpace: (params: {
+    readonly space: string;
+    readonly cursor?: number | undefined;
+  }) => Stream.Stream<
+    SpaceCommitEvent,
+    FutureCursorError | OutdatedCursorError
+  >;
   readonly head: Effect.Effect<{
     readonly seq: number;
     readonly timeUs: number;
@@ -272,6 +332,63 @@ export const firehoseLayer = (config?: FirehoseOptions) =>
           return cursor ?? started.timeUs;
         });
 
+      /**
+       * A subscription over the events `accepts` keeps, resumable from `cursor`.
+       *
+       * One stream serves the public firehose and each space: the window, the position and the
+       * ordering are shared, so a cursor is a place in either, and the filter is what keeps a
+       * permissioned write off the stream anyone may read.
+       */
+      const tail = <A extends FirehoseEvent>(
+        accepts: (event: FirehoseEvent) => event is A,
+        cursor: number | undefined,
+      ): Stream.Stream<A, FutureCursorError | OutdatedCursorError> =>
+        Stream.unwrap(
+          Effect.gen(function* () {
+            // The position, then the registration, then the window: the order
+            // that closes the gap. Registering before reading is what makes an
+            // event published during the handover arrive exactly once.
+            const resumeFrom = yield* cursorOf(cursor);
+
+            const queue = yield* Queue.unbounded<FirehoseEvent>();
+            yield* Ref.update(subscribers, (held) => [...held, queue]);
+
+            const window = yield* Ref.get(events);
+            const replayed = window
+              .filter((event) => event.timeUs > resumeFrom)
+              .filter(accepts);
+            const newest = window.at(-1);
+
+            // Everything still queued that is not a replay of what was just
+            // read: the window is monotone, so the comparison is exact.
+            const after = (event: FirehoseEvent) =>
+              event.timeUs > (newest?.timeUs ?? resumeFrom) && accepts(event);
+            const live = Stream.fromQueue(queue).pipe(
+              Stream.filter(after),
+              // The cast is `accepts`, already applied: `Stream.filter` takes a predicate and
+              // cannot carry its refinement through, so the stream is narrowed here instead.
+              Stream.map((event) => event as A),
+            );
+
+            return Stream.concat(Stream.fromIterable(replayed), live).pipe(
+              Stream.onExit(() =>
+                Ref.update(subscribers, (held) =>
+                  held.filter((each) => each !== queue),
+                ),
+              ),
+            );
+          }),
+        );
+
+      const isPublicEvent = (
+        event: FirehoseEvent,
+      ): event is CommitEvent | IdentityEvent => event.kind !== 'space';
+
+      const isSpaceOf =
+        (space: string) =>
+        (event: FirehoseEvent): event is SpaceCommitEvent =>
+          event.kind === 'space' && event.space === space;
+
       return {
         head: Ref.get(head),
         cursorOf,
@@ -300,6 +417,24 @@ export const firehoseLayer = (config?: FirehoseOptions) =>
             return Option.some(event);
           }),
 
+        emitSpace: (write) =>
+          append({
+            timeUs: write.timeUs,
+            make: (stamp) => ({
+              kind: 'space',
+              ...stamp,
+              time: write.time,
+              space: write.space,
+              did: write.did,
+              rev: write.rev,
+              action: write.action,
+              collection: write.collection,
+              rkey: write.rkey,
+              cid: write.cid,
+              ...(write.value === undefined ? {} : { value: write.value }),
+            }),
+          }),
+
         emitIdentity: (write) =>
           append({
             timeUs: write.timeUs,
@@ -312,40 +447,9 @@ export const firehoseLayer = (config?: FirehoseOptions) =>
             }),
           }),
 
-        subscribe: (params) =>
-          Stream.unwrap(
-            Effect.gen(function* () {
-              // The position, then the registration, then the window: the order
-              // that closes the gap. Registering before reading is what makes an
-              // event published during the handover arrive exactly once.
-              const resumeFrom = yield* cursorOf(params.cursor);
-
-              const queue = yield* Queue.unbounded<FirehoseEvent>();
-              yield* Ref.update(subscribers, (held) => [...held, queue]);
-
-              const window = yield* Ref.get(events);
-              const replayed = window.filter(
-                (event) => event.timeUs > resumeFrom,
-              );
-              const newest = window.at(-1);
-
-              // Everything still queued that is not a replay of what was just
-              // read: the window is monotone, so the comparison is exact.
-              const live = Stream.fromQueue(queue).pipe(
-                Stream.filter(
-                  (event) => event.timeUs > (newest?.timeUs ?? resumeFrom),
-                ),
-              );
-
-              return Stream.concat(Stream.fromIterable(replayed), live).pipe(
-                Stream.onExit(() =>
-                  Ref.update(subscribers, (held) =>
-                    held.filter((each) => each !== queue),
-                  ),
-                ),
-              );
-            }),
-          ),
+        subscribe: (params) => tail(isPublicEvent, params.cursor),
+        subscribeSpace: (params) =>
+          tail(isSpaceOf(params.space), params.cursor),
       } satisfies FirehoseShape;
     }),
   );
