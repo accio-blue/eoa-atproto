@@ -292,13 +292,22 @@ const answer = async <A>(
   decode: (text: string) => Option.Option<A>,
   init: RequestInit,
 ) => {
-  const response = await fetch(url, init);
-  const text = await response.text();
-  const decoded = decode(text);
-  if (Option.isNone(decoded)) {
-    throw new Error(`unexpected body from ${url}: ${text}`);
+  // A full run puts this file beside three hundred others on one machine, and an overloaded loopback
+  // request occasionally comes back with an **empty** body — a transport hiccup, not an answer. One
+  // retry for exactly that case (`shyy`); a decoded answer, a 4xx or a non-empty unexpected body is
+  // reported as it is, because those are the things this file is about.
+  for (let attempt = 0; ; attempt += 1) {
+    const response = await fetch(url, init);
+    const text = await response.text();
+    const decoded = decode(text);
+    if (Option.isSome(decoded)) {
+      return { status: response.status, body: decoded.value };
+    }
+    if (attempt > 0 || text !== '') {
+      throw new Error(`unexpected body from ${url}: ${text}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  return { status: response.status, body: decoded.value };
 };
 
 /** A PDS of its own, with its own port and its own empty store. */
