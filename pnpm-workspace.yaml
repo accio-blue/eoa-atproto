@@ -10,6 +10,13 @@ overrides:
   '@effect/platform-node-shared': 4.1.2
   # Force one Effect copy; duplicate copies break Effect's module identity.
   effect: 4.1.2
+  # `@solidjs/vite-plugin` asks for `^2.0.0-rc.13` and pnpm floats that to the
+  # newest rc, whose output calls `setStatefulProperty` — a helper `@solidjs/web`
+  # rc.13 does not export, so `vp dev` served a module graph that threw on load
+  # while `vp build` stayed green. Pin the compiler to the rc.13 line, where the
+  # catalog keeps the runtime, and move it together with web when Solid moves.
+  '@solidjs/vite-plugin>@solidjs/babel-plugin': 2.0.0-rc.13
+  '@solidjs/compiler': 2.0.0-rc.13
 
 peerDependencyRules:
   allowedVersions:
