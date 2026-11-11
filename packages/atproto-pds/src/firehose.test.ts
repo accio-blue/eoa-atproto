@@ -156,6 +156,57 @@ describe('the firehose', () => {
   });
 });
 
+describe('an account on the stream', () => {
+  it('takes a position like the rest, and only the public subscription carries it', async () => {
+    const club = 'at://did:web:pds.example:alice/ing.lexicon.space/club';
+    const report = await withFirehose((firehose) =>
+      Effect.gen(function* () {
+        const account = yield* firehose.emitAccount({
+          time: '2026-11-07T00:00:00.000Z',
+          timeUs: 3_000_000,
+          did: 'did:web:pds.example:alice',
+          active: false,
+          status: 'suspended',
+        });
+        yield* firehose.emitSpace({
+          time: '2026-11-07T00:00:00.000Z',
+          timeUs: 3_000_000,
+          space: club,
+          did: 'did:web:pds.example:alice',
+          rev: '3abc',
+          action: 'create',
+          collection: 'ing.lexicon.note',
+          rkey: 'one',
+          cid: 'bafyreiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          value: { $type: 'ing.lexicon.note', text: 'one' },
+        });
+        const open = yield* firehose
+          .subscribe({ cursor: 0 })
+          .pipe(Stream.take(1), Stream.runCollect);
+        const own = yield* firehose
+          .subscribeSpaces({ spaces: [club], cursor: 0 })
+          .pipe(Stream.take(1), Stream.runCollect);
+        return { account, open: [...open], own: [...own] };
+      }),
+    );
+
+    // The same `append` gives it a place in the one order, and the event says which way the
+    // account moved.
+    expect(report.account.seq).toBe(1);
+    expect(report.account).toMatchObject({
+      kind: 'account',
+      did: 'did:web:pds.example:alice',
+      active: false,
+      status: 'suspended',
+    });
+    // The public stream carries it, and the space's write is not there.
+    expect(report.open.map((event) => event.kind)).toEqual(['account']);
+    // …and a space's own stream never carries the account event, even though it came first:
+    // an account is not that space's business.
+    expect(report.own.map((event) => event.kind)).toEqual(['space']);
+  });
+});
+
 describe('a space on the same stream', () => {
   const spaceWrite = (params: {
     readonly space: string;

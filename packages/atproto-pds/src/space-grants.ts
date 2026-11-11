@@ -12,9 +12,13 @@ import {
   Grant,
   GrantRevoke,
   GrantStore,
+  LENS_NSID,
+  Lens,
+  type LensRef,
   LensRegistry,
   LookupError,
   Membership,
+  type ResolvedLens,
   RevocationLog,
   type RevocationState,
   SpaceWriteLog,
@@ -172,6 +176,12 @@ export class SpaceGrantStores extends Context.Service<
   {
     readonly grants: GrantStore['Service'];
     readonly revocations: RevocationLog['Service'];
+    readonly lenses: {
+      readonly check: (
+        space: ATURI,
+        pinned: LensRef,
+      ) => Effect.Effect<ResolvedLens, LookupError>;
+    };
   }
 >()('@eoa/atproto-pds/SpaceGrantStores') {
   /**
@@ -221,8 +231,62 @@ export class SpaceGrantStores extends Context.Service<
           }));
         });
 
+      /**
+       * A pinned lens, read from the authority's record at `ing.lexicon.lens/<nsid>`.
+       *
+       * One read per check, like the grants, and no cache: a lens is a policy record, and a
+       * decision made against a stale one would be a decision about a different promise.
+       */
+      const lenses = {
+        check: (
+          space: ATURI,
+          pinned: LensRef,
+        ): Effect.Effect<ResolvedLens, LookupError> =>
+          Effect.gen(function* () {
+            const parsed = spaceFromUri(space);
+            if (parsed === undefined) {
+              return { status: 'missing' as const };
+            }
+            const state = yield* log
+              .state({ space, did: parsed.authority })
+              .pipe(
+                Effect.mapError(() =>
+                  failed(`the lenses in ${space} could not be read`),
+                ),
+              );
+            const row = state.get(`${LENS_NSID}/${pinned.nsid}`);
+            if (row === undefined || row.value === undefined) {
+              return { status: 'missing' as const };
+            }
+            const cid = yield* cidOf(row.value);
+            if (cid !== pinned.cid) {
+              return { status: 'incompatible' as const };
+            }
+            const value = yield* valueOf(row.value);
+            if (Option.isNone(value)) {
+              return { status: 'missing' as const };
+            }
+            const lens = Option.getOrUndefined(
+              Schema.decodeUnknownOption(Lens)(value.value),
+            );
+            if (lens === undefined) {
+              return { status: 'missing' as const };
+            }
+            return {
+              status: 'compatible' as const,
+              projection: {
+                fields: lens.fields,
+                ...(lens.condition === undefined
+                  ? {}
+                  : { condition: lens.condition }),
+              },
+            };
+          }),
+      };
+
       return SpaceGrantStores.of({
         grants: GrantStore.of({ grantsFor }),
+        lenses,
         revocations: RevocationLog.of({
           // Granting is a record write, which goes through the space's own log: this store only
           // reads, so opening an epoch is the constant the ledger starts from.
@@ -271,10 +335,18 @@ export const spaceGrantLayers: Layer.Layer<
     Membership,
     Membership.of({ expand: () => Effect.succeed([]) }),
   ),
-  // No lens registry here, so a grant that pins a lens is denied (`lens-missing`) - the fail-closed
-  // side of a feature this host does not serve.
-  Layer.succeed(
+  // A pinned lens is the authority's `ing.lexicon.lens` record, keyed by the nsid of the shape it
+  // applies to: the cid a grant pins must be that record's cid, or the grant fails closed as
+  // `incompatible`. Its fields are the shared projection a reader gets.
+  Layer.effect(
     LensRegistry,
-    LensRegistry.of({ check: () => Effect.succeed('missing' as const) }),
+    SpaceGrantStores.pipe(
+      Effect.map((held) =>
+        LensRegistry.of({
+          check: (space, pinned): Effect.Effect<ResolvedLens, LookupError> =>
+            held.lenses.check(space, pinned),
+        }),
+      ),
+    ),
   ),
 ).pipe(Layer.provide(SpaceGrantStores.layer));

@@ -135,11 +135,11 @@ const repoArchive = async (params: {
   return { bytes, data };
 };
 
-const memberState = (did: string): [string, SpaceMetaValue] => [
+const memberState = (did: string, read = true): [string, SpaceMetaValue] => [
   `com.atproto.memberspace.member/${did}`,
   {
     $type: 'com.atproto.memberspace.member',
-    read: true,
+    read,
     write: false,
   },
 ];
@@ -1271,7 +1271,7 @@ describe('a space repo outlives the server', () => {
   });
 });
 
-describe('the authority mints a space credential (frxd)', () => {
+describe('the authority, or a member, mints a space credential (frxd, myyq)', () => {
   const JKT = 'the-app-dpop-thumbprint';
 
   const withSpace = async (
@@ -1356,10 +1356,16 @@ describe('the authority mints a space credential (frxd)', () => {
         // The claims say who may use it, for what, and until when.
         const claims = JSON.parse(
           Buffer.from(token.split('.')[1] ?? '', 'base64url').toString('utf8'),
-        ) as { space: string; sub: string; cnf: { jkt: string } };
+        ) as {
+          space: string;
+          sub: string;
+          member: string;
+          cnf: { jkt: string };
+        };
         expect(claims).toMatchObject({
           space,
           sub: 'did:web:appview.example',
+          member: account.did,
           cnf: { jkt: JKT },
         });
       },
@@ -1384,15 +1390,169 @@ describe('the authority mints a space credential (frxd)', () => {
     );
   });
 
-  it('lets nobody but the authority mint', async () => {
-    await withSpace(async ({ space, other, post }) => {
-      const refused = await post(
-        '/xrpc/com.atproto.space.getCredential',
-        { space, app: 'did:web:appview.example', jkt: JKT },
-        other.accessJwt,
-      );
-      expect(refused.body['error']).toBe('SpaceNotFound');
-    });
+  /**
+   * A memberspace with `publicRead: false` and a member row for one account (not the authority),
+   * which is the only place `decideRead` has a membership to lend.
+   */
+  const withClosed = async (
+    run: (params: {
+      readonly space: string;
+      readonly authority: Account;
+      readonly member: Account;
+      readonly carol: Account;
+      readonly post: (
+        path: string,
+        body: unknown,
+        jwt: string,
+      ) => Promise<{
+        readonly status: number;
+        readonly body: Record<string, Schema.Json>;
+      }>;
+    }) => Promise<void>,
+    allowedApps?: ReadonlyArray<string>,
+    read = true,
+  ) =>
+    Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const pds = yield* startMemoryPds();
+          const authority = yield* Effect.promise(() =>
+            createAccount(pds.url, 'alice.pds.test'),
+          );
+          const member = yield* Effect.promise(() =>
+            createAccount(pds.url, 'bob.pds.test'),
+          );
+          const carol = yield* Effect.promise(() =>
+            createAccount(pds.url, 'carol.pds.test'),
+          );
+          const space = `at://${authority.did}/${SPACE_TYPE}/club`;
+          const meta = yield* Effect.promise(() =>
+            metaArchive({
+              space,
+              policy: {
+                $type: 'com.atproto.memberspace.policy',
+                publicRead: false,
+                ...(allowedApps === undefined
+                  ? {}
+                  : { allowedApps: [...allowedApps] }),
+              },
+              state: [
+                memberState(authority.did),
+                memberState(member.did, read),
+              ],
+              writers: [],
+            }),
+          );
+          const imported = yield* Effect.promise(() =>
+            postRaw(
+              `${pds.url}/xrpc/com.atproto.space.importSpaceMeta`,
+              meta,
+              authority.accessJwt,
+            ),
+          );
+          expect(imported.status).toBe(200);
+          yield* Effect.promise(() =>
+            run({
+              space,
+              authority,
+              member,
+              carol,
+              post: (path, body, jwt) =>
+                postJson(
+                  `${pds.url}${path}`,
+                  jwt,
+                  body as Record<string, Schema.Json>,
+                ),
+            }),
+          );
+        }),
+      ),
+    );
+
+  const APP = 'did:web:appview.example';
+
+  it('refuses a session with no member row in a closed space', async () => {
+    await withClosed(
+      async ({ space, carol, post }) => {
+        const refused = await post(
+          '/xrpc/com.atproto.space.getCredential',
+          { space, app: APP, jkt: JKT },
+          carol.accessJwt,
+        );
+        expect(refused.status).toBe(403);
+        expect(String(refused.body['message'])).toContain('not-a-member');
+      },
+      [APP],
+    );
+  });
+
+  it('mints for an app when a member with read lends its read', async () => {
+    await withClosed(
+      async ({ space, member, post }) => {
+        const minted = await post(
+          '/xrpc/com.atproto.space.getCredential',
+          { space, app: APP, jkt: JKT },
+          member.accessJwt,
+        );
+        expect(minted.status).toBe(200);
+        const token = String(minted.body['token'] ?? '');
+        // The token names the app as `sub`, and the member that lent its read as `member`.
+        const claims = JSON.parse(
+          Buffer.from(token.split('.')[1] ?? '', 'base64url').toString('utf8'),
+        ) as { sub: string; member: string; cnf: { jkt: string } };
+        expect(claims.sub).toBe(APP);
+        expect(claims.member).toBe(member.did);
+        expect(claims.cnf.jkt).toBe(JKT);
+      },
+      [APP],
+    );
+  });
+
+  it('refuses a member with no read', async () => {
+    await withClosed(
+      async ({ space, member, post }) => {
+        const refused = await post(
+          '/xrpc/com.atproto.space.getCredential',
+          { space, app: APP, jkt: JKT },
+          member.accessJwt,
+        );
+        expect(refused.status).toBe(403);
+        expect(String(refused.body['message'])).toContain('member-has-no-read');
+      },
+      [APP],
+      false,
+    );
+  });
+
+  it('refuses an app the policy does not name, even for a member', async () => {
+    await withClosed(
+      async ({ space, member, post }) => {
+        const refused = await post(
+          '/xrpc/com.atproto.space.getCredential',
+          { space, app: APP, jkt: JKT },
+          member.accessJwt,
+        );
+        expect(refused.status).toBe(403);
+        expect(String(refused.body['message'])).toContain(
+          'not an app this space allows',
+        );
+      },
+      ['did:web:other.example'],
+    );
+  });
+
+  it('still lets the authority mint in a closed space', async () => {
+    await withClosed(
+      async ({ space, authority, post }) => {
+        const minted = await post(
+          '/xrpc/com.atproto.space.getCredential',
+          { space, app: APP, jkt: JKT },
+          authority.accessJwt,
+        );
+        expect(minted.status).toBe(200);
+      },
+      [APP],
+    );
   });
 });
 
@@ -1556,13 +1716,29 @@ describe('an approved app reads a space with its credential (frxd)', () => {
         readonly status: number;
         readonly body: Record<string, unknown>;
       }>;
+      /** The same, with a session's token: the authority, or a member lending its read. */
+      readonly mintWith: (
+        space: string,
+        jkt: string,
+        jwt: string,
+      ) => Promise<{
+        readonly status: number;
+        readonly body: Record<string, unknown>;
+      }>;
       readonly space: string;
       readonly repo: string;
       /** A read proof for one space, signed by the app's key. */
       readonly readProofFor: (space: string) => Promise<string>;
       readonly jkt: string;
       readonly proof: string;
+      /** The second account: a member, never the authority. */
+      readonly member: Account;
+      /** The space's authority. */
+      readonly authority: Account;
+      /** Remove the member from the space, as the authority. */
+      readonly removeMember: (did: string) => Promise<void>;
     }) => Promise<void>,
+    options?: { readonly publicRead?: boolean },
   ) => {
     const keys = await Effect.runPromise(generateES256KeyPair());
     const jkt = await Effect.runPromise(jktOfKey(keys.publicKey));
@@ -1589,6 +1765,9 @@ describe('an approved app reads a space with its credential (frxd)', () => {
           const alice = yield* Effect.promise(() =>
             createAccount(pds.url, 'alice.pds.test'),
           );
+          const member = yield* Effect.promise(() =>
+            createAccount(pds.url, 'bob.pds.test'),
+          );
           const created = yield* Effect.promise(() =>
             postJson(
               `${pds.url}/xrpc/com.atproto.space.createSpace`,
@@ -1600,13 +1779,21 @@ describe('an approved app reads a space with its credential (frxd)', () => {
                   $type: 'com.atproto.memberspace.policy',
                   // The AppView's case: a space anyone may read, which still needs *something*
                   // that proves it — a session before, a credential for an app now.
-                  publicRead: true,
+                  publicRead: options?.publicRead ?? true,
                   allowedApps: [APP],
                 },
               },
             ),
           );
           const space = String(created.body['uri']);
+          const added = yield* Effect.promise(() =>
+            postJson(
+              `${pds.url}/xrpc/com.atproto.memberspace.putMember`,
+              alice.accessJwt,
+              { space, did: member.did, read: true, write: false },
+            ),
+          );
+          expect(added.status).toBe(200);
           const written = yield* Effect.promise(() =>
             postJson(
               `${pds.url}/xrpc/com.atproto.space.createRecord`,
@@ -1661,10 +1848,29 @@ describe('an approved app reads a space with its credential (frxd)', () => {
                 ),
               jkt,
               proof,
+              member,
+              authority: alice,
+              removeMember: async (did) => {
+                const removed = await call(
+                  '/xrpc/com.atproto.memberspace.removeMember',
+                  {
+                    method: 'POST',
+                    headers: { authorization: `Bearer ${alice.accessJwt}` },
+                    body: JSON.stringify({ space, did }),
+                  },
+                );
+                expect(removed.status).toBe(200);
+              },
               mint: (space, jkt, proof) =>
                 call('/xrpc/com.atproto.space.getCredential', {
                   method: 'POST',
                   headers: { authorization: `Bearer ${proof}` },
+                  body: JSON.stringify({ space, app: APP, jkt }),
+                }),
+              mintWith: (space, jkt, jwt) =>
+                call('/xrpc/com.atproto.space.getCredential', {
+                  method: 'POST',
+                  headers: { authorization: `Bearer ${jwt}` },
                   body: JSON.stringify({ space, app: APP, jkt }),
                 }),
               read: (space, repo, headers) =>
@@ -1741,6 +1947,80 @@ describe('an approved app reads a space with its credential (frxd)', () => {
           dpop: await readProofFor(space),
         });
         expect(answer.status).toBe(401);
+      },
+    );
+  });
+
+  it('stops opening the space when the member that lent it is removed', async () => {
+    await withSpace(
+      async ({
+        space,
+        repo,
+        jkt,
+        member,
+        mintWith,
+        read,
+        readProofFor,
+        removeMember,
+      }) => {
+        const minted = await mintWith(space, jkt, member.accessJwt);
+        expect(minted.status).toBe(200);
+        const credential = String(minted.body['token'] ?? '');
+        const headers = async () => ({
+          authorization: `Bearer ${credential}`,
+          dpop: await readProofFor(space),
+        });
+        // The read the membership bought, while it stands.
+        expect((await read(space, repo, await headers())).status).toBe(200);
+        await removeMember(member.did);
+        // The same token, well before `exp`, no longer opens anything.
+        const refused = await read(space, repo, await headers());
+        expect(refused.status).toBe(401);
+        expect(String(refused.body['message'])).toContain('not-a-member');
+      },
+      { publicRead: false },
+    );
+  });
+
+  it("still reads with the authority's own credential in a closed space", async () => {
+    await withSpace(
+      async ({ space, repo, jkt, authority, mintWith, read, readProofFor }) => {
+        const minted = await mintWith(space, jkt, authority.accessJwt);
+        expect(minted.status).toBe(200);
+        const answer = await read(space, repo, {
+          authorization: `Bearer ${String(minted.body['token'] ?? '')}`,
+          dpop: await readProofFor(space),
+        });
+        expect(answer.status).toBe(200);
+      },
+      { publicRead: false },
+    );
+  });
+
+  it('keeps a publicRead credential reading after a member is removed', async () => {
+    await withSpace(
+      async ({
+        space,
+        repo,
+        jkt,
+        proof,
+        member,
+        mint,
+        read,
+        readProofFor,
+        removeMember,
+      }) => {
+        // The app asks on its own here, so the token's `member` is the app: `publicRead` is what
+        // the re-check answers with, and a membership it never had cannot take that away.
+        const minted = await mint(space, jkt, proof);
+        expect(minted.status).toBe(200);
+        const credential = String(minted.body['token'] ?? '');
+        await removeMember(member.did);
+        const answer = await read(space, repo, {
+          authorization: `Bearer ${credential}`,
+          dpop: await readProofFor(space),
+        });
+        expect(answer.status).toBe(200);
       },
     );
   });
@@ -2091,6 +2371,379 @@ describe('grants over a space', () => {
           (one) => one.rkey,
         ),
       ).toEqual(['one', 'two']);
+    });
+  });
+
+  it('returns only the fields a grant promises, and no others', async () => {
+    await withGrantedSpace(async ({ space, authority, reader, write, get }) => {
+      const written = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: 'com.example.note',
+          rkey: 'one',
+          value: {
+            $type: 'com.example.note',
+            text: 'what the coach must not see',
+            startedAt: '2026-11-07T00:00:00.000Z',
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(written.status).toBe(200);
+
+      const granted = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: GRANT,
+          rkey: 'fields-to-bob',
+          value: grantFor({
+            space,
+            subject: reader.did,
+            issuedBy: authority.did,
+            selector: {
+              collection: 'com.example.note',
+              fields: ['/startedAt'],
+            },
+          }),
+        }),
+        authority.accessJwt,
+      );
+      expect(granted.status).toBe(200);
+
+      const listed = await get(
+        `com.atproto.space.listRecords?space=${encodeURIComponent(space)}&repo=${authority.did}&collection=com.example.note`,
+        reader.accessJwt,
+      );
+      expect(listed.status).toBe(200);
+      const records = listed.body['records'] as ReadonlyArray<{
+        rkey: string;
+        value: Record<string, Schema.Json>;
+      }>;
+      expect(records.map((one) => one.rkey)).toEqual(['one']);
+      // The promised field, the type every reader needs to interpret it, and nothing else.
+      expect(records[0]?.value).toEqual({
+        $type: 'com.example.note',
+        startedAt: '2026-11-07T00:00:00.000Z',
+      });
+
+      const one = await get(
+        `com.atproto.space.getRecord?space=${encodeURIComponent(space)}&repo=${authority.did}&collection=com.example.note&rkey=one`,
+        reader.accessJwt,
+      );
+      expect(one.status).toBe(200);
+      expect(one.body['value']).toEqual({
+        $type: 'com.example.note',
+        startedAt: '2026-11-07T00:00:00.000Z',
+      });
+    });
+  });
+
+  it('hides a record that no longer satisfies the grant condition', async () => {
+    await withGrantedSpace(async ({ space, authority, reader, write, get }) => {
+      const fresh = new Date().toISOString();
+      const stale = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+      for (const [rkey, createdAt] of [
+        ['fresh', fresh],
+        ['stale', stale],
+      ] as const) {
+        const written = await write(
+          record({
+            space,
+            repo: authority.did,
+            collection: 'com.example.note',
+            rkey,
+            value: { $type: 'com.example.note', text: rkey, createdAt },
+          }),
+          authority.accessJwt,
+        );
+        expect(written.status).toBe(200);
+      }
+
+      const granted = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: GRANT,
+          rkey: 'recent-only',
+          value: grantFor({
+            space,
+            subject: reader.did,
+            issuedBy: authority.did,
+            selector: {
+              collection: 'com.example.note',
+              condition: { field: '/createdAt', maxAgeSeconds: 3600 },
+            },
+          }),
+        }),
+        authority.accessJwt,
+      );
+      expect(granted.status).toBe(200);
+
+      const listed = await get(
+        `com.atproto.space.listRecords?space=${encodeURIComponent(space)}&repo=${authority.did}&collection=com.example.note`,
+        reader.accessJwt,
+      );
+      expect(listed.status).toBe(200);
+      // The stale record is not named at all — an rkey would say "something is here".
+      expect(
+        (listed.body['records'] as ReadonlyArray<{ rkey: string }>).map(
+          (one) => one.rkey,
+        ),
+      ).toEqual(['fresh']);
+
+      const one = await get(
+        `com.atproto.space.getRecord?space=${encodeURIComponent(space)}&repo=${authority.did}&collection=com.example.note&rkey=stale`,
+        reader.accessJwt,
+      );
+      // `notFound` answers 400 with atproto's own name for it, the way every other missing record
+      // in this host does; the point is that it is absent, not that it is forbidden.
+      expect(one.body['error']).toBe('RecordNotFound');
+    });
+  });
+
+  it('projects a read through the lens the authority publishes', async () => {
+    await withGrantedSpace(async ({ space, authority, reader, write, get }) => {
+      const written = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: 'com.example.note',
+          rkey: 'one',
+          value: {
+            $type: 'com.example.note',
+            text: 'what the coach must not see',
+            startedAt: '2026-11-07T00:00:00.000Z',
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(written.status).toBe(200);
+
+      // The lens is a record in the authority's repo, keyed by the nsid of the shape it projects.
+      const lens = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: 'ing.lexicon.lens',
+          rkey: 'com.example.note',
+          value: {
+            $type: 'ing.lexicon.lens',
+            fields: ['/startedAt'],
+            issuedBy: authority.did,
+            createdAt: new Date().toISOString(),
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(lens.status).toBe(200);
+      const lensCid = String(lens.body['cid']);
+      expect(lensCid).not.toBe('');
+
+      // The grant names no fields of its own: the shape is the lens's, and the cid pins it.
+      const granted = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: GRANT,
+          rkey: 'lens-to-bob',
+          value: {
+            ...grantFor({
+              space,
+              subject: reader.did,
+              issuedBy: authority.did,
+              selector: { collection: 'com.example.note' },
+            }),
+            lens: { nsid: 'com.example.note', cid: lensCid },
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(granted.status).toBe(200);
+
+      const listed = await get(
+        `com.atproto.space.listRecords?space=${encodeURIComponent(space)}&repo=${authority.did}&collection=com.example.note`,
+        reader.accessJwt,
+      );
+      expect(listed.status).toBe(200);
+      const records = listed.body['records'] as ReadonlyArray<{
+        rkey: string;
+        value: Record<string, Schema.Json>;
+      }>;
+      expect(records.map((one) => one.rkey)).toEqual(['one']);
+      expect(records[0]?.value).toEqual({
+        $type: 'com.example.note',
+        startedAt: '2026-11-07T00:00:00.000Z',
+      });
+    });
+  });
+
+  it('refuses a grant that pins a lens version that is not current', async () => {
+    await withGrantedSpace(async ({ space, authority, reader, write, get }) => {
+      const written = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: 'com.example.note',
+          rkey: 'one',
+          value: { $type: 'com.example.note', text: 'hello' },
+        }),
+        authority.accessJwt,
+      );
+      expect(written.status).toBe(200);
+
+      const lens = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: 'ing.lexicon.lens',
+          rkey: 'com.example.note',
+          value: {
+            $type: 'ing.lexicon.lens',
+            fields: ['/text'],
+            issuedBy: authority.did,
+            createdAt: new Date().toISOString(),
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(lens.status).toBe(200);
+
+      const granted = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: GRANT,
+          rkey: 'stale-lens',
+          value: {
+            ...grantFor({
+              space,
+              subject: reader.did,
+              issuedBy: authority.did,
+              selector: { collection: 'com.example.note' },
+            }),
+            lens: { nsid: 'com.example.note', cid: A_CID },
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(granted.status).toBe(200);
+
+      const listed = await get(
+        `com.atproto.space.listRecords?space=${encodeURIComponent(space)}&repo=${authority.did}&collection=com.example.note`,
+        reader.accessJwt,
+      );
+      expect(listed.status).toBe(403);
+      expect(String(listed.body['message'])).toContain('lens-incompatible');
+    });
+  });
+
+  it('never lets a public view carry the full calendar event', async () => {
+    // Kimbia's discipline, on a shape where it matters: a recorded run leaks the
+    // address in its start and finish, an event leaks its attendees, and a
+    // `VEVENT` keeps both byte for byte in `raw`. The view is the lens, so the
+    // fields that never reach a reader are named once, by the authority.
+    const event = {
+      $type: 'ing.lexicon.calendar.event',
+      raw: [
+        'BEGIN:VCALENDAR',
+        'BEGIN:VEVENT',
+        'UID:planning@example.com',
+        'DTSTART:20261107T100000Z',
+        'SUMMARY:Planning',
+        'ATTENDEE:mailto:bob@example.com',
+        'LOCATION:56.9496,24.1052',
+        'END:VEVENT',
+        'END:VCALENDAR',
+      ].join('\r\n'),
+      href: '/calendars/alice/planning.ics',
+      uid: 'planning@example.com',
+      start: '2026-11-07T10:00:00.000Z',
+      end: '2026-11-07T11:00:00.000Z',
+      summary: 'Planning',
+      organizer: 'mailto:alice@example.com',
+      attendees: ['mailto:bob@example.com'],
+      recurrenceId: null,
+      recurrenceRule: null,
+      excluded: [],
+      sequence: 0,
+      updatedAt: '2026-11-06T00:00:00.000Z',
+    };
+
+    await withGrantedSpace(async ({ space, authority, reader, write, get }) => {
+      const written = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: 'ing.lexicon.calendar.event',
+          rkey: 'planning',
+          value: event,
+        }),
+        authority.accessJwt,
+      );
+      expect(written.status).toBe(200);
+
+      const lens = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: 'ing.lexicon.lens',
+          rkey: 'ing.lexicon.calendar.event',
+          value: {
+            $type: 'ing.lexicon.lens',
+            fields: ['/uid', '/summary', '/start', '/end'],
+            description: 'what a public calendar shows',
+            issuedBy: authority.did,
+            createdAt: new Date().toISOString(),
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(lens.status).toBe(200);
+
+      const granted = await write(
+        record({
+          space,
+          repo: authority.did,
+          collection: GRANT,
+          rkey: 'public-calendar',
+          value: {
+            ...grantFor({
+              space,
+              subject: reader.did,
+              issuedBy: authority.did,
+              selector: { collection: 'ing.lexicon.calendar.event' },
+            }),
+            lens: {
+              nsid: 'ing.lexicon.calendar.event',
+              cid: String(lens.body['cid']),
+            },
+          },
+        }),
+        authority.accessJwt,
+      );
+      expect(granted.status).toBe(200);
+
+      const listed = await get(
+        `com.atproto.space.listRecords?space=${encodeURIComponent(space)}&repo=${authority.did}&collection=ing.lexicon.calendar.event`,
+        reader.accessJwt,
+      );
+      expect(listed.status).toBe(200);
+      const records = listed.body['records'] as ReadonlyArray<{
+        value: Record<string, Schema.Json>;
+      }>;
+      // Exactly the four fields: no `raw` (the whole VEVENT), no `attendees`,
+      // no `organizer`, and no `href` (the resource path is the person's).
+      expect(records.map((one) => one.value)).toEqual([
+        {
+          $type: 'ing.lexicon.calendar.event',
+          uid: 'planning@example.com',
+          summary: 'Planning',
+          start: '2026-11-07T10:00:00.000Z',
+          end: '2026-11-07T11:00:00.000Z',
+        },
+      ]);
     });
   });
 

@@ -59,13 +59,9 @@ export class UpstreamFailureError extends Data.TaggedError(
   readonly message: string;
 }> {}
 
-// Network and timeout errors
+// Network errors
 export class NetworkError extends Data.TaggedError('NetworkError')<{
   readonly cause: Error;
-}> {}
-
-export class TimeoutError extends Data.TaggedError('TimeoutError')<{
-  readonly timeoutMs: number;
 }> {}
 
 // Utility function to create errors from unknown causes

@@ -1,7 +1,7 @@
 import { AccountStore, accountStoreLayer } from './account-store.js';
 import { BlobStore, blobStoreLayer } from './blob-store.js';
 import { DpopReplay, dpopReplayLayer } from './dpop-replay.js';
-import { Effect, Layer, Option, Schema } from 'effect';
+import { Effect, Layer, Option, Schema, Stream } from 'effect';
 import { Firehose, firehoseLayer } from './firehose.js';
 import { RepoStore, repoStoreLayer } from '@eoa/repo-store';
 import { SpaceStore, spaceStoreLayer } from './space-store.js';
@@ -158,6 +158,19 @@ const appPasswordListOf = Schema.decodeUnknownOption(
 const inviteOf = Schema.decodeUnknownOption(
   Schema.fromJsonString(InviteSchema),
 );
+const inviteListOf = Schema.decodeUnknownOption(
+  Schema.fromJsonString(
+    Schema.Struct({
+      codes: Schema.Array(
+        Schema.Struct({
+          code: Schema.String,
+          available: Schema.Number,
+          expiresAt: Schema.optional(Schema.String),
+        }),
+      ),
+    }),
+  ),
+);
 const errorOf = Schema.decodeUnknownOption(Schema.fromJsonString(ErrorSchema));
 /** The same refusal with its reason: some guards are told apart only by the message. */
 const errorMessageOf = Schema.decodeUnknownOption(
@@ -277,7 +290,9 @@ const within = (promise: Promise<unknown>, what: string) =>
 // oxlint-disable-next-line diff-check/no-explicit-function-return-type
 async function waitFor(url: string, left: number) {
   try {
-    await fetch(url);
+    // Read the body: a response nobody drains holds its socket, and a harness
+    // that holds sockets under load is where a flake of its own starts.
+    await (await fetch(url)).arrayBuffer();
   } catch (cause) {
     if (left <= 0) {
       throw cause;
@@ -292,16 +307,60 @@ const answer = async <A>(
   decode: (text: string) => Option.Option<A>,
   init: RequestInit,
 ) => {
-  const response = await fetch(url, init);
-  const text = await response.text();
-  const decoded = decode(text);
-  if (Option.isNone(decoded)) {
-    throw new Error(`unexpected body from ${url}: ${text}`);
+  // A full run puts this file beside three hundred others on one machine, and an overloaded loopback
+  // request occasionally came back with an **empty** body (`shyy`). The transport no longer has a
+  // path to that for a JSON answer — a buffered body carries its length and is written in one
+  // `end()` — so one retry stays only as the witness: if it ever fires again, the body came from a
+  // `Response` the transport did not build, and the error below says what its framing was.
+  for (let attempt = 0; ; attempt += 1) {
+    const response = await fetch(url, init);
+    const text = await response.text();
+    const decoded = decode(text);
+    if (Option.isSome(decoded)) {
+      return { status: response.status, body: decoded.value };
+    }
+    if (attempt > 0 || text !== '') {
+      const framing = [
+        response.status,
+        response.headers.get('content-type') ?? 'no type',
+        response.headers.get('content-length') ??
+          response.headers.get('transfer-encoding') ??
+          'no length',
+      ].join(' · ');
+      throw new Error(`unexpected body from ${url} (${framing}): ${text}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  return { status: response.status, body: decoded.value };
 };
 
 /** A PDS of its own, with its own port and its own empty store. */
+/**
+ * A port the OS says is free right now.
+ *
+ * Two formulas in the same 40000–60000 range is one collision per overlapping
+ * run, and the loser's `runFork` dies without a word: the listener never exists
+ * and every request answers ECONNREFUSED. Asking the kernel is not a guarantee
+ * either — the port is released before the PDS takes it — so `startPds` retries
+ * the start as well.
+ */
+const freePort = async () => {
+  const probe = createServer();
+  await new Promise<void>((resolve) => {
+    probe.listen(0, '127.0.0.1', () => {
+      resolve();
+    });
+  });
+  const address = probe.address();
+  const port =
+    typeof address === 'object' && address !== null ? address.port : 0;
+  await new Promise<void>((resolve) => {
+    probe.close(() => {
+      resolve();
+    });
+  });
+  return port;
+};
+
 const startPds = async (
   options: {
     recoveryDidKey?: string;
@@ -310,8 +369,8 @@ const startPds = async (
     failingHandleDns?: boolean;
   } = {},
 ) => {
-  const port = 40000 + Math.floor(Math.random() * 20000);
-  const base = `http://127.0.0.1:${port}`;
+  let port = 0;
+  let base = '';
   const stack = Layer.mergeAll(
     repoStoreLayer,
     accountStoreLayer,
@@ -479,14 +538,27 @@ const startPds = async (
       },
     },
   };
-  Effect.runFork(
-    Effect.scoped(
-      server
-        .start({ port, hostname: '127.0.0.1' })
-        .pipe(Effect.andThen(Effect.never)),
-    ),
-  );
-  await waitFor(`${base}/xrpc/com.atproto.server.describeServer`, 40);
+  // Start until one listener answers: a bind that lost a race dies silently in
+  // the fork, and a silent loser is a whole file of ECONNREFUSED.
+  for (let attempt = 0; ; attempt += 1) {
+    port = await freePort();
+    base = `http://127.0.0.1:${port}`;
+    Effect.runFork(
+      Effect.scoped(
+        server
+          .start({ port, hostname: '127.0.0.1' })
+          .pipe(Effect.andThen(Effect.never)),
+      ),
+    );
+    try {
+      await waitFor(`${base}/xrpc/com.atproto.server.describeServer`, 40);
+      break;
+    } catch (error) {
+      if (attempt >= 4) {
+        throw error;
+      }
+    }
+  }
 
   const query = <A>(
     path: string,
@@ -576,6 +648,8 @@ const startPds = async (
     raw,
     oauthCall,
     createAccount,
+    // The stream a test watches, built in this PDS and not a second one.
+    firehose: services.firehose,
     admins,
     mails,
     issuer,
@@ -938,6 +1012,41 @@ describe('the account surface', () => {
     expect(short.status).toBe(400);
   });
 
+  it('mints a ticket that ends, reports when, and refuses an end that is already past', async () => {
+    const pds = await startPds();
+    const created = await pds.createAccount(HANDLE);
+    const token = created.body.accessJwt;
+
+    const past = new Date(Date.now() - 60_000).toISOString();
+    const refused = await pds.call(
+      'com.atproto.server.createInviteCode',
+      { useCount: 1, expiresAt: past },
+      errorOf,
+      token,
+    );
+    expect(refused.status).toBe(400);
+
+    const until = new Date(Date.now() + 3_600_000).toISOString();
+    const minted = await pds.call(
+      'com.atproto.server.createInviteCode',
+      { useCount: 1, expiresAt: until },
+      inviteOf,
+      token,
+    );
+    expect(minted.status).toBe(200);
+
+    const listed = await pds.call(
+      'com.atproto.server.getAccountInviteCodes',
+      {},
+      inviteListOf,
+      token,
+    );
+    expect(listed.status).toBe(200);
+    expect(
+      listed.body.codes.find((one) => one.code === minted.body.code)?.expiresAt,
+    ).toBe(until);
+  });
+
   it('follows the spec: suspend stops the tokens, reinstate brings them back, delete releases the handle', async () => {
     const pds = await startPds();
     const created = await pds.createAccount(HANDLE);
@@ -1034,6 +1143,79 @@ describe('the account surface', () => {
     expect(reclaimed.status).toBe(200);
     expect(reclaimed.body.handle).toBe(HANDLE);
     expect(reclaimed.body.did).not.toBe(alice);
+  });
+
+  it('says each status move once on the public stream, and a non-move not at all', async () => {
+    const pds = await startPds();
+    const created = await pds.createAccount(HANDLE);
+    const token = created.body.accessJwt;
+    const alice = created.body.did;
+    const empty = Schema.decodeUnknownOption(
+      Schema.fromJsonString(Schema.Struct({})),
+    );
+
+    // Only account events: a create writes a repo, and a commit is not what this test is about.
+    const accountEvents = (count: number) =>
+      Effect.runPromise(
+        pds.firehose.subscribe({ cursor: 0 }).pipe(
+          Stream.filter((event) => event.kind === 'account'),
+          Stream.take(count),
+          Stream.runCollect,
+        ),
+      );
+
+    const off = await pds.call(
+      'com.atproto.server.deactivateAccount',
+      {},
+      empty,
+      token,
+    );
+    expect(off.status).toBe(200);
+    const dark = [...(await accountEvents(1))];
+    expect(dark).toHaveLength(1);
+    expect(dark[0]).toMatchObject({
+      kind: 'account',
+      did: alice,
+      active: false,
+      status: 'suspended',
+    });
+    const afterDeactivate = await Effect.runPromise(pds.firehose.head);
+
+    // A second deactivation cannot even authenticate — the suspended account's token is dead —
+    // so the retry adds no event, and takes no position.
+    const again = await pds.call(
+      'com.atproto.server.deactivateAccount',
+      {},
+      errorOf,
+      token,
+    );
+    expect(again.status).toBe(401);
+    expect(await Effect.runPromise(pds.firehose.head)).toEqual(afterDeactivate);
+
+    // Reinstate is the other move, and it says so.
+    const back = await pds.call(
+      'com.atproto.server.activateAccount',
+      { identifier: HANDLE, password: PASSWORD },
+      empty,
+    );
+    expect(back.status).toBe(200);
+    const seen = [...(await accountEvents(2))];
+    expect(seen).toHaveLength(2);
+    expect(seen[1]).toMatchObject({
+      did: alice,
+      active: true,
+      status: 'active',
+    });
+
+    // Activating an already-active account is the spec's no-op: no write, no event, no position.
+    const before = await Effect.runPromise(pds.firehose.head);
+    const twice = await pds.call(
+      'com.atproto.server.activateAccount',
+      { identifier: HANDLE, password: PASSWORD },
+      empty,
+    );
+    expect(twice.status).toBe(200);
+    expect(await Effect.runPromise(pds.firehose.head)).toEqual(before);
   });
 
   it('takes a blob, gives it back, and lets a record hold its reference', async () => {

@@ -26,9 +26,56 @@ export const StrongRef = Schema.Struct({ uri: ATURI, cid: CidString });
 export const Action = Schema.Literals(['view', 'write']);
 export type Action = typeof Action.Type;
 
-/** Scope is flat: a whole collection, or one exact record. */
-export const CollectionSelector = Schema.Struct({ collection: NSID });
-export const RecordSelector = Schema.Struct({ record: StrongRef });
+/**
+ * One field of a record, as a JSON Pointer (RFC 6901): `/startedAt`, `/data/name`.
+ *
+ * A selector that names fields promises a **projection**: a reader gets those fields and no others.
+ * That is narrower than a lens, which says what shape a whole record is returned in; a grant may
+ * carry both, and then both bind.
+ */
+export type FieldPath = typeof FieldPath.Type;
+export const FieldPath = Schema.String.check(
+  Schema.isNonEmpty(),
+  Schema.isPattern(/^\//u),
+);
+
+/**
+ * A condition over the record itself: the datetime at `field` must be no older than
+ * `maxAgeSeconds` at evaluation time.
+ *
+ * It is a closed comparison, not an expression language. blinkers allows CEL here, which is
+ * right for a service that already parses the record; ours is evaluated where the record is in
+ * hand (the read path), so a shape the evaluator can check without an interpreter covers what a
+ * grant actually says: "this key is good for the last two hours".
+ *
+ * Failure is absence, not an error: a record that does not satisfy the condition is not covered by
+ * the grant, so a reader does not see it — and a *missing* or unparseable `field` fails the
+ * condition rather than passing it.
+ */
+export type Condition = typeof Condition.Type;
+export const Condition = Schema.Struct({
+  field: FieldPath,
+  maxAgeSeconds: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+});
+
+/**
+ * Scope is flat: a whole collection, or one exact record — and, optionally, which fields of it and
+ * under what condition.
+ *
+ * `fields` is additive: a selector without it promises the whole record, exactly as before, and a
+ * request that names no fields never matches a selector that names some (fail-closed: a projection
+ * cannot be silently widened to a record).
+ */
+export const CollectionSelector = Schema.Struct({
+  collection: NSID,
+  fields: Schema.optionalKey(Schema.NonEmptyArray(FieldPath)),
+  condition: Schema.optionalKey(Condition),
+});
+export const RecordSelector = Schema.Struct({
+  record: StrongRef,
+  fields: Schema.optionalKey(Schema.NonEmptyArray(FieldPath)),
+  condition: Schema.optionalKey(Condition),
+});
 export const Selector = Schema.Union([CollectionSelector, RecordSelector]);
 export type Selector = typeof Selector.Type;
 

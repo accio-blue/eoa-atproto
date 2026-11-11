@@ -158,15 +158,35 @@ export interface XrpcServer {
 }
 
 // Response utilities
+/**
+ * A JSON answer, with its length written down.
+ *
+ * The length is known here, and saying it is what lets the transport write the
+ * answer in one `end()` instead of streaming a string through a reader. It also
+ * closes a silent hole: `JSON.stringify(undefined)` is `undefined`, and a
+ * `Response` built from that has **no body** — an empty 200 a client cannot
+ * tell from a bug. `null` is a JSON value, so a handler that answered nothing
+ * answers `null` and the caller's decoder says so.
+ */
+const jsonAnswer = (body: Schema.Json) => {
+  const text = JSON.stringify(body) ?? 'null';
+  return {
+    text,
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': String(new TextEncoder().encode(text).length),
+    },
+  };
+};
+
 export const createJsonResponse = (
   body: Schema.Json,
   status = 200,
 ): Response => {
-  return new Response(JSON.stringify(body), {
+  const answer = jsonAnswer(body);
+  return new Response(answer.text, {
     status,
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: answer.headers,
   });
 };
 
@@ -183,26 +203,18 @@ export class XrpcError extends Schema.TaggedError<XrpcError>()('XrpcError', {
 
 export const createErrorResponse = (error: Error, status = 500): Response => {
   if (error instanceof XrpcError) {
-    return new Response(
-      JSON.stringify({ error: error.error, message: error.message }),
-      {
-        status: error.status,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      },
-    );
+    const answer = jsonAnswer({ error: error.error, message: error.message });
+    return new Response(answer.text, {
+      status: error.status,
+      headers: answer.headers,
+    });
   }
-  return new Response(
-    JSON.stringify({
-      error: error.message,
-      code: error.name,
-    }),
-    {
-      status,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    },
-  );
+  const answer = jsonAnswer({
+    error: error.message,
+    code: error.name,
+  });
+  return new Response(answer.text, {
+    status,
+    headers: answer.headers,
+  });
 };

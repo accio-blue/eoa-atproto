@@ -13,6 +13,7 @@ import {
 import {
   BadRecordSwapError,
   CidString,
+  type Condition,
   MANAGED_POLICY_TYPE,
   MEMBER_POLICY_TYPE,
   MEMBER_RECORD_COLLECTION,
@@ -53,10 +54,12 @@ import {
   parseSpaceMetaStar,
   policyRecordOf,
   policyStateSurvives,
+  projectRecord,
   spaceFromUri,
   verifyAppProof,
   verifyRepoStar,
   verifySpaceCredential,
+  withinWindow,
 } from '@eoa/space-host';
 import {
   Effect,
@@ -520,6 +523,16 @@ export const registerSpaceMethods = (
   /** A member's state key: the one shape `decideWrite` looks up. */
   const memberKey = (did: string) => `${MEMBER_STATE_PREFIX}${did}`;
 
+  /** The access this archive grants `did`, or `undefined` when it has no row. */
+  const memberOf = (archive: SpaceMetaArchive, did: string) => {
+    const entry = archive.policyState.find((one) => one.key === memberKey(did));
+    return entry === undefined
+      ? undefined
+      : Option.getOrUndefined(
+          Schema.decodeUnknownOption(MemberAccess)(entry.value),
+        );
+  };
+
   /** A DID out of a request, refused rather than decoded blindly. */
   const memberDidOf = (value: string) =>
     Effect.gen(function* () {
@@ -566,15 +579,7 @@ export const registerSpaceMethods = (
           serverError('the stored space policy does not parse'),
         ),
       );
-      const entry = archive.policyState.find(
-        (one) => one.key === memberKey(params.did),
-      );
-      const member =
-        entry === undefined
-          ? undefined
-          : Option.getOrUndefined(
-              Schema.decodeUnknownOption(MemberAccess)(entry.value),
-            );
+      const member = memberOf(archive, params.did);
       return Match.value(
         decideSessionRead({
           policy,
@@ -614,8 +619,8 @@ export const registerSpaceMethods = (
   }) =>
     Effect.gen(function* () {
       const reader = params.reader;
-      if (reader.kind === 'app') return;
-      if (reader.did === params.repo) return;
+      if (reader.kind === 'app') return undefined;
+      if (reader.did === params.repo) return undefined;
       const space = spaceOf(params.space);
       if (space === undefined) {
         return yield* Effect.fail(
@@ -629,7 +634,7 @@ export const registerSpaceMethods = (
         authority: space.authority,
         did: reader.did,
       });
-      if (policy.kind === 'allow') return;
+      if (policy.kind === 'allow') return undefined;
       const record =
         params.collection === undefined || params.rkey === undefined
           ? undefined
@@ -645,8 +650,23 @@ export const registerSpaceMethods = (
           ? {}
           : { record: Schema.decodeSync(ATURI)(record) }),
       }).pipe(Effect.provide(grantLayers));
-      yield* Match.value(decision).pipe(
-        Match.tag('Allow', () => Effect.void),
+      return yield* Match.value(decision).pipe(
+        // What the winning selector promised: the fields to return and the condition the record
+        // must satisfy. `undefined` means the whole record, unconditionally.
+        Match.tag('Allow', (allowed) =>
+          Effect.succeed(
+            allowed.fields === undefined && allowed.condition === undefined
+              ? undefined
+              : {
+                  ...(allowed.fields === undefined
+                    ? {}
+                    : { fields: allowed.fields }),
+                  ...(allowed.condition === undefined
+                    ? {}
+                    : { condition: allowed.condition }),
+                },
+          ),
+        ),
         Match.tag('Deny', (denied) =>
           Effect.fail(
             forbidden(
@@ -657,6 +677,36 @@ export const registerSpaceMethods = (
         Match.exhaustive,
       );
     });
+
+  /**
+   * The record a reader is allowed to see: the whole of it, or the fields and condition the grant
+   * promised. `undefined` means the record is not covered at all — a condition it fails makes it
+   * absent rather than an error, which is what "this key is good for two hours" means once the two
+   * hours are up.
+   */
+  const visible = (
+    value: Schema.Json,
+    projection:
+      | {
+          readonly fields?: ReadonlyArray<string>;
+          readonly condition?: Condition;
+        }
+      | undefined,
+    now: number = Date.now(),
+  ): Schema.Json | undefined => {
+    if (projection === undefined) {
+      return value;
+    }
+    if (
+      projection.condition !== undefined &&
+      !withinWindow(value, projection.condition, now)
+    ) {
+      return undefined;
+    }
+    return projection.fields === undefined
+      ? value
+      : projectRecord(value, projection.fields);
+  };
 
   /**
    * The same gate as `mayRead`, as a yes/no.
@@ -718,7 +768,8 @@ export const registerSpaceMethods = (
    *
    * The token alone is not a password: `cnf.jkt` names the app's key, the proof has to verify
    * against that same key, and it names the space it is for — so a leaked token is useless without
-   * the key and a captured proof opens one space for a minute.
+   * the key and a captured proof opens one space for a minute. The token's `member` is re-decided
+   * against the policy here, so access it no longer carries is refused now.
    */
   const readerOf = (ctx: HandlerContext, space: string) =>
     Effect.gen(function* () {
@@ -788,6 +839,27 @@ export const registerSpaceMethods = (
       if (!verified.ok) {
         return yield* Effect.fail(unauthorized(verified.reason));
       }
+      const parsed = spaceOf(space);
+      if (parsed === undefined) {
+        return yield* Effect.fail(
+          invalid(`the space ${space} is not a space address`),
+        );
+      }
+      // The token named whose access it carries at mint time, and that is the difference from a
+      // stateless check: re-decide that DID now, with the same policy a session gets, so a member
+      // removed from the space is refused on its next read rather than at `exp`.
+      const policy = yield* policyReadOf({
+        space,
+        authority: parsed.authority,
+        did: credential.credential.member,
+      });
+      if (policy.kind !== 'allow') {
+        return yield* Effect.fail(
+          unauthorized(
+            `the credential's member ${credential.credential.member} may not read ${space}: ${policy.reason}`,
+          ),
+        );
+      }
       return { kind: 'app' as const, app };
     });
 
@@ -795,9 +867,9 @@ export const registerSpaceMethods = (
    * May this caller read this space? The one gate both `com.atproto.space.subscribeRepos` and
    * Jetstream's `?space=` mode pass, so the two cannot disagree about a reader.
    *
-   * A credential is scoped to one space by the authority that minted it, so it is its own answer
-   * (`listRepos` asks the same way). A session is a person, and the policy says whether that person
-   * may read.
+   * A credential is scoped to one space by the authority that minted it and names the reader it
+   * was minted for, which `readerOf` re-decides; a session is a person the policy answers for
+   * directly (`listRepos` asks the same way).
    */
   const gateRead = (ctx: HandlerContext, spaceUri: string) =>
     Effect.gen(function* () {
@@ -912,15 +984,7 @@ export const registerSpaceMethods = (
         ),
       );
       const did = didOf(callerDid);
-      const entry = archive.policyState.find(
-        (one) => one.key === `${MEMBER_STATE_PREFIX}${callerDid}`,
-      );
-      const member: MemberAccess | undefined =
-        entry === undefined
-          ? undefined
-          : Option.getOrUndefined(
-              Schema.decodeUnknownOption(MemberAccess)(entry.value),
-            );
+      const member = memberOf(archive, callerDid);
       const verdict = decideWrite({
         policy,
         did,
@@ -1315,12 +1379,15 @@ export const registerSpaceMethods = (
   );
 
   /**
-   * The authority hands an approved app a credential for one space (`frxd`, spaces `0016`).
+   * The authority, or a member, hands an approved app a credential for one space (`frxd`, spaces
+   * `0016`, `myyq`).
    *
-   * Only the authority mints: a space's policy is its own decision, and a member asking on an
-   * app's behalf is a different flow (the app calls, the member consents) that this host does not
-   * speak yet. `allowedApps` is asked **explicitly** — `decideRead` short-circuits for the
-   * authority, which is right for a read and wrong for handing a token to somebody else.
+   * The authority may always mint. A member may lend **its own read**: `decideRead` is asked with
+   * the member's state row, so a member without `read` is refused and one with it mints for the app
+   * — the member is where the permission came from, while the token's `sub` stays the app. No
+   * session is the app's own path: it proves the key its DID publishes and asks for itself.
+   * `allowedApps` is asked **explicitly** — `decideRead` short-circuits for the authority, which is
+   * right for a read and wrong for handing a token to somebody else.
    *
    * The token is bound to the app's DPoP key (`jkt`), so a minted credential is useless to anyone
    * who does not hold that key: the caller may name any `jkt`, and only its owner can use it.
@@ -1358,19 +1425,13 @@ export const registerSpaceMethods = (
       );
       const now = Date.now();
 
-      // Two ways in: the authority's own session, or the app proving it holds the key its DID
-      // publishes. The second is how an app with no account on this host asks for its own
-      // credential; a forged claim only sends the signature check to the wrong key.
+      // Two ways in: a session (the authority, or a member lending its read), or the app proving it
+      // holds the key its DID publishes. The second is how an app with no account on this host asks
+      // for its own credential; a forged claim only sends the signature check to the wrong key.
       const session = yield* authenticateAccess(deps, ctx).pipe(Effect.option);
       const token = bearer(ctx);
 
-      if (Option.isSome(session)) {
-        if (space.authority !== session.value.account.did) {
-          return yield* Effect.fail(
-            notFound('SpaceNotFound', `no space ${input.space} for you`),
-          );
-        }
-      } else {
+      if (Option.isNone(session)) {
         if (token === undefined || deps.appKeys === undefined) {
           return yield* Effect.fail(
             unauthorized('a session, or a proof signed by an approved app'),
@@ -1415,7 +1476,9 @@ export const registerSpaceMethods = (
         Effect.mapError(() => serverError('the space names no authority')),
       );
 
-      // The reader is whoever asks: the authority's session, or the app itself.
+      // The reader is whoever asks: a session's account, or the app itself. A member's session
+      // carries its state row, which is where the permission comes from — the token keeps the app
+      // as `sub` and names the reader as `member`, which the host re-decides on every use.
       const reader = Option.isSome(session)
         ? yield* Schema.decodeUnknownEffect(DID)(
             session.value.account.did,
@@ -1430,7 +1493,9 @@ export const registerSpaceMethods = (
         authority,
         // The token is for this host, which is what verifies it; the authority is the issuer.
         audience: deps.config.did,
-        member: undefined,
+        member: Option.isSome(session)
+          ? memberOf(archive, session.value.account.did)
+          : undefined,
         app: input.app,
         space: input.space,
         jkt: input.jkt,
@@ -1893,15 +1958,7 @@ export const registerSpaceMethods = (
       }).pipe(
         Effect.mapError(() => serverError('the grants could not be read')),
       );
-      const entry = archive.policyState.find(
-        (one) => one.key === memberKey(caller.account.did),
-      );
-      const access =
-        entry === undefined
-          ? undefined
-          : Option.getOrUndefined(
-              Schema.decodeUnknownOption(MemberAccess)(entry.value),
-            );
+      const access = memberOf(archive, caller.account.did);
       return {
         space: input.space,
         did: caller.account.did,
@@ -2522,7 +2579,7 @@ export const registerSpaceMethods = (
       }
       const input = decoded.value;
       const reader = yield* readerOf(ctx, input.space);
-      yield* mayRead({
+      const projection = yield* mayRead({
         reader,
         space: input.space,
         repo: input.repo,
@@ -2551,6 +2608,7 @@ export const registerSpaceMethods = (
                 : record.key > after,
             );
       const page = from.slice(0, limit);
+      const now = Date.now();
       const records = yield* Effect.forEach(page, (record) =>
         Effect.gen(function* () {
           if (record.value === undefined) {
@@ -2562,19 +2620,29 @@ export const registerSpaceMethods = (
           const collection = record.key.slice(0, at);
           const rkey = record.key.slice(at + 1);
           const digest = yield* sha256(record.value);
-          return {
+          const value = toJson(yield* recordOf(record.value));
+          const seen =
+            input.excludeValues === 'true'
+              ? value
+              : visible(value, projection, now);
+          // A record a condition excludes is not named at all: leaving its rkey in the page would
+          // say "there is something here" to a reader the grant does not cover. The page can come
+          // back shorter than the limit for that reason.
+          if (seen === undefined) {
+            return Option.none();
+          }
+          return Option.some({
             collection,
             rkey,
             cid: formatCid(cidFromDigest({ codec: CODEC_DAG_CBOR, digest })),
-            ...(input.excludeValues === 'true'
-              ? {}
-              : { value: toJson(yield* recordOf(record.value)) }),
-          };
+            value: seen,
+          });
         }),
       );
+      const listed = records.filter(Option.isSome).map((one) => one.value);
       const cursor = page.at(-1)?.key;
       return {
-        records,
+        records: listed,
         ...(from.length > limit && cursor !== undefined ? { cursor } : {}),
       };
     }),
@@ -2590,7 +2658,7 @@ export const registerSpaceMethods = (
       }
       const input = decoded.value;
       const reader = yield* readerOf(ctx, input.space);
-      yield* mayRead({
+      const projection = yield* mayRead({
         reader,
         space: input.space,
         repo: input.repo,
@@ -2606,11 +2674,19 @@ export const registerSpaceMethods = (
           notFound('RecordNotFound', `no record ${path} in ${input.space}`),
         );
       }
+      const value = visible(toJson(yield* recordOf(found.value)), projection);
+      // A condition the record fails makes it absent, exactly as if it were not there: the grant
+      // does not cover it any more, and a 403 would confirm that something is.
+      if (value === undefined) {
+        return yield* Effect.fail(
+          notFound('RecordNotFound', `no record ${path} in ${input.space}`),
+        );
+      }
       const digest = yield* sha256(found.value);
       return {
         uri: `at://${input.repo}/${input.collection}/${input.rkey}`,
         cid: formatCid(cidFromDigest({ codec: CODEC_DAG_CBOR, digest })),
-        value: toJson(yield* recordOf(found.value)),
+        value,
       };
     }),
   );

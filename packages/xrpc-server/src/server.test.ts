@@ -150,6 +150,20 @@ describe('xrpc server HTTP routing', () => {
     expect(body.params).toEqual({ did: 'alice', limit: '10' });
   });
 
+  it('writes a buffered answer in one piece, with the length it already knew', async () => {
+    const response = await fetch(`${baseUrl}/xrpc/com.example.ping`);
+
+    expect(response.status).toBe(200);
+    // The length is the body's, so the answer is not chunked - and a body that
+    // was never a stream cannot arrive as an empty one.
+    const text = await response.text();
+    expect(response.headers.get('content-length')).toBe(
+      String(new TextEncoder().encode(text).length),
+    );
+    expect(response.headers.get('transfer-encoding')).toBeNull();
+    expect(text).toBe(JSON.stringify({ pong: true }));
+  });
+
   it('routes POST requests and parses the JSON body', async () => {
     const response = await fetch(`${baseUrl}/xrpc/com.example.echo`, {
       method: 'POST',

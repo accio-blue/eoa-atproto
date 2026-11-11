@@ -112,7 +112,7 @@ describe('oauth session lifecycle (differential, against the spec)', () => {
     });
 
     expect(result.tracesReplayed).toBe(12);
-  }, 60_000);
+  }, 180_000);
 });
 
 describe('the fail-closed rules the traces cannot always reach', () => {

@@ -67,16 +67,49 @@
     },
     "collectionSelector": {
       "type": "object",
-      "description": "Everything in one collection.",
+      "description": "Everything in one collection -- or, when `fields` is given, only those fields of every record in it.",
       "required": ["collection"],
-      "properties": { "collection": { "type": "string", "format": "nsid" } }
+      "properties": {
+        "collection": { "type": "string", "format": "nsid" },
+        "fields": {
+          "type": "array",
+          "minLength": 1,
+          "items": { "type": "string", "format": "json-pointer" },
+          "description": "A projection: the reader gets these fields and no others. A request that names no fields does not match this selector -- a narrower grant is never readable as a wider one."
+        },
+        "condition": {
+          "type": "ref",
+          "ref": "#condition",
+          "description": "Only covers a record that satisfies it. Judged where the record is in hand; a record that fails it is not covered at all, and a selector with a condition never covers a write."
+        }
+      }
     },
     "recordSelector": {
       "type": "object",
-      "description": "One exact record, as it was read.",
+      "description": "One exact record, as it was read -- or, when `fields` is given, only those fields of it.",
       "required": ["record"],
       "properties": {
-        "record": { "type": "ref", "ref": "ing.lexicon.cms.defs#strongRef" }
+        "record": { "type": "ref", "ref": "ing.lexicon.cms.defs#strongRef" },
+        "fields": {
+          "type": "array",
+          "minLength": 1,
+          "items": { "type": "string", "format": "json-pointer" },
+          "description": "A projection: the reader gets these fields and no others. A request that names no fields does not match this selector."
+        },
+        "condition": {
+          "type": "ref",
+          "ref": "#condition",
+          "description": "Only covers a record that satisfies it. Judged where the record is in hand; a record that fails it is not covered at all, and a selector with a condition never covers a write."
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "description": "A closed comparison over the record, not an expression language: the datetime at `field` must be no older than `maxAgeSeconds` when the grant is checked.",
+      "required": ["field", "maxAgeSeconds"],
+      "properties": {
+        "field": { "type": "string", "format": "json-pointer" },
+        "maxAgeSeconds": { "type": "integer", "minimum": 0 }
       }
     },
     "lensRef": {

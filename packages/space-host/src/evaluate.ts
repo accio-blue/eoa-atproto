@@ -3,6 +3,7 @@ import {
   type Action,
   type CidString,
   CollectionSelector,
+  type Condition,
   type Grant,
   type LensRef,
   type LookupError,
@@ -48,7 +49,20 @@ export type DenyReason =
   | 'timeout';
 
 export type Decision = Data.TaggedEnum<{
-  Allow: { readonly grant: StrongRef };
+  Allow: {
+    readonly grant: StrongRef;
+    /**
+     * The fields the winning selector promised, when it promised a projection. A caller that gets
+     * this returns those fields and no others; a grant without `fields` returns the whole record,
+     * which is what an absent value means.
+     */
+    readonly fields?: ReadonlyArray<string>;
+    /**
+     * The condition the winning selector put on the record, when it put one. A read that does not
+     * satisfy it is not covered by the grant; the caller checks it where the record is in hand.
+     */
+    readonly condition?: Condition;
+  };
   Deny: { readonly reason: DenyReason };
 }>;
 export const Decision = Data.taggedEnum<Decision>();
@@ -62,6 +76,24 @@ export interface StoredGrant {
 }
 
 export type LensStatus = 'compatible' | 'missing' | 'incompatible';
+
+/** What a lens promises a reader: the fields, and optionally a window over the record. */
+export interface LensProjection {
+  readonly fields: ReadonlyArray<string>;
+  readonly condition?: Condition;
+}
+
+/**
+ * What a registry says about a pinned lens.
+ *
+ * `projection` is present when the registry could read the shape the cid names: its fields (and
+ * condition) are the authority's shared view, applied when the grant's selector does not speak for
+ * itself. A registry that only compares cids answers the status alone.
+ */
+export interface ResolvedLens {
+  readonly status: LensStatus;
+  readonly projection?: LensProjection;
+}
 
 /** Where grants live (host storage). Returns grants for the given subject DIDs. */
 export class GrantStore extends Context.Service<
@@ -124,7 +156,10 @@ export class Membership extends Context.Service<
 export class LensRegistry extends Context.Service<
   LensRegistry,
   {
-    readonly check: (lens: LensRef) => Effect.Effect<LensStatus, LookupError>;
+    readonly check: (
+      space: ATURI,
+      lens: LensRef,
+    ) => Effect.Effect<ResolvedLens, LookupError>;
   }
 >()('@eoa/space-host/LensRegistry') {
   /**
@@ -132,18 +167,26 @@ export class LensRegistry extends Context.Service<
    * an absent nsid is "missing". Swap in a smarter registry when lens
    * evolution rules exist.
    */
-  static readonly layerFromCurrent = (current: ReadonlyMap<NSID, CidString>) =>
+  static readonly layerFromCurrent = (
+    current: ReadonlyMap<NSID, CidString>,
+    /** What a compatible lens projects, for a test that wants the shared shape to matter. */
+    projection?: LensProjection,
+  ) =>
     Layer.succeed(
       LensRegistry,
       LensRegistry.of({
-        check: (lens) => {
+        check: (_space, lens) => {
           const cid = current.get(lens.nsid);
-          return Effect.succeed(
+          const status =
             cid === undefined
-              ? 'missing'
+              ? ('missing' as const)
               : cid === lens.cid
-                ? 'compatible'
-                : 'incompatible',
+                ? ('compatible' as const)
+                : ('incompatible' as const);
+          return Effect.succeed(
+            status === 'compatible' && projection !== undefined
+              ? { status, projection }
+              : { status },
           );
         },
       }),
@@ -160,33 +203,72 @@ export interface AccessRequest {
   readonly record?: ATURI;
   /** The lens the caller wants to read through, if any. */
   readonly lens?: LensRef;
+  /**
+   * The fields the caller wants to touch (JSON Pointers), when it asks for less than the record.
+   *
+   * A request that names none asks for the whole record, which is why it never matches a selector
+   * that promises a projection — the alternative would let a caller read around the grant.
+   */
+  readonly fields?: ReadonlyArray<string>;
   /** Evaluation time; defaults to the Clock. A request with `now` bypasses the cache. */
   readonly now?: DateTime.Utc;
 }
 
-const selectorMatches = (
-  selector: Selector,
-  request: AccessRequest,
-): boolean =>
-  Schema.is(CollectionSelector)(selector)
-    ? request.collection === selector.collection
-    : request.record === selector.record.uri;
+/**
+ * Whether a selector covers what the request asks for.
+ *
+ * For a **view** the promise is the server's to keep: a selector that names fields is fulfilled by
+ * projecting the record, so a read needs to name nothing. For a **write** the caller states the
+ * fields it changes, and every one of them has to be inside the promise — a write that names none
+ * is a write of the whole record, which a projection cannot accept.
+ *
+ * That asymmetry is the point: reading less is what the grant asked for, writing more is not.
+ */
+const coversFields = (
+  declared: ReadonlyArray<string> | undefined,
+  requested: ReadonlyArray<string> | undefined,
+  action: Action,
+): boolean => {
+  if (declared === undefined || action === 'view') {
+    return true;
+  }
+  if (requested === undefined || requested.length === 0) {
+    return false;
+  }
+  return requested.every((field) => declared.includes(field));
+};
 
-/** Static scope: space, subject, action and selector all match. */
+const selectorMatches = (selector: Selector, request: AccessRequest): boolean =>
+  (Schema.is(CollectionSelector)(selector)
+    ? request.collection === selector.collection
+    : request.record === selector.record.uri) &&
+  // A condition is judged against the record, which the evaluator does not hold. A write that
+  // matches a conditioned selector is refused rather than allowed unchecked: silence would mean
+  // "the condition passed", and nothing here can say that.
+  (selector.condition === undefined || request.action === 'view') &&
+  coversFields(selector.fields, request.fields, request.action);
+
+/**
+ * Static scope: space, subject, action and selector all match. Returns the winning selector, which
+ * carries the projection a caller has to honour.
+ */
 export const grantInScope = (
   grant: Grant,
   request: AccessRequest,
   subjects: ReadonlyArray<DID>,
-): boolean =>
+): Selector | undefined =>
   grant.space === request.space &&
   subjects.includes(grant.subject) &&
-  grant.actions.includes(request.action) &&
-  grant.selectors.some((selector) => selectorMatches(selector, request));
+  grant.actions.includes(request.action)
+    ? grant.selectors.find((selector) => selectorMatches(selector, request))
+    : undefined;
 
 export interface Candidate extends StoredGrant {
   readonly revocation: RevocationState;
   /** `undefined` when the grant pins no lens. */
   readonly lensStatus: LensStatus | undefined;
+  /** The projection the pinned lens promises, when the registry could read it. */
+  readonly projection?: LensProjection;
 }
 
 const failureOf = (
@@ -224,6 +306,40 @@ const failureOf = (
 };
 
 /**
+ * The projection a reader gets: the selector where it speaks, the lens where it does not.
+ *
+ * A selector may narrow a lens (its `fields` must be inside the lens's) but never widen it — the
+ * whole point of a shared shape is that every grant through it promises the same view. `undefined`
+ * means the grant asked for more than the lens allows.
+ *
+ * ponytail: two conditions (a selector's and a lens's) cannot both be carried by `Allow` today, so
+ * the selector's wins when it names one. Combining two windows needs `conditions: Condition[]` in
+ * the decision; add it when a real grant needs both.
+ */
+const projectionOf = (
+  selector: Selector,
+  lens: LensProjection | undefined,
+):
+  | { readonly fields?: ReadonlyArray<string>; readonly condition?: Condition }
+  | undefined => {
+  const lensFields = lens?.fields;
+  const selectorFields = selector.fields;
+  if (
+    lensFields !== undefined &&
+    selectorFields !== undefined &&
+    !selectorFields.every((field) => lensFields.includes(field))
+  ) {
+    return undefined;
+  }
+  const fields = selectorFields ?? lensFields;
+  const condition = selector.condition ?? lens?.condition;
+  return {
+    ...(fields === undefined ? {} : { fields }),
+    ...(condition === undefined ? {} : { condition }),
+  };
+};
+
+/**
  * The pure core: allow iff some in-scope candidate survives revocation, expiry
  * and lens checks. Otherwise deny with the first in-scope failure, or
  * `no-grant` when nothing was in scope.
@@ -236,12 +352,32 @@ export const decide = (input: {
 }): Decision => {
   const failures: Array<DenyReason> = [];
   for (const candidate of input.candidates) {
-    if (!grantInScope(candidate.grant, input.request, input.subjects)) {
+    const selector = grantInScope(
+      candidate.grant,
+      input.request,
+      input.subjects,
+    );
+    if (selector === undefined) {
       continue;
     }
     const failure = failureOf(candidate, input.request, input.now);
     if (failure === undefined) {
-      return Decision.Allow({ grant: candidate.ref });
+      const projection = projectionOf(selector, candidate.projection);
+      // A grant that tries to project *more* than the lens it pins is refused, not narrowed
+      // silently: the lens is the authority's promise about what a reader sees.
+      if (projection === undefined) {
+        failures.push('lens-mismatch');
+        continue;
+      }
+      return Decision.Allow({
+        grant: candidate.ref,
+        ...(projection.fields === undefined
+          ? {}
+          : { fields: projection.fields }),
+        ...(projection.condition === undefined
+          ? {}
+          : { condition: projection.condition }),
+      });
     }
     failures.push(failure);
   }
@@ -297,6 +433,7 @@ const cacheKeyOf = (request: AccessRequest): string =>
     request.action,
     request.collection ?? '',
     request.record ?? '',
+    [...(request.fields ?? [])].sort().join(','),
     request.lens?.nsid ?? '',
     request.lens?.cid ?? '',
   ].join('\n');
@@ -312,14 +449,23 @@ const resolve = (request: AccessRequest, now: DateTime.Utc) =>
     const subjects = [...new Set([request.did, ...expanded])];
     const stored = yield* grants.grantsFor(request.space, subjects);
     const candidates = yield* Effect.forEach(
-      stored.filter((entry) => grantInScope(entry.grant, request, subjects)),
+      stored.filter(
+        (entry) => grantInScope(entry.grant, request, subjects) !== undefined,
+      ),
       Effect.fnUntraced(function* (entry) {
         const revocation = yield* revocations.state(entry.ref.uri);
-        const lensStatus =
+        const resolved =
           entry.grant.lens === undefined
             ? undefined
-            : yield* lenses.check(entry.grant.lens);
-        return { ...entry, revocation, lensStatus };
+            : yield* lenses.check(request.space, entry.grant.lens);
+        return {
+          ...entry,
+          revocation,
+          lensStatus: resolved?.status,
+          ...(resolved?.projection === undefined
+            ? {}
+            : { projection: resolved.projection }),
+        };
       }),
     );
     return decide({ request, now, subjects, candidates });

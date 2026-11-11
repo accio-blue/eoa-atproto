@@ -6,6 +6,7 @@ import {
 } from './consent.js';
 import { Effect, Exit, Schema } from 'effect';
 import { Grant, GrantRevoke, decodeGrant, decodeGrantRevoke } from './grant.js';
+import { Lens, decodeLens } from './lens.js';
 import { describe, expect, it } from 'vitest';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
@@ -61,7 +62,10 @@ const REF = {
 const sampleGrant = {
   space: `at://${DID}/ing.lexicon.space/org`,
   subject: OTHER,
-  selectors: [{ collection: 'ing.lexicon.space.note' }, { record: REF }],
+  selectors: [
+    { collection: 'ing.lexicon.space.note' },
+    { record: REF, fields: ['/startedAt', '/note'] },
+  ],
   actions: ['view', 'write'],
   lens: { nsid: 'ing.lexicon.space.view', cid: REF.cid },
   expiry: AT,
@@ -73,6 +77,15 @@ const sampleGrant = {
   },
   purpose: 'notes for the org',
   consent: `at://${OTHER}/ing.lexicon.grant.acceptance/3mxr64j6ib222`,
+  issuedBy: DID,
+  createdAt: AT,
+};
+
+/** A lens that uses **every** property `ing.lexicon.lens` declares. */
+const sampleLens = {
+  fields: ['/startedAt', '/note'],
+  condition: { field: '/startedAt', maxAgeSeconds: 3600 },
+  description: 'what a coach sees of a session',
   issuedBy: DID,
   createdAt: AT,
 };
@@ -107,6 +120,16 @@ describe('the space-host records, as published lexicons', () => {
       Object.keys(sampleGrant).sort(),
     );
     await Effect.runPromise(decodeGrant(sampleGrant));
+  });
+
+  it('publishes `ing.lexicon.lens` with exactly the properties the schema takes', async () => {
+    expect([...propertiesOf('lens')].sort()).toEqual(
+      Object.keys(sampleLens).sort(),
+    );
+    expect(Object.keys(Lens.fields).sort()).toEqual(
+      Object.keys(sampleLens).sort(),
+    );
+    await Effect.runPromise(decodeLens(sampleLens));
   });
 
   it('publishes `ing.lexicon.grant.revoke` the same way', async () => {

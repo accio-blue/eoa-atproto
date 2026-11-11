@@ -139,16 +139,21 @@ export const subscribeReposHandler =
           );
         }
 
-        return firehose
-          .subscribe({ cursor: resumeFrom.success })
-          .pipe(
-            Stream.mapEffect((event) =>
-              event.kind === 'identity'
-                ? Effect.succeed(frame('#identity', identityBody(event)))
-                : Effect.map(commitBody(event), (body) =>
-                    frame('#commit', body),
-                  ),
-            ),
-          );
+        return firehose.subscribe({ cursor: resumeFrom.success }).pipe(
+          // An `#account` event is deliberately not a frame here. This socket is the repo
+          // syncer's: its two frames are `#commit` and `#identity`, and neither describes an
+          // account's status. The consumer that needs to know a member went away reads
+          // Jetstream, which carries the `account` frame (`lfmr`); translating the same event a
+          // second way here would be a second shape to keep, with no reader asking for it.
+          Stream.filter(
+            (event): event is CommitEvent | IdentityEvent =>
+              event.kind !== 'account',
+          ),
+          Stream.mapEffect((event) =>
+            event.kind === 'identity'
+              ? Effect.succeed(frame('#identity', identityBody(event)))
+              : Effect.map(commitBody(event), (body) => frame('#commit', body)),
+          ),
+        );
       }),
     );

@@ -1,4 +1,3 @@
-// Effect-based data synchronization and firehose subscriptions for AT Protocol
-export * from './firehose.js';
+// Effect-based data synchronization for AT Protocol
 export * from './sync.js';
 export * from './types.js';

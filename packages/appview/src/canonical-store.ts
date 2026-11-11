@@ -18,6 +18,22 @@ import type { Json } from 'effect/Schema';
  * ingestion pipeline's rule (`ingestion-pipeline.ts`), not this store's. This
  * store only holds what is canonical now.
  *
+ * ## How stale it can be, and what a cap would cost
+ *
+ * There is no clock in this projection, and no record cap: the bound is the
+ * **stream position**. A record is canonical once its frame is applied, a delete
+ * removes by URI at its own position, and a delivery at or below the cursor is
+ * ignored (`canonical-ingest.ts`), so a redelivered create can never resurrect
+ * what a later delete removed. A gap is not skipped - it blocks until backfill
+ * closes it (`backfill-cursor.ts`, `backfill-live.ts`) - and a read is served
+ * only from a snapshot the projection has already materialised
+ * (`read-freshness.ts`).
+ *
+ * The alternative is a pull sync with a staleness window and a per-collection
+ * cap (`devswhomove`, research §2): a delete is then reflected within minutes,
+ * and a collection larger than the cap is silently short. A cursor that cannot
+ * skip trades that window for a stall, which is the failure a person can see.
+ *
  * Durability is not modelled, like every store in this repo: the records live
  * in a `Ref`-held `Map` and are rebuilt per `Effect.provide`. Swapping the
  * `Ref` for a durable backend is a separate concern from this shape.

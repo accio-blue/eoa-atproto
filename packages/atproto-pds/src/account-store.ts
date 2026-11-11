@@ -133,11 +133,27 @@ export interface OneUseToken {
   readonly expiresAt: number;
 }
 
+/**
+ * One invite: the ticket an outsider redeems to become an account here (`gh0f`).
+ *
+ * The code is the whole capability — it is shown once, and a store that leaks
+ * hands over doors — so the row says only what a decision needs: who it admits
+ * (`forAccount`), how many times (`usesAvailable`, spent in the same batch as
+ * the account), until when (`expiresAt`), and whether it still stands
+ * (`disabled`).
+ *
+ * Revoking one is `putInvite({ ...one, disabled: true })`: the row is keyed by
+ * code, so one ticket moves and the others do not. Revoking a *ticket* is not
+ * removing the *member* it admitted — an account that exists is a different
+ * question, with a different answer.
+ */
 export interface Invite {
   readonly code: string;
   readonly forAccount: string | null;
   readonly createdBy: string;
   readonly createdAt: number;
+  /** When the code stops being usable, in ms. Absent means it does not expire. */
+  readonly expiresAt?: number;
   readonly usesAvailable: number;
   readonly disabled: boolean;
 }
@@ -196,6 +212,10 @@ const InviteSchema = Schema.Struct({
   forAccount: Schema.Union([Schema.String, Schema.Null]),
   createdBy: Schema.String,
   createdAt: Schema.Number,
+  // Absent on rows written before invites expired: an unexpiring ticket is the
+  // reading that keeps them working, and the only one that does not expire them
+  // retroactively.
+  expiresAt: Schema.optionalKey(Schema.Number),
   usesAvailable: Schema.Number,
   disabled: Schema.Boolean,
 });
@@ -531,6 +551,9 @@ export const accountStoreLayer = Layer.effect(
           const spent =
             one.disabled ||
             one.usesAvailable <= 0 ||
+            // Judged at the moment of the decision, not at mint: a ticket that
+            // was good when handed out is still not good now.
+            (one.expiresAt !== undefined && one.expiresAt <= params.now) ||
             (one.forAccount !== null && one.forAccount !== params.did);
           if (spent) {
             return createInviteInvalid({ code });

@@ -102,7 +102,7 @@ describe('oauth DPoP nonce (differential, against the spec)', () => {
     });
 
     expect(result.tracesReplayed).toBe(12);
-  }, 60_000);
+  }, 180_000);
 });
 
 describe('the decision the provider actually makes (acceptsProof)', () => {

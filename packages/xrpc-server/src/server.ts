@@ -244,12 +244,20 @@ export const createXrpcServer = (_lexicons?: Lexicons): XrpcServer => {
             },
           });
           res.writeHead(response.status, Object.fromEntries(response.headers));
+          // A body whose length is known is written once (`createJsonResponse` says so): no reader,
+          // no `close` handler, and no way for the answer to arrive as a valid empty 200 because a
+          // reader was cancelled between the headers and the first chunk.
+          if (response.headers.get('content-length') !== null) {
+            res.end(Buffer.from(await response.arrayBuffer()));
+            return;
+          }
           if (response.body === null) {
             res.end();
             return;
           }
-          // Written as it comes, not buffered: a streamed body (Jetstream) never ends. A client that
-          // leaves cancels the source, so the stream behind it stops rather than running on.
+          // Written as it comes, not buffered: a streamed body (a route's SSE, Jetstream) never
+          // ends. A client that leaves cancels the source, so the stream behind it stops rather
+          // than running on.
           // Headers go now: a quiet stream would otherwise hold them until its first frame, and a
           // client waits on headers before it reads anything.
           res.flushHeaders();
@@ -258,9 +266,16 @@ export const createXrpcServer = (_lexicons?: Lexicons): XrpcServer => {
             void reader.cancel();
           });
           for (;;) {
-            const chunk = await reader
-              .read()
-              .catch(() => ({ done: true as const, value: undefined }));
+            // `undefined` is a body that failed, which `done` is not: ending on a failure would
+            // hand the client a short answer it cannot tell from a whole one.
+            const chunk = await reader.read().catch(() => undefined);
+            if (chunk === undefined) {
+              // Releasing the reader is what stops the failure from also surfacing as an
+              // unhandled rejection; destroying the response makes the truncation the error it is.
+              void reader.cancel().catch(() => {});
+              res.destroy();
+              return;
+            }
             if (chunk.done) {
               break;
             }

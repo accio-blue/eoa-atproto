@@ -83,6 +83,30 @@ export interface IdentityEvent {
 }
 
 /**
+ * An `#account` event: the account's status moved, so a reader that shows the
+ * account's records can hide or show them again (spaces: a deactivated member's
+ * records are hidden in every space, `lfmr`).
+ *
+ * It is a **public** event, like `#identity` and never like a space write: an
+ * account going away is the firehose's oldest job, and a space reader gets it
+ * from the public stream rather than from its space's own subscription.
+ *
+ * `status` is the row's own word (`created`, `active`, `suspended`, `deleted`)
+ * rather than a second vocabulary: a consumer that needs atproto's four words
+ * maps them where it knows the difference.
+ */
+export interface AccountEvent {
+  readonly kind: 'account';
+  readonly seq: number;
+  readonly timeUs: number;
+  readonly time: string;
+  readonly did: string;
+  /** Whether the account is live after the move; `status` says from where. */
+  readonly active: boolean;
+  readonly status: string;
+}
+
+/**
  * One record a space took, as a space's own stream carries it.
  *
  * A space repo is not an MST repo, so there is no CAR to hand out: the frame is the record itself,
@@ -123,7 +147,11 @@ export interface SpaceCommitWrite {
 }
 
 /** Anything the stream carries. */
-export type FirehoseEvent = CommitEvent | IdentityEvent | SpaceCommitEvent;
+export type FirehoseEvent =
+  | CommitEvent
+  | IdentityEvent
+  | SpaceCommitEvent
+  | AccountEvent;
 
 /** What the emitter supplies for an identity event. */
 export interface IdentityWrite {
@@ -131,6 +159,15 @@ export interface IdentityWrite {
   readonly timeUs: number;
   readonly did: string;
   readonly handle?: string;
+}
+
+/** What the emitter supplies for an account event. */
+export interface AccountWrite {
+  readonly time: string;
+  readonly timeUs: number;
+  readonly did: string;
+  readonly active: boolean;
+  readonly status: string;
 }
 
 /** What the emitter supplies; the stream assigns `seq` and `timeUs`. */
@@ -197,6 +234,12 @@ export interface FirehoseShape {
    */
   readonly emitIdentity: (write: IdentityWrite) => Effect.Effect<IdentityEvent>;
   /**
+   * Put an account's new status on the stream. Never withheld: an account going
+   * away is exactly what the public stream is for, and it names no repo state
+   * a permissioned space could keep private.
+   */
+  readonly emitAccount: (write: AccountWrite) => Effect.Effect<AccountEvent>;
+  /**
    * Put a space's write on the stream. Never withheld: a space stream is only served to a caller
    * that may read the space, so the filter is at the subscription, not here.
    */
@@ -211,11 +254,11 @@ export interface FirehoseShape {
   readonly cursorOf: (
     cursor?: number | undefined,
   ) => Effect.Effect<number, FutureCursorError | OutdatedCursorError>;
-  /** The public stream: commits and identity events, never a space's writes. */
+  /** The public stream: commits, identity and account events, never a space's writes. */
   readonly subscribe: (params: {
     readonly cursor?: number | undefined;
   }) => Stream.Stream<
-    CommitEvent | IdentityEvent,
+    CommitEvent | IdentityEvent | AccountEvent,
     FutureCursorError | OutdatedCursorError
   >;
   /**
@@ -389,7 +432,8 @@ export const firehoseLayer = (config?: FirehoseOptions) =>
 
       const isPublicEvent = (
         event: FirehoseEvent,
-      ): event is CommitEvent | IdentityEvent => event.kind !== 'space';
+      ): event is CommitEvent | IdentityEvent | AccountEvent =>
+        event.kind !== 'space';
 
       const isSpaceIn =
         (spaces: ReadonlySet<string>) =>
@@ -451,6 +495,19 @@ export const firehoseLayer = (config?: FirehoseOptions) =>
               time: write.time,
               did: write.did,
               ...(write.handle === undefined ? {} : { handle: write.handle }),
+            }),
+          }),
+
+        emitAccount: (write) =>
+          append({
+            timeUs: write.timeUs,
+            make: (stamp) => ({
+              kind: 'account',
+              ...stamp,
+              time: write.time,
+              did: write.did,
+              active: write.active,
+              status: write.status,
             }),
           }),
 

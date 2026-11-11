@@ -65,17 +65,3 @@ export class InvalidIdentifierError extends Data.TaggedError(
 )<{
   readonly identifier: string;
 }> {}
-
-// Cache entry for identity resolution
-export interface IdentityCacheEntry {
-  readonly resolution: IdentityResolution;
-  readonly timestamp: number;
-  readonly ttl: number;
-}
-
-// Handle to DID mapping cache entry
-export interface HandleCacheEntry {
-  readonly did: DID;
-  readonly timestamp: number;
-  readonly ttl: number;
-}

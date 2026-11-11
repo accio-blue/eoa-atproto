@@ -47,6 +47,8 @@ interface Setup {
     ReturnType<typeof nsid>,
     ReturnType<typeof cid>
   >;
+  /** What a compatible lens projects, when a test wants the shared shape to matter. */
+  readonly projection?: { readonly fields: ReadonlyArray<string> };
   readonly membership?: Layer.Layer<Membership>;
   /** Runs after every grant opened its epoch, before the check. */
   readonly beforeCheck?: Effect.Effect<void, LookupError, RevocationLog>;
@@ -76,7 +78,10 @@ const check = (
         GrantStore.layerInMemory(grants),
         setup.membership ?? Membership.layerNone,
         RevocationLog.layerInMemory,
-        LensRegistry.layerFromCurrent(setup.lenses ?? new Map()),
+        LensRegistry.layerFromCurrent(
+          setup.lenses ?? new Map(),
+          setup.projection,
+        ),
       ),
     ),
     Effect.runPromise,
@@ -229,6 +234,103 @@ describe('checkAccess: scope', () => {
   });
 });
 
+describe('checkAccess: a selector that names fields promises a projection', () => {
+  const withFields = (fields: readonly [string, ...Array<string>]) =>
+    stored({ selectors: [{ collection: RUNS, fields }] });
+
+  it('covers a read and carries the projection the server has to apply', async () => {
+    expect(
+      await check([withFields(['/startedAt', '/note'])], request()),
+    ).toEqual(
+      Decision.Allow({
+        grant: grantRef(1),
+        fields: ['/startedAt', '/note'],
+      }),
+    );
+  });
+
+  it('covers a write that names only promised fields', async () => {
+    const writer = stored({
+      selectors: [{ collection: RUNS, fields: ['/startedAt'] }],
+      actions: ['write'],
+    });
+    expect(
+      isAllow(
+        await check(
+          [writer],
+          request({ action: 'write', fields: ['/startedAt'] }),
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it('denies a write of a field the grant did not promise', async () => {
+    const writer = stored({
+      selectors: [{ collection: RUNS, fields: ['/startedAt'] }],
+      actions: ['write'],
+    });
+    expect(
+      await check([writer], request({ action: 'write', fields: ['/note'] })),
+    ).toEqual(denied('no-grant'));
+  });
+
+  it('denies a write that names no fields, so a projection cannot be widened', async () => {
+    const writer = stored({
+      selectors: [{ collection: RUNS, fields: ['/startedAt'] }],
+      actions: ['write'],
+    });
+    expect(await check([writer], request({ action: 'write' }))).toEqual(
+      denied('no-grant'),
+    );
+    expect(
+      await check(
+        [writer],
+        request({ action: 'write', fields: ['/startedAt', '/note'] }),
+      ),
+    ).toEqual(denied('no-grant'));
+  });
+
+  it('carries the condition the winning selector put on the record', async () => {
+    const conditioned = stored({
+      selectors: [
+        {
+          collection: RUNS,
+          condition: { field: '/createdAt', maxAgeSeconds: 3600 },
+        },
+      ],
+    });
+    expect(await check([conditioned], request())).toEqual(
+      Decision.Allow({
+        grant: grantRef(1),
+        condition: { field: '/createdAt', maxAgeSeconds: 3600 },
+      }),
+    );
+  });
+
+  it('does not cover a write when the selector carries a condition', async () => {
+    const conditioned = stored({
+      selectors: [
+        {
+          collection: RUNS,
+          condition: { field: '/createdAt', maxAgeSeconds: 3600 },
+        },
+      ],
+      actions: ['write'],
+    });
+    // The evaluator holds no record, so it cannot say the condition passed: silence there would
+    // mean "yes", which is the one answer it must never guess.
+    expect(await check([conditioned], request({ action: 'write' }))).toEqual(
+      denied('no-grant'),
+    );
+  });
+
+  it('leaves a selector without fields covering the whole record', async () => {
+    expect(await check([stored()], request())).toEqual(
+      Decision.Allow({ grant: grantRef(1) }),
+    );
+  });
+});
+
 describe('checkAccess: expiry', () => {
   const grant = stored({ expiry: utc('2026-10-04T13:00:00Z') });
 
@@ -353,6 +455,44 @@ describe('checkAccess: lens binding fails closed', () => {
 
   it('a grant without a lens does not depend on the registry', async () => {
     expect(isAllow(await check([stored()], request({ lens })))).toBe(true);
+  });
+
+  it('carries the shared projection of a compatible lens', async () => {
+    const lenses = new Map([[lens.nsid, lens.cid]]);
+    expect(
+      await check([pinned], request(), {
+        lenses,
+        projection: { fields: ['/startedAt'] },
+      }),
+    ).toEqual(Decision.Allow({ grant: grantRef(1), fields: ['/startedAt'] }));
+  });
+
+  it('refuses a grant that would project more than its lens', async () => {
+    const lenses = new Map([[lens.nsid, lens.cid]]);
+    const wider = stored({
+      lens,
+      selectors: [{ collection: RUNS, fields: ['/startedAt', '/secret'] }],
+    });
+    expect(
+      await check([wider], request(), {
+        lenses,
+        projection: { fields: ['/startedAt'] },
+      }),
+    ).toEqual(denied('lens-mismatch'));
+  });
+
+  it('lets a grant narrow its lens', async () => {
+    const lenses = new Map([[lens.nsid, lens.cid]]);
+    const narrower = stored({
+      lens,
+      selectors: [{ collection: RUNS, fields: ['/startedAt'] }],
+    });
+    expect(
+      await check([narrower], request(), {
+        lenses,
+        projection: { fields: ['/startedAt', '/note'] },
+      }),
+    ).toEqual(Decision.Allow({ grant: grantRef(1), fields: ['/startedAt'] }));
   });
 });
 

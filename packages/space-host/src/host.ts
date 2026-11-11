@@ -167,10 +167,18 @@ export const lensRegistryFromHost: Layer.Layer<
   Effect.gen(function* () {
     const host = yield* HostStorage;
     return LensRegistry.of({
-      check: (lens) =>
-        host
-          .lensVersions(lens.nsid)
-          .pipe(Effect.map((versions) => lensStatusOf(versions, lens))),
+      check: (_space, lens) =>
+        host.lensVersions(lens.nsid).pipe(
+          // The projection is the *pinned* version's fields: that is what the grant promised a
+          // reader, and a newer version that only adds fields did not change it.
+          Effect.map((versions) => {
+            const status = lensStatusOf(versions, lens);
+            const pinned = versions.find((one) => one.cid === lens.cid);
+            return pinned === undefined
+              ? { status }
+              : { status, projection: { fields: pinned.fields } };
+          }),
+        ),
     });
   }),
 );
