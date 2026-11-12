@@ -953,6 +953,31 @@ describe('writing into a space', () => {
           expect(String(refused.body['message'])).toContain(
             'no identity resolver',
           );
+
+          // A read is the same answer: with no resolver there is nobody to ask, so the grant gate
+          // decides and the 403 says the managing app would have.
+          const written = yield* Effect.promise(() =>
+            postJson(
+              `${pds.url}/xrpc/com.atproto.space.createRecord`,
+              alice.accessJwt,
+              {
+                space,
+                repo: alice.did,
+                collection: 'com.example.note',
+                rkey: 'one',
+                record: { $type: 'com.example.note', text: 'one' },
+              },
+            ),
+          );
+          expect(written.status).toBe(200);
+          const read = yield* Effect.promise(() =>
+            getJson(
+              `${pds.url}/xrpc/com.atproto.space.listRecords?${spaceQuery(space, alice.did)}`,
+              bob.accessJwt,
+            ),
+          );
+          expect(read.status).toBe(403);
+          expect(String(read.body['message'])).toContain('decides reads');
         }),
       ),
     );
@@ -2044,16 +2069,38 @@ describe('a managedspace asks its app (`70cr`)', () => {
       ],
     });
 
-  /** A managing app that answers `authorized` to everything, and remembers what it was asked. */
-  const startApp = async (authorized: boolean) => {
+  /**
+   * A managing app that answers `authorized`, or — for the failure paths — never answers at all:
+   * `unreachable` is a port nothing listens on, `timeout` a server that holds the request.
+   */
+  const startApp = async (answer: boolean | 'unreachable' | 'timeout') => {
     const asked: Array<{ url: string; authorization: string }> = [];
+    if (answer === 'unreachable') {
+      // A port that was bound and closed again: the endpoint resolves, nothing answers.
+      const probe = createServer();
+      await new Promise<void>((resolve) =>
+        probe.listen(0, '127.0.0.1', resolve),
+      );
+      const { port } = probe.address() as AddressInfo;
+      await new Promise<void>((resolve, reject) =>
+        probe.close((error) => (error ? reject(error) : resolve())),
+      );
+      return {
+        endpoint: `http://127.0.0.1:${port}`,
+        asked,
+        close: () => Promise.resolve(),
+      };
+    }
     const server = createServer((request, response) => {
       asked.push({
         url: request.url ?? '',
         authorization: String(request.headers.authorization ?? ''),
       });
+      if (answer === 'timeout') {
+        return;
+      }
       response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(JSON.stringify({ authorized }));
+      response.end(JSON.stringify({ authorized: answer }));
     });
     await new Promise<void>((resolve) =>
       server.listen(0, '127.0.0.1', resolve),
@@ -2063,9 +2110,10 @@ describe('a managedspace asks its app (`70cr`)', () => {
       endpoint: `http://127.0.0.1:${port}`,
       asked,
       close: () =>
-        new Promise<void>((resolve, reject) =>
-          server.close((error) => (error ? reject(error) : resolve())),
-        ),
+        new Promise<void>((resolve, reject) => {
+          server.closeAllConnections();
+          server.close((error) => (error ? reject(error) : resolve()));
+        }),
     };
   };
 
@@ -2074,7 +2122,7 @@ describe('a managedspace asks its app (`70cr`)', () => {
    * `checkUserAccess` call over HTTP, only the document fetch replaced.
    */
   const withManagedSpace = async (
-    authorized: boolean,
+    answer: boolean | 'unreachable' | 'timeout',
     run: (params: {
       readonly url: string;
       readonly space: string;
@@ -2092,9 +2140,16 @@ describe('a managedspace asks its app (`70cr`)', () => {
         readonly status: number;
         readonly body: Record<string, Schema.Json>;
       }>;
+      readonly get: (
+        query: string,
+        jwt: string,
+      ) => Promise<{
+        readonly status: number;
+        readonly body: Record<string, Schema.Json>;
+      }>;
     }) => Promise<void>,
   ) => {
-    const app = await startApp(authorized);
+    const app = await startApp(answer);
     try {
       await Effect.runPromise(
         Effect.scoped(
@@ -2143,6 +2198,18 @@ describe('a managedspace asks its app (`70cr`)', () => {
                 asked: app.asked,
                 post: (path, body, jwt) =>
                   postJson(`${pds.url}${path}`, jwt, body),
+                get: async (query, jwt) => {
+                  const response = await fetch(`${pds.url}/xrpc/${query}`, {
+                    headers: { authorization: `Bearer ${jwt}` },
+                  });
+                  return {
+                    status: response.status,
+                    body: (await response.json()) as Record<
+                      string,
+                      Schema.Json
+                    >,
+                  };
+                },
               }),
             );
           }),
@@ -2216,6 +2283,202 @@ describe('a managedspace asks its app (`70cr`)', () => {
       expect(written.status).toBe(200);
       expect(asked).toEqual([]);
     });
+  });
+
+  /** The note the authority writes, and the grant it may share instead of the app's yes. */
+  const noteRecord = (space: string, repo: string) => ({
+    space,
+    repo,
+    collection: 'com.example.note',
+    rkey: 'one',
+    record: { $type: 'com.example.note', text: 'one' },
+  });
+
+  const grantRecord = (params: {
+    readonly space: string;
+    readonly subject: string;
+    readonly issuedBy: string;
+  }) => ({
+    space: params.space,
+    repo: params.issuedBy,
+    collection: 'ing.lexicon.grant',
+    rkey: 'to-reader',
+    record: {
+      $type: 'ing.lexicon.grant',
+      space: params.space,
+      subject: params.subject,
+      selectors: [{ collection: 'com.example.note' }],
+      actions: ['view'],
+      issuedBy: params.issuedBy,
+      createdAt: new Date().toISOString(),
+    },
+  });
+
+  const notesOf = (space: string, repo: string) =>
+    `com.atproto.space.listRecords?space=${encodeURIComponent(space)}&repo=${repo}&collection=com.example.note`;
+
+  it('lets a session read another author when the app says yes, with no grant', async () => {
+    await withManagedSpace(
+      true,
+      async ({ space, authority, writer, asked, post, get }) => {
+        const written = await post(
+          '/xrpc/com.atproto.space.createRecord',
+          noteRecord(space, authority.did),
+          authority.accessJwt,
+        );
+        expect(written.status).toBe(200);
+        // The authority's own write asks nothing: the read below is the only ask.
+        expect(asked).toEqual([]);
+
+        const listed = await get(
+          notesOf(space, authority.did),
+          writer.accessJwt,
+        );
+        expect(listed.status).toBe(200);
+        expect(
+          (listed.body['records'] as ReadonlyArray<{ rkey: string }>).map(
+            (one) => one.rkey,
+          ),
+        ).toEqual(['one']);
+
+        expect(asked).toHaveLength(1);
+        const asked1 = new URL(`http://app${asked[0]?.url ?? ''}`);
+        expect(asked1.searchParams.get('space')).toBe(space);
+        expect(asked1.searchParams.get('user')).toBe(writer.did);
+        expect(asked1.searchParams.get('access')).toBe('read');
+      },
+    );
+  });
+
+  for (const [name, answer] of [
+    ['says no', false],
+    ['is unreachable', 'unreachable'],
+    ['times out', 'timeout'],
+  ] as const) {
+    it(`falls through to the grant gate when the app ${name}`, async () => {
+      await withManagedSpace(
+        answer,
+        async ({ space, authority, writer, post, get }) => {
+          const written = await post(
+            '/xrpc/com.atproto.space.createRecord',
+            noteRecord(space, authority.did),
+            authority.accessJwt,
+          );
+          expect(written.status).toBe(200);
+
+          // No grant: refused with the app's own reason, never a 500.
+          const refused = await get(
+            notesOf(space, authority.did),
+            writer.accessJwt,
+          );
+          expect(refused.status).toBe(403);
+          expect(String(refused.body['message'])).toContain(
+            answer === false ? 'the-app-denied' : answer,
+          );
+
+          // The grant is the second axis: the app's no does not withdraw it.
+          const granted = await post(
+            '/xrpc/com.atproto.space.createRecord',
+            grantRecord({
+              space,
+              subject: writer.did,
+              issuedBy: authority.did,
+            }),
+            authority.accessJwt,
+          );
+          expect(granted.status).toBe(200);
+          const listed = await get(
+            notesOf(space, authority.did),
+            writer.accessJwt,
+          );
+          expect(listed.status).toBe(200);
+        },
+      );
+    }, 15_000); // Two asks at the app's 2 s bound: the granted read asks again rather than caching.
+  }
+
+  it('mints a credential for a managed space when the app says yes', async () => {
+    await withManagedSpace(true, async ({ space, writer, post }) => {
+      const minted = await post(
+        '/xrpc/com.atproto.space.getCredential',
+        { space, app: 'did:web:reader.example', jkt: 'jkt' },
+        writer.accessJwt,
+      );
+      expect(minted.status).toBe(200);
+      expect(String(minted.body['token'] ?? '').split('.')).toHaveLength(3);
+    });
+  });
+
+  it('refuses a credential for a managed space when the app says no', async () => {
+    await withManagedSpace(false, async ({ space, writer, post }) => {
+      const refused = await post(
+        '/xrpc/com.atproto.space.getCredential',
+        { space, app: 'did:web:reader.example', jkt: 'jkt' },
+        writer.accessJwt,
+      );
+      expect(refused.status).toBe(403);
+      expect(String(refused.body['message'])).toContain(
+        'the-managing-app-decides',
+      );
+    });
+  });
+
+  it('never asks for a memberspace or a personalspace', async () => {
+    await withManagedSpace(
+      false,
+      async ({ authority, writer, asked, post, get }) => {
+        const memberSpace = `at://${authority.did}/${SPACE_TYPE}/public`;
+        const created = await post(
+          '/xrpc/com.atproto.space.createSpace',
+          {
+            spaceType: SPACE_TYPE,
+            skey: 'public',
+            policy: {
+              $type: 'com.atproto.memberspace.policy',
+              publicRead: true,
+            },
+          },
+          authority.accessJwt,
+        );
+        expect(created.status).toBe(200);
+        const written = await post(
+          '/xrpc/com.atproto.space.createRecord',
+          noteRecord(memberSpace, authority.did),
+          authority.accessJwt,
+        );
+        expect(written.status).toBe(200);
+        const publicRead = await get(
+          notesOf(memberSpace, authority.did),
+          writer.accessJwt,
+        );
+        expect(publicRead.status).toBe(200);
+
+        const personalSpace = `at://${authority.did}/${SPACE_TYPE}/mine`;
+        const personal = await post(
+          '/xrpc/com.atproto.space.createSpace',
+          {
+            spaceType: SPACE_TYPE,
+            skey: 'mine',
+            policy: { $type: 'com.atproto.personalspace.policy' },
+          },
+          authority.accessJwt,
+        );
+        expect(personal.status).toBe(200);
+        const own = await post(
+          '/xrpc/com.atproto.space.createRecord',
+          noteRecord(personalSpace, authority.did),
+          authority.accessJwt,
+        );
+        expect(own.status).toBe(200);
+        const refused = await get(
+          notesOf(personalSpace, authority.did),
+          writer.accessJwt,
+        );
+        expect(refused.status).toBe(403);
+
+        expect(asked).toEqual([]);
+      },
+    );
   });
 });
 describe('grants over a space', () => {

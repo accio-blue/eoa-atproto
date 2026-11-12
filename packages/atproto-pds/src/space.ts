@@ -79,6 +79,7 @@ import {
   type XrpcServer,
 } from '@eoa/xrpc-server';
 import { JETSTREAM_PATH, jetstreamResponse } from './jetstream.js';
+import { type ManagingAppVerdict, askManagingApp } from './managing-app.js';
 import {
   type PdsConfig,
   authenticateAccess,
@@ -99,7 +100,6 @@ import { type IdentityResolver } from '@eoa/identity';
 import { type PublicKey } from '@eoa/crypto';
 import { type SpaceHooks } from './space-hooks.js';
 import { type SpaceStore } from './space-store.js';
-import { askManagingApp } from './managing-app.js';
 import { blobCidsIn } from './blob.js';
 import { nextTid } from '@eoa/repo-store';
 import { sha256 } from '@eoa/crypto';
@@ -544,12 +544,43 @@ export const registerSpaceMethods = (
     });
 
   /**
-   * The **policy's** answer about a read: the authority, a member's `read`, `publicRead`.
+   * The managing app's answer about one read, as an option: `none` is "no answer at all" — the app
+   * could not be reached, timed out, or the ask itself failed — which is not a yes.
+   *
+   * One ask per read request, never a cache: a shared answer would let one reader's yes stand for
+   * another's. The caller keeps the app's `detail`, so a refusal can say which of the two happened.
+   */
+  const askRead = (params: {
+    readonly managingApp: string;
+    readonly authority: string;
+    readonly space: string;
+    readonly did: string;
+    readonly identity: IdentityResolver;
+  }): Effect.Effect<Option.Option<ManagingAppVerdict>> =>
+    askManagingApp({
+      managingApp: params.managingApp,
+      authority: params.authority,
+      space: params.space,
+      did: params.did,
+      access: 'read',
+      signingKey: deps.config.signingKey,
+      identity: params.identity,
+      now: Date.now(),
+    }).pipe(
+      Effect.asSome,
+      Effect.catchCause(() =>
+        Effect.succeed(Option.none<ManagingAppVerdict>()),
+      ),
+    );
+
+  /**
+   * The **policy's** answer about a read: the authority, a member's `read`, `publicRead`, or — for a
+   * managed space — the managing app's own answer.
    *
    * The coarse axis. `allow` is a yes; everything else — a personal space's silence, a member entry
-   * that says `read: false`, a managed space whose read the managing app would have to answer — falls
-   * through to the grant gate, because a policy that does not say yes is not a policy that says no to
-   * a grant (`Deny` means "not through me", `Ask` means "not my question").
+   * that says `read: false`, a managed space whose app said no or was never reached — falls through
+   * to the grant gate, because a policy that does not say yes is not a policy that says no to a
+   * grant (`Deny` means "not through me", `Ask` means "not my question").
    */
   const policyReadOf = (params: {
     readonly space: string;
@@ -580,7 +611,7 @@ export const registerSpaceMethods = (
         ),
       );
       const member = memberOf(archive, params.did);
-      return Match.value(
+      return yield* Match.value(
         decideSessionRead({
           policy,
           did: didOf(params.did),
@@ -588,15 +619,50 @@ export const registerSpaceMethods = (
           member,
         }),
       ).pipe(
-        Match.tag('Allow', () => ({ kind: 'allow' as const })),
-        Match.tag('Deny', (denied) => ({
-          kind: 'else' as const,
-          reason: String(denied.reason),
-        })),
-        Match.tag('Ask', () => ({
-          kind: 'else' as const,
-          reason: 'the managing app decides reads',
-        })),
+        Match.tag('Allow', () => Effect.succeed({ kind: 'allow' as const })),
+        Match.tag('Deny', (denied) =>
+          Effect.succeed({
+            kind: 'else' as const,
+            reason: String(denied.reason),
+          }),
+        ),
+        Match.tag('Ask', () =>
+          Effect.gen(function* () {
+            // `decideSessionRead` answers Ask only for the managed policy, the one that carries an
+            // app. Without a resolver to reach it there is nothing to ask, and the grant gate is
+            // still the answer.
+            if (
+              policy.$type !== MANAGED_POLICY_TYPE ||
+              deps.identity === undefined
+            ) {
+              return {
+                kind: 'else' as const,
+                reason: `the ${MANAGED_POLICY_TYPE} decides reads, and this host has no identity resolver to ask it`,
+              };
+            }
+            const asked = yield* askRead({
+              managingApp: policy.managingApp,
+              authority: params.authority,
+              space: params.space,
+              did: params.did,
+              identity: deps.identity,
+            });
+            if (Option.isNone(asked)) {
+              return {
+                kind: 'else' as const,
+                reason: `the ${MANAGED_POLICY_TYPE} could not be asked whether ${params.did} may read ${params.space}`,
+              };
+            }
+            return Match.value(asked.value).pipe(
+              Match.tag('Allow', () => ({ kind: 'allow' as const })),
+              Match.tag('Deny', (denied) => ({
+                kind: 'else' as const,
+                reason: `the ${MANAGED_POLICY_TYPE} asked ${policy.managingApp} whether ${params.did} may read ${params.space}: ${denied.detail} [${denied.reason}]`,
+              })),
+              Match.exhaustive,
+            );
+          }),
+        ),
         Match.exhaustive,
       );
     });
@@ -1487,6 +1553,30 @@ export const registerSpaceMethods = (
             Effect.mapError(() => serverError('the app is not a DID')),
           );
 
+      // A managed space's read is its app's answer, not this host's. `decideRead` asks only for a
+      // managed policy and only when the reader is not the authority, so ask under exactly those
+      // conditions — the authority's own mint never needs the network.
+      const managingAppAllows = yield* Effect.gen(function* () {
+        if (
+          policy.$type !== MANAGED_POLICY_TYPE ||
+          deps.identity === undefined ||
+          reader === authority
+        ) {
+          return false;
+        }
+        const asked = yield* askRead({
+          managingApp: policy.managingApp,
+          authority: space.authority,
+          space: input.space,
+          did: reader,
+          identity: deps.identity,
+        });
+        return Option.match(asked, {
+          onNone: () => false,
+          onSome: (verdict) => Predicate.isTagged(verdict, 'Allow'),
+        });
+      });
+
       const verdict = yield* credentialFor({
         policy,
         did: reader,
@@ -1501,6 +1591,7 @@ export const registerSpaceMethods = (
         jkt: input.jkt,
         key: deps.config.signingKey,
         now,
+        managingAppAllows,
       });
       if (!verdict.ok) {
         return yield* Effect.fail(

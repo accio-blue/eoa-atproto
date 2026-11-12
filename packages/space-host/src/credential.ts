@@ -259,6 +259,11 @@ export type IssueVerdict =
  *
  * An allow without an attested app mints nothing: `allowedApps` is evaluated against an app, and a
  * credential with no `sub` would be one nobody approved.
+ *
+ * This function decides from local state only. A managed space's read is the managing app's to
+ * answer, and this host does not ask it here: `managingAppAllows` is how the caller reports a yes it
+ * already got over the network. Without it an `Ask` keeps refusing — the pure function must not
+ * pretend to know an answer it was not given.
  */
 export const credentialFor = (params: {
   readonly policy: Policy;
@@ -273,6 +278,8 @@ export const credentialFor = (params: {
   readonly key: PrivateKey;
   readonly now: number;
   readonly ttl?: number | undefined;
+  /** The caller already asked the managing app about this read, and it said yes. */
+  readonly managingAppAllows?: boolean | undefined;
 }): Effect.Effect<IssueVerdict> =>
   Effect.gen(function* () {
     const verdict = decideRead({
@@ -285,7 +292,10 @@ export const credentialFor = (params: {
     if (Predicate.isTagged(verdict, 'Deny')) {
       return { ok: false as const, reason: verdict.reason };
     }
-    if (Predicate.isTagged(verdict, 'Ask')) {
+    if (
+      Predicate.isTagged(verdict, 'Ask') &&
+      params.managingAppAllows !== true
+    ) {
       return {
         ok: false as const,
         reason: 'the-managing-app-decides' as const,
