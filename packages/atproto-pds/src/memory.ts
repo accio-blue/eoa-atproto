@@ -6,6 +6,7 @@ import { Firehose, firehoseLayer } from './firehose.js';
 import { Mail, noMailLayer } from './mail.js';
 import { RepoStore, repoStoreLayer } from '@eoa/repo-store';
 import { SpaceStore, spaceStoreLayer } from './space-store.js';
+import { type PdsConfig } from './pds.js';
 import type { PluginHooks } from './repo.js';
 import { type PluginMethod } from './plugin-method.js';
 import type { SpaceSurfaceDeps } from './space.js';
@@ -34,6 +35,8 @@ export const startMemoryPds = (
     readonly plugins?: PluginHooks;
     /** How a managing app's `did#fragment` is resolved (`70cr`); a test passes one over a map. */
     readonly identity?: SpaceSurfaceDeps['identity'];
+    /** How a DID document is fetched when a proof is checked (`mqu7`); absent means the network. */
+    readonly fetchDocument?: PdsConfig['fetchDocument'];
   } = {},
 ) =>
   Effect.gen(function* () {
@@ -70,6 +73,9 @@ export const startMemoryPds = (
         ...(params.privateCollections === undefined
           ? {}
           : { privateCollections: params.privateCollections }),
+        ...(params.fetchDocument === undefined
+          ? {}
+          : { fetchDocument: params.fetchDocument }),
       },
       ...services,
       ...(params.identity === undefined ? {} : { identity: params.identity }),

@@ -122,7 +122,7 @@ import { sha256 } from '@eoa/crypto';
  */
 
 /** A space URI, parsed. `undefined` when the string is not a space address. */
-const spaceOf = (value: string): Space | undefined => {
+export const spaceOf = (value: string): Space | undefined => {
   const decoded = Schema.decodeUnknownOption(ATURI)(value);
   return Option.isNone(decoded) ? undefined : spaceFromUri(decoded.value);
 };

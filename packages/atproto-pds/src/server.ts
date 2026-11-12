@@ -20,6 +20,7 @@ import { registerAccountMethods } from './account.js';
 import { registerAdminMethods } from './admin.js';
 import { registerBlobMethods } from './blob.js';
 import { registerIdentityMethods } from './identity.js';
+import { registerMutualMethods } from './mutuals.js';
 import { registerPrefsMethods } from './prefs.js';
 import { registerRepoMethods } from './repo.js';
 import { registerSpaceMethods } from './space.js';
@@ -220,6 +221,16 @@ export const createPdsServer = (params: {
       ? {}
       : { spaceHooks: params.spaceHooks }),
   });
+
+  // The host's other end of `70cr`: a "mutuals" space names this host as its managing app, and the
+  // answer comes from the follow graph. Without a resolver nothing can be read, so a host that
+  // names none does not answer at all - exactly as before this route existed.
+  if (params.identity !== undefined) {
+    registerMutualMethods(server, {
+      config: params.config,
+      identity: params.identity,
+    });
+  }
 
   return server;
 };
