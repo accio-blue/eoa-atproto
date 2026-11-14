@@ -1,7 +1,5 @@
 packages:
-  - 'apps/*'
   - 'packages/*'
-  - 'tools/*'
 
 # pnpm 11+ reads non-auth config from here, not from .npmrc or package.json#pnpm.
 nodeLinker: hoisted
@@ -125,7 +123,7 @@ minimumReleaseAgeExclude:
   - '@cssints/css-grammar@0.13.0 || 0.20.0 || 0.22.0 || 0.28.0 || 0.29.0 || 0.30.1'
   - '@cssints/icons@0.13.0 || 0.20.0 || 0.22.0 || 0.28.0 || 0.29.0 || 0.30.1'
   - '@cssints/mise-en-mode@0.13.0 || 0.20.0 || 0.22.0 || 0.28.0 || 0.29.0 || 0.30.1'
-  - '@cssints/headless@0.13.0 || 0.13.1 || 0.20.0 || 0.22.0 || 0.24.0 || 0.28.0 || 0.29.0 || 0.30.1 || 0.32.0 || 0.33.0 || 0.37.0'
+  - '@cssints/headless@0.13.0 || 0.13.1 || 0.20.0 || 0.22.0 || 0.24.0 || 0.28.0 || 0.29.0 || 0.30.1 || 0.32.0 || 0.33.0'
   - '@cssints/apg-specs@0.5.2 || 0.28.0 || 0.29.0 || 0.30.1'
   - '@cloudflare/workers-types@5.20261012.1 || 5.20261107.1'
   - '@quint-machine/core@0.2.0'
@@ -136,7 +134,7 @@ minimumReleaseAgeExclude:
   - '@effect/platform-node-shared@4.1.2'
   - '@effect/platform-node@4.1.2'
   - effect@4.1.2
-  - '@cssints/machine@0.28.0 || 0.29.0 || 0.30.1 || 0.32.0 || 0.33.0 || 0.37.0'
+  - '@cssints/machine@0.28.0 || 0.29.0 || 0.30.1 || 0.32.0 || 0.33.0'
   - knip@6.44.2
 
 # `alchemy` is the deploy path, and every published beta (through 2.0.0-beta.84) still imports
@@ -144,5 +142,3 @@ minimumReleaseAgeExclude:
 # `SecureRandom`/`Digest` instead of `Crypto`, the platform layer supplies `NodeCrypto`/`BunCrypto` (4.1
 # keeps crypto out of `NodeServices`), and the type references follow. Drop it as soon as upstream
 # publishes a 4.1-compatible beta — `patches/` is not a place to live.
-patchedDependencies:
-  alchemy@2.0.0-beta.83: patches/alchemy@2.0.0-beta.83.patch
