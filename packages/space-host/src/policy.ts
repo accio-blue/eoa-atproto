@@ -47,7 +47,7 @@ export const SPACE_METHODS = {
   putMember: 'com.atproto.memberspace.putMember',
   removeMember: 'com.atproto.memberspace.removeMember',
   listMembers: 'com.atproto.memberspace.listMembers',
-  checkUserAccess: 'com.atproto.managedspace.checkUserAccess',
+  checkAccess: 'com.atproto.managedspace.checkAccess',
 } as const;
 
 /**
@@ -133,7 +133,7 @@ export type PolicyDenial =
 export type PolicyVerdict = Data.TaggedEnum<{
   Allow: {};
   Deny: { readonly reason: PolicyDenial };
-  /** A managed space cannot decide locally: the authority must ask `checkUserAccess`. */
+  /** A managed space cannot decide locally: the authority must ask `checkAccess`. */
   Ask: {};
 }>;
 export const PolicyVerdict = Data.taggedEnum<PolicyVerdict>();

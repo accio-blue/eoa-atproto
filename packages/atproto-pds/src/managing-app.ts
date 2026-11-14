@@ -6,11 +6,12 @@ import { serviceAuthToken } from './token.js';
 
 /**
  * Asking a `managedspace`'s **managing app** whether a user may do something
- * (`com.atproto.managedspace.checkUserAccess`, proposal `0016`).
+ * (`com.atproto.managedspace.checkAccess`, proposal `0016`).
  *
  * The app is served by the app, not by this PDS: the authority resolves the
  * policy's `managingApp` (a DID and a fragment) to its endpoint, signs a
- * service-auth token as itself, and asks. The answer is `{ authorized: boolean }`.
+ * service-auth token as itself, and asks. The answer is `{ read, write }` — two
+ * fields, one per access kind, so an app can allow a write and refuse a read.
  *
  * Every way of not getting a yes is a no. That is the spec's own rule — the
  * proposal makes the host's failure to decide a refusal — and it is also why the
@@ -27,7 +28,7 @@ export type ManagedAccess = 'read' | 'write';
  * one names a different thing to go and fix.
  */
 export type ManagingAppDenial =
-  /** The app answered, and the answer was `authorized: false`. */
+  /** The app answered, and the field for the access asked about was `false`. */
   | 'the-app-denied'
   /** The policy's `managingApp` did not resolve to an endpoint. */
   | 'unresolvable'
@@ -37,7 +38,7 @@ export type ManagingAppDenial =
   | 'timeout'
   /** The app answered something other than 200. */
   | 'non-200'
-  /** The app answered 200 with a body that is not `{ authorized: boolean }`. */
+  /** The app answered 200 with a body that is not `{ read, write }`. */
   | 'malformed'
   /** The authority could not sign the service-auth token at all. */
   | 'cannot-sign';
@@ -56,8 +57,11 @@ export const ManagingAppVerdict = Data.taggedEnum<ManagingAppVerdict>();
 const denied = (reason: ManagingAppDenial, detail: string) =>
   ManagingAppVerdict.Deny({ reason, detail });
 
-/** What the callback's output is, decoded at the boundary. */
-const ACCESS_ANSWER = Schema.Struct({ authorized: Schema.Boolean });
+/** What the callback's output is, decoded at the boundary. Both fields are required. */
+const ACCESS_ANSWER = Schema.Struct({
+  read: Schema.Boolean,
+  write: Schema.Boolean,
+});
 
 /**
  * The bound on the call: **two seconds**.
@@ -98,10 +102,9 @@ const urlOf = (params: {
   readonly clientId: string | undefined;
 }) => {
   const base = params.endpoint.replace(/\/+$/, '');
-  const url = new URL(`${base}/xrpc/${SPACE_METHODS.checkUserAccess}`);
+  const url = new URL(`${base}/xrpc/${SPACE_METHODS.checkAccess}`);
   url.searchParams.set('space', params.space);
-  url.searchParams.set('user', params.did);
-  url.searchParams.set('access', params.access);
+  url.searchParams.set('repo', params.did);
   // The proposal is explicit: a write carries no client, because `notifyWrite`
   // does not identify the app that originated it.
   if (params.access === 'read' && params.clientId !== undefined) {
@@ -156,7 +159,7 @@ export const askManagingApp = (params: AskManagingAppInput) =>
         key: params.signingKey,
         iss: params.authority,
         aud: params.managingApp,
-        lxm: SPACE_METHODS.checkUserAccess,
+        lxm: SPACE_METHODS.checkAccess,
         now: params.now,
       }),
     );
@@ -195,27 +198,29 @@ export const askManagingApp = (params: AskManagingAppInput) =>
       // A body that is not JSON, and JSON that is not the shape, are both
       // "not the expected shape" - the app answered something, just not an
       // answer this host is allowed to read as one.
-      const authorized = yield* Effect.tryPromise({
+      const answer = yield* Effect.tryPromise({
         try: () => response.success.json(),
         catch: () => undefined,
       }).pipe(
-        Effect.map(
-          (body) =>
-            Option.getOrUndefined(
-              Schema.decodeUnknownOption(ACCESS_ANSWER)(body),
-            )?.authorized,
+        Effect.map((body) =>
+          Option.getOrUndefined(
+            Schema.decodeUnknownOption(ACCESS_ANSWER)(body),
+          ),
         ),
         Effect.orElseSucceed(() => undefined),
       );
-      if (authorized === undefined) {
+      if (answer === undefined) {
         return denied(
           'malformed',
-          'the app answered 200 with a body that is not { "authorized": boolean }',
+          'the app answered 200 with a body that is not { "read": boolean, "write": boolean }',
         );
       }
-      return authorized
+      return (params.access === 'read' ? answer.read : answer.write)
         ? ManagingAppVerdict.Allow()
-        : denied('the-app-denied', 'the app said no (authorized: false)');
+        : denied(
+            'the-app-denied',
+            `the app said ${params.access} is false; its ${params.access === 'read' ? 'write' : 'read'} answer is a separate field and may differ`,
+          );
     }).pipe(
       Effect.timeoutOrElse({
         duration: MANAGING_APP_TIMEOUT,

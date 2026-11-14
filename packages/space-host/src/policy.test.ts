@@ -212,8 +212,8 @@ describe('policy migration and publication', () => {
   it('names the lifecycle methods under com.atproto.space after the split', () => {
     expect(SPACE_METHODS.createSpace).toBe('com.atproto.space.createSpace');
     expect(SPACE_METHODS.putMember).toBe('com.atproto.memberspace.putMember');
-    expect(SPACE_METHODS.checkUserAccess).toBe(
-      'com.atproto.managedspace.checkUserAccess',
+    expect(SPACE_METHODS.checkAccess).toBe(
+      'com.atproto.managedspace.checkAccess',
     );
   });
 });

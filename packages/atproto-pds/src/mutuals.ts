@@ -11,7 +11,7 @@ import { spaceOf } from './space.js';
  * itself (`mqu7`, proposal `0016`'s follower-gating).
  *
  * The authority names its own host as the space's `managingApp` (`<host did>#atproto_pds`), and
- * `managing-app.ts` asks it `com.atproto.managedspace.checkUserAccess` on every read. Here the host
+ * `managing-app.ts` asks it `com.atproto.managedspace.checkAccess` on every read. Here the host
  * answers from `app.bsky.graph.follow` — the authority follows the user, and the user follows the
  * authority — so no member list exists and nothing has to be synced when someone follows.
  *
@@ -166,10 +166,11 @@ export const mutualRule = (params: {
     return Result.isSuccess(userRead) && userRead.success.has(params.authority);
   });
 
-/** The query the managing app sends: the space, the user, and an `access` the rule does not read. */
+/** The query the managing app sends: the space, the repo, and an optional `clientId`. */
 const CHECK_INPUT = Schema.Struct({
   space: Schema.String,
-  user: Schema.String,
+  repo: Schema.optionalKey(Schema.String),
+  clientId: Schema.optionalKey(Schema.String),
 });
 
 /** What this route needs: who we are, and how a DID resolves to its PDS. */
@@ -189,7 +190,7 @@ const audiencesOf = (config: PdsConfig) => [
 ];
 
 /**
- * `com.atproto.managedspace.checkUserAccess`, served here beside the space methods.
+ * `com.atproto.managedspace.checkAccess`, served here beside the space methods.
  *
  * The issuer is the space's **authority, parsed out of the `space` URI and never taken from the
  * token**: a token proves who signed it, not whose space it may ask about, so the token has to be
@@ -213,7 +214,7 @@ export const registerMutualMethods = (
             did: params.did,
             token: params.token,
             audience,
-            lxm: SPACE_METHODS.checkUserAccess,
+            lxm: SPACE_METHODS.checkAccess,
             plcDirectoryUrl: deps.config.plcDirectoryUrl,
             fetchDocument: deps.config.fetchDocument,
             now: params.now,
@@ -227,12 +228,12 @@ export const registerMutualMethods = (
       return yield* Effect.fail(unauthorized(reason));
     });
 
-  server.method(SPACE_METHODS.checkUserAccess, {}, (ctx) =>
+  server.method(SPACE_METHODS.checkAccess, {}, (ctx) =>
     Effect.gen(function* () {
       const decoded = Schema.decodeUnknownOption(CHECK_INPUT)(ctx.params);
       if (Option.isNone(decoded)) {
         return yield* Effect.fail(
-          invalid('checkUserAccess needs a space and a user'),
+          invalid('checkAccess needs a space and a repo'),
         );
       }
       const parsed = spaceOf(decoded.value.space);
@@ -244,7 +245,7 @@ export const registerMutualMethods = (
       const token = bearer(ctx);
       if (token === undefined) {
         return yield* Effect.fail(
-          unauthorized('checkUserAccess is asked with a service-auth token'),
+          unauthorized('checkAccess is asked with a service-auth token'),
         );
       }
       // The authority is the space's, not the token's: a yes here is about the graph of whoever
@@ -254,12 +255,16 @@ export const registerMutualMethods = (
         token,
         now: Date.now(),
       });
-      const authorized = yield* mutualRule({
+      // `clientId` is accepted and ignored: no attestation reaches this host yet.
+      // A repo-less ask is the authority about its own space, and it passes the rule by definition.
+      const user = decoded.value.repo ?? parsed.authority;
+      const allowed = yield* mutualRule({
         authority: parsed.authority,
-        user: decoded.value.user,
+        user,
         follows: (did) => liveFollows({ did, identity: deps.identity }),
       });
-      return { authorized };
+      // The audience set does not differ by kind, so one decision answers both fields.
+      return { read: allowed, write: allowed };
     }),
   );
 };

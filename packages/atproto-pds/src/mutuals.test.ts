@@ -11,7 +11,7 @@ import { type DidDocument } from './proof.js';
 import { startMemoryPds } from './memory.js';
 
 /**
- * The mutuals oracle (`mqu7`): the follow graph answers `checkUserAccess`, and only the token can
+ * The mutuals oracle (`mqu7`): the follow graph answers `checkAccess`, and only the token can
  * refuse it.
  *
  * Two halves are tested separately and then together: the rule and the graph read need no server,
@@ -268,7 +268,7 @@ const checkAccess = async (
   token?: string,
 ) => {
   const response = await fetch(
-    `${url}/xrpc/com.atproto.managedspace.checkUserAccess?${new URLSearchParams(query)}`,
+    `${url}/xrpc/com.atproto.managedspace.checkAccess?${new URLSearchParams(query)}`,
     token === undefined
       ? {}
       : { headers: { authorization: `Bearer ${token}` } },
@@ -288,7 +288,7 @@ const serviceAuth = async (params: {
 }) => {
   const query = new URLSearchParams({
     aud: params.aud ?? MANAGING_APP,
-    lxm: params.lxm ?? 'com.atproto.managedspace.checkUserAccess',
+    lxm: params.lxm ?? 'com.atproto.managedspace.checkAccess',
   });
   const response = await fetch(
     `${params.url}/xrpc/com.atproto.server.getServiceAuth?${query}`,
@@ -365,24 +365,19 @@ describe('the route: only the token refuses', () => {
     await withOracle(async ({ url, user, space }) => {
       const answer = await checkAccess(url, {
         space,
-        user: user.did,
-        access: 'read',
+        repo: user.did,
       });
       expect(answer.status).toBe(401);
-      expect(answer.body).not.toHaveProperty('authorized');
+      expect(answer.body).not.toHaveProperty('read');
     });
   });
 
   it('is 401 for a token issued by someone other than the space’s authority', async () => {
     await withOracle(async ({ url, user, space }) => {
       const token = await serviceAuth({ url, accessJwt: user.accessJwt });
-      const answer = await checkAccess(
-        url,
-        { space, user: user.did, access: 'read' },
-        token,
-      );
+      const answer = await checkAccess(url, { space, repo: user.did }, token);
       expect(answer.status).toBe(401);
-      expect(answer.body).not.toHaveProperty('authorized');
+      expect(answer.body).not.toHaveProperty('read');
     });
   });
 
@@ -393,30 +388,22 @@ describe('the route: only the token refuses', () => {
         accessJwt: authority.accessJwt,
         lxm: 'com.atproto.repo.listRecords',
       });
-      const answer = await checkAccess(
-        url,
-        { space, user: user.did, access: 'read' },
-        token,
-      );
+      const answer = await checkAccess(url, { space, repo: user.did }, token);
       expect(answer.status).toBe(401);
-      expect(answer.body).not.toHaveProperty('authorized');
+      expect(answer.body).not.toHaveProperty('read');
     });
   });
 
-  it('answers 200 { authorized: false } when nothing is mutual', async () => {
+  it('answers 200 { read: false, write: false } when nothing is mutual', async () => {
     await withOracle(async ({ url, authority, user, space }) => {
       const token = await serviceAuth({ url, accessJwt: authority.accessJwt });
-      const answer = await checkAccess(
-        url,
-        { space, user: user.did, access: 'read' },
-        token,
-      );
+      const answer = await checkAccess(url, { space, repo: user.did }, token);
       expect(answer.status).toBe(200);
-      expect(answer.body).toEqual({ authorized: false });
+      expect(answer.body).toEqual({ read: false, write: false });
     });
   });
 
-  it('answers 200 { authorized: true } when both follow each other', async () => {
+  it('answers 200 { read: true, write: true } when both follow each other', async () => {
     await withOracle(async ({ url, authority, user, space }) => {
       const follow = async (follower: Account, subject: string) => {
         const response = await fetch(
@@ -444,13 +431,18 @@ describe('the route: only the token refuses', () => {
       await follow(user, authority.did);
 
       const token = await serviceAuth({ url, accessJwt: authority.accessJwt });
-      const answer = await checkAccess(
-        url,
-        { space, user: user.did, access: 'write' },
-        token,
-      );
+      const answer = await checkAccess(url, { space, repo: user.did }, token);
       expect(answer.status).toBe(200);
-      expect(answer.body).toEqual({ authorized: true });
+      expect(answer.body).toEqual({ read: true, write: true });
+    });
+  });
+
+  it('answers both true when no repo is named, which is the authority itself', async () => {
+    await withOracle(async ({ url, authority, space }) => {
+      const token = await serviceAuth({ url, accessJwt: authority.accessJwt });
+      const answer = await checkAccess(url, { space }, token);
+      expect(answer.status).toBe(200);
+      expect(answer.body).toEqual({ read: true, write: true });
     });
   });
 });
@@ -553,7 +545,7 @@ describe('the two halves fit: a mutuals space reads itself', () => {
           const pds = yield* startMemoryPds();
           const response = yield* Effect.promise(() =>
             fetch(
-              `${pds.url}/xrpc/com.atproto.managedspace.checkUserAccess?space=at://${AUTHORITY}/${SPACE_TYPE}/mutuals&user=${USER}&access=read`,
+              `${pds.url}/xrpc/com.atproto.managedspace.checkAccess?space=at://${AUTHORITY}/${SPACE_TYPE}/mutuals&repo=${USER}`,
             ),
           );
           expect(response.status).toBe(404);
