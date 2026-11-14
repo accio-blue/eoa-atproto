@@ -19,7 +19,8 @@
     "test:coverage": "vp test --run --coverage",
     "test:run": "vp test --run",
     "typecheck": "vp run -r build && vp run -r --concurrency-limit=1 typecheck",
-    "cf:budget": "node tools/cf-budget.mjs"
+    "cf:budget": "node tools/cf-budget.mjs",
+    "publish:public": "node tools/publish.mjs"
   },
   "devDependencies": {
     "@eoa/workflow": "workspace:*",
