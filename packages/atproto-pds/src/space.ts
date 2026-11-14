@@ -89,6 +89,7 @@ import {
   invalid,
   notFound,
   serverError,
+  takenDown,
   unauthorized,
 } from './pds.js';
 import { fromJson, toJson } from './repo.js';
@@ -1479,6 +1480,26 @@ export const registerSpaceMethods = (
       if (Option.isNone(held)) {
         return yield* Effect.fail(
           notFound('SpaceNotFound', `no space ${input.space} on this host`),
+        );
+      }
+      // The spec's takedown rule (spaces alpha, 2026-11-12): an account that is taken down serves no
+      // credentials for the spaces it hosts. Checked before any authentication, because the space is
+      // closed to everyone, not only to callers the session check would refuse. A space whose
+      // authority has no account row here is left alone: `importSpaceMeta` brings spaces from away,
+      // and this rule is about an account that exists and is not active.
+      const authorityRow = yield* deps.accounts
+        .account(space.authority)
+        .pipe(
+          Effect.mapError(() => serverError('the authority could not be read')),
+        );
+      if (
+        Option.isSome(authorityRow) &&
+        authorityRow.value.status !== 'active'
+      ) {
+        return yield* Effect.fail(
+          takenDown(
+            `the authority of ${input.space} is ${authorityRow.value.status}`,
+          ),
         );
       }
       const archive = yield* parseSpaceMetaStar(held.value).pipe(

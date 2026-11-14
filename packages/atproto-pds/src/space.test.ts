@@ -1398,6 +1398,30 @@ describe('the authority, or a member, mints a space credential (frxd, myyq)', ()
     );
   });
 
+  it('refuses every credential while the authority is not active', async () => {
+    await withSpace(
+      async ({ space, account, post }) => {
+        const off = await post(
+          '/xrpc/com.atproto.server.deactivateAccount',
+          {},
+          account.accessJwt,
+        );
+        expect(off.status).toBe(200);
+        const refused = await post(
+          '/xrpc/com.atproto.space.getCredential',
+          { space, app: 'did:web:appview.example', jkt: JKT },
+          account.accessJwt,
+        );
+        // The space is closed to everyone, so the answer is the account's state rather than the
+        // caller's credential: a member's session would be refused the same way.
+        expect(refused.status).toBe(400);
+        expect(String(refused.body['error'])).toBe('AccountTakedown');
+        expect(String(refused.body['message'])).toContain('suspended');
+      },
+      ['did:web:appview.example'],
+    );
+  });
+
   it('refuses an app the policy does not name', async () => {
     await withSpace(
       async ({ space, account, post }) => {
